@@ -1,0 +1,236 @@
+import subprocess
+import sys
+import threading
+from typing import TYPE_CHECKING, Any
+
+import colorama
+import orjson
+
+import ralphlib.logger
+import ralphlib.types
+
+if TYPE_CHECKING:
+    import io
+
+    from ralphlib.options import RalpherOptions
+
+print_lock = threading.Lock()
+
+
+def run(options: RalpherOptions, prompt: str, iteration: int) -> None:
+    context = make_context(options, prompt, iteration)
+    try:
+        process(options, context)
+    except Exception as e:
+        raise Exception(f'Exception: {e}') from e
+    finally:
+        unmake_context(context)
+
+
+def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
+    cmd = options.agent.split()
+    cmd.append(prompt)
+    context: dict[str, Any] = {
+        'iteration': iteration,
+        'prompt': prompt,
+        'cmd': cmd,
+        'stdout': None,
+        'stderr': None,
+        'progress': None,
+    }
+    try:
+        if options.stdout:
+            context['stdout'] = ralphlib.logger.log_file(options, options.stdout, iteration)
+        if options.stderr:
+            context['stderr'] = ralphlib.logger.log_file(options, options.stderr, iteration)
+        if options.progress:
+            context['progress'] = ralphlib.logger.log_file(options, options.progress, iteration)
+    except Exception as e:
+        raise Exception(f'Exception: {e}') from e
+    finally:
+        unmake_context(context)
+    return context
+
+
+def unmake_context(context: dict[str, Any]) -> None:
+    pass
+
+
+def process(options: RalpherOptions, context: dict[str, Any]) -> None:
+    kwargs = {
+        'stdout': subprocess.PIPE,
+        'stderr': subprocess.PIPE,
+        'bufsize': 1,  # line-buffered
+        'text': True,
+        'errors': 'replace',
+    }
+    if options.cwd:
+        kwargs['cwd'] = options.cwd
+
+    proc = subprocess.Popen(  # noqa: S603
+        context['cmd'],
+        **kwargs,
+    )
+
+    # Threads to read and print from each pipe concurrently
+    stdout_thread = threading.Thread(
+        target=process_stdout,
+        args=(
+            options,
+            context,
+            proc.stdout,
+        ),
+    )
+    stderr_thread = threading.Thread(
+        target=process_stderr,
+        args=(
+            options,
+            context,
+            proc.stderr,
+        ),
+    )
+
+    stdout_thread.start()
+    stderr_thread.start()
+
+    # Wait for the process to complete
+    proc.wait()
+
+    # Join threads to ensure all output is read
+    stdout_thread.join()
+    stderr_thread.join()
+
+
+def process_stdout(
+    options: RalpherOptions,
+    context: dict[str, Any],
+    pipe: io.TextIOWrapper,
+) -> None:
+    newline_types = [
+        ralphlib.types.MessageType.CONTENT_STOP,
+        ralphlib.types.MessageType.SYSTEM,
+        ralphlib.types.MessageType.TOOL_USE,
+    ]
+
+    logfd: io.TextIOWrapper | None = None
+    progressfd: io.TextIOWrapper | None = None
+    if context['stdout']:
+        logfd = context['stdout'].open('a', encoding='utf-8')
+    if context['progress']:
+        progressfd = context['progress'].open('a', encoding='utf-8')
+
+    for line in iter(pipe.readline, ''):
+        line = line.strip()
+        if not line:
+            continue
+
+        if logfd:
+            logfd.write(line + '\n')
+
+        message_type, message = process_line(line)
+        if message_type == ralphlib.types.MessageType.NONE:
+            continue
+
+        if progressfd:
+            if message:
+                progressfd.write(message)
+            if message_type in newline_types:
+                progressfd.write('\n')
+                progressfd.flush()
+
+        if not options.quiet:
+            if message:
+                print_progress(message_type, message)
+            if message_type in newline_types:
+                print_progress_eol()
+
+
+def print_progress(message_type: ralphlib.types.MessageType, message: str) -> None:
+    msg_color = {
+        ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
+        ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
+        ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
+    }
+    with print_lock:
+        print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
+
+
+def print_progress_eol() -> None:
+    with print_lock:
+        print('', flush=True)
+
+
+def process_stderr(
+    options: RalpherOptions,
+    context: dict[str, Any],
+    pipe: io.TextIOWrapper,
+) -> None:
+    logfd: io.TextIOWrapper | None = None
+    if context['stderr']:
+        logfd = context['stderr'].open('a', encoding='utf-8')
+
+    for line in iter(pipe.readline, ''):
+        line = line.strip()
+        if not line:
+            continue
+
+        if logfd:
+            logfd.write(line + '\n')
+
+        if not options.quiet:
+            print_error(line)
+
+
+def print_error(message: str) -> None:
+    with print_lock:
+        print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
+
+
+def process_line(line: str) -> tuple[ralphlib.types.MessageType, str]:
+    try:
+        payload = orjson.loads(line)
+        ptype = payload.get('type')
+        if ptype == 'system':
+            content = payload.get('subtype', '')
+            return ralphlib.types.MessageType.SYSTEM, content
+
+        if ptype == 'assistant':
+            return ralphlib.types.MessageType.NONE, line
+
+        if ptype == 'result':
+            return ralphlib.types.MessageType.NONE, line
+
+        if ptype == 'user':
+            return ralphlib.types.MessageType.NONE, line
+
+        if ptype == 'stream_event':
+            event = payload.get('event', {})
+            etype = event.get('type', '')
+
+            if etype in ['message_start', 'message_stop', 'message_delta']:
+                return ralphlib.types.MessageType.NONE, ''
+
+            if etype == 'content_block_start':
+                content_block = event.get('content_block', {})
+                cb_type = content_block.get('type', '')
+                if cb_type == 'text':
+                    return ralphlib.types.MessageType.CONTENT_START, content_block.get('text', '')
+                if cb_type == 'tool_use':
+                    return ralphlib.types.MessageType.TOOL_USE, content_block.get('name', '')
+
+            if etype == 'content_block_stop':
+                return ralphlib.types.MessageType.CONTENT_STOP, ''
+
+            if etype == 'content_block_delta':
+                delta = event.get('delta', {})
+                cb_type = delta.get('type', '')
+                if cb_type == 'text_delta':
+                    return ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', '')
+                if cb_type == 'input_json_delta':
+                    return ralphlib.types.MessageType.NONE, ''
+
+        print_error(f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
+    except Exception as e:
+        print_error(f'\nprocess_line: exception: {e}\n{line}\n')
+        return ralphlib.types.MessageType.ERROR, line
+    return ralphlib.types.MessageType.NONE, line
