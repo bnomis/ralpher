@@ -31,22 +31,23 @@ def loop(options: RalpherOptions) -> None:
 
     ralphlib.logger.init(options)
 
-    ralphlib.printer.prt(options, 'Start\n')
-    ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n')
-    ralphlib.printer.prt(options, f'Args:\n{options.args}\n')
-    ralphlib.printer.prt(options, f'Prompt:\n{content}\n')
-    ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n')
-
+    now = datetime.datetime.now().isoformat()
+    ralphlib.printer.prt(options, f'Start at {now}\n', 0)
+    ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n', 0)
+    ralphlib.printer.prt(options, f'Args:\n{options.args}\n', 0)
+    ralphlib.printer.prt(options, f'Prompt:\n{content}\n', 0)
+    ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n', 0)
     for i in range(1, options.iterations + 1):
         now = datetime.datetime.now().isoformat()
-        ralphlib.printer.prt(options, f'Iteration {i}/{options.iterations} at {now}\n')
         p = ralphlib.templater.render(options, content, i)
+        ralphlib.printer.prt(options, f'Iteration {i}/{options.iterations} at {now}\nPrompt:\n{p}\n', i)
 
         complete = ralphlib.iteration.run(options, prompt=p, iteration=i)
-        ralphlib.printer.prt(options, '\n')
+        ralphlib.printer.prt(options, '\n', i)
 
         if complete:
-            ralphlib.printer.prt(options, f'Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}.\n')
+            ralphlib.printer.prt(options, f'Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}.\n', i)
             break
 
-    ralphlib.printer.prt(options, '\nDone')
+    now = datetime.datetime.now().isoformat()
+    ralphlib.printer.prt(options, f'End at {now}\n', 0)
