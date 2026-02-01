@@ -226,6 +226,14 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
                                 if stop in text:
                                     set_complete(True)
                                     return ralphlib.types.MessageType.COMPLETE, ''
+                        if ctype == 'tool_use':
+                            vals = [c.get('name', '')]
+                            tool_input = c.get('input', {})
+                            if tool_input:
+                                command = tool_input.get('command', '')
+                                if command:
+                                    vals.append(command)
+                            return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
             return ralphlib.types.MessageType.NONE, line
 
@@ -254,7 +262,7 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
                 if cb_type == 'text':
                     return ralphlib.types.MessageType.CONTENT_START, content_block.get('text', '')
                 if cb_type == 'tool_use':
-                    return ralphlib.types.MessageType.TOOL_USE, content_block.get('name', '')
+                    return ralphlib.types.MessageType.NONE, ''
 
             if etype == 'content_block_stop':
                 return ralphlib.types.MessageType.CONTENT_STOP, ''
