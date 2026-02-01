@@ -1,4 +1,5 @@
 import datetime
+import os
 import sys
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
 
 def loop(options: RalpherOptions) -> None:
     colorama.just_fix_windows_console()
+
+    if options.cwd:
+        os.chdir(options.cwd)
 
     content = ''
     if options.prompt:
