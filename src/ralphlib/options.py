@@ -13,8 +13,12 @@ class RalpherOptions:
 
     agent: Annotated[
         str,
-        cappa.Arg(long=True, help='Agent command to execute'),
-    ] = 'claude --verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json'
+        cappa.Arg(long=True, help='Agent'),
+    ] = 'claude'
+    args: Annotated[
+        str,
+        cappa.Arg(long=True, help='Agent args'),
+    ] = '--verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json'
     iterations: Annotated[
         int,
         cappa.Arg(long=True, help='Number of iterations to run'),
@@ -33,23 +37,23 @@ class RalpherOptions:
     ] = False
     vars: Annotated[
         list[str],
-        cappa.Arg(long=True, help='Variables to set, in the form KEY=VALUE'),
+        cappa.Arg(long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts.'),
     ] = dataclasses.field(default_factory=list)
     logdir: Annotated[
         str | None,
-        cappa.Arg(long=True, help='Log directory, prepended to stdout/stderr/progress filenames'),
+        cappa.Arg(long=True, help='Directory to prepend to stdout/stderr/progress filenames'),
     ] = None
     stdout: Annotated[
         str | None,
-        cappa.Arg(long=True, help='Write agent raw stdout to file in the logdir, iteration numbers will be appended'),
+        cappa.Arg(long=True, help='Write raw agent stdout to STDOUT file in logdir, iteration numbers are appended to the filename'),
     ] = None
     stderr: Annotated[
         str | None,
-        cappa.Arg(long=True, help='Write agent raw stderr to file in the logdir, iteration numbers will be appended'),
+        cappa.Arg(long=True, help='Write raw agent stderr to STDERR file in logdir, iteration numbers are appended to the filename'),
     ] = None
     progress: Annotated[
         str | None,
-        cappa.Arg(long=True, help='Write parsed agent progress to file in the logdir, iteration numbers will be appended'),
+        cappa.Arg(long=True, help='Write parsed agent stdout to PROGRESS file in logdir, iteration numbers are appended to the filename'),
     ] = None
     cwd: Annotated[
         str | None,

@@ -28,7 +28,8 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> None:
 
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
-    cmd = options.agent.split()
+    cmd = [options.agent]
+    cmd.extend(options.args.split())
     cmd.append(prompt)
     context: dict[str, Any] = {
         'iteration': iteration,
