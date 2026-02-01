@@ -10,5 +10,5 @@ def test_templater() -> None:
         ]
     )
     prompt = '{{ greeting }}, {{ name }}!'
-    rendered = ralphlib.templater.render(options, prompt)
+    rendered = ralphlib.templater.render(options, prompt, 1)
     assert rendered == 'Hello, World!'
