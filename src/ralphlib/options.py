@@ -37,7 +37,7 @@ class RalpherOptions:
     ] = False
     vars: Annotated[
         list[str],
-        cappa.Arg(long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts.'),
+        cappa.Arg(long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts. Can be given multiple times.'),
     ] = dataclasses.field(default_factory=list)
     logdir: Annotated[
         str | None,
@@ -59,6 +59,14 @@ class RalpherOptions:
         str | None,
         cappa.Arg(long=True, help='Current working directory for the agent command'),
     ] = None
+    stops: Annotated[
+        list[str],
+        cappa.Arg(long=True, help='Completion marker strings to look for in agent output to indicate completion. Can be given multiple times. Default: ["<promise>COMPLETE</promise>"]'),
+    ] = dataclasses.field(
+        default_factory=lambda: [
+            '<promise>COMPLETE</promise>',
+        ]
+    )
 
 
 def parse_options() -> RalpherOptions:

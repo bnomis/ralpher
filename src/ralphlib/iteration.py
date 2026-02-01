@@ -14,10 +14,26 @@ if TYPE_CHECKING:
 
     from ralphlib.options import RalpherOptions
 
+complete_value = False
+complete_lock = threading.Lock()
 print_lock = threading.Lock()
 
 
-def run(options: RalpherOptions, prompt: str, iteration: int) -> None:
+def set_complete(value: bool) -> bool:
+    global complete_value
+    with complete_lock:
+        complete_value = value
+    return value
+
+
+def get_complete() -> bool:
+    global complete_value
+    with complete_lock:
+        value = complete_value
+    return value
+
+
+def run(options: RalpherOptions, prompt: str, iteration: int) -> bool:
     context = make_context(options, prompt, iteration)
     try:
         process(options, context)
@@ -25,6 +41,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> None:
         raise Exception(f'Exception: {e}') from e
     finally:
         unmake_context(context)
+    return get_complete()
 
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
@@ -108,6 +125,7 @@ def process_stdout(
     pipe: io.TextIOWrapper,
 ) -> None:
     newline_types = [
+        ralphlib.types.MessageType.COMPLETE,
         ralphlib.types.MessageType.CONTENT_STOP,
         ralphlib.types.MessageType.SYSTEM,
         ralphlib.types.MessageType.TOOL_USE,
@@ -128,7 +146,7 @@ def process_stdout(
         if logfd:
             logfd.write(line + '\n')
 
-        message_type, message = process_line(line)
+        message_type, message = process_line(options, line)
         if message_type == ralphlib.types.MessageType.NONE:
             continue
 
@@ -187,7 +205,7 @@ def print_error(message: str) -> None:
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
-def process_line(line: str) -> tuple[ralphlib.types.MessageType, str]:
+def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.MessageType, str]:
     try:
         payload = orjson.loads(line)
         ptype = payload.get('type')
@@ -196,9 +214,28 @@ def process_line(line: str) -> tuple[ralphlib.types.MessageType, str]:
             return ralphlib.types.MessageType.SYSTEM, content
 
         if ptype == 'assistant':
+            message = payload.get('message', {})
+            if message:
+                content = message.get('content', [])
+                if content:
+                    for c in content:
+                        ctype = c.get('type', '')
+                        if ctype == 'text':
+                            text = c.get('text', '')
+                            for stop in options.stops:
+                                if stop in text:
+                                    set_complete(True)
+                                    return ralphlib.types.MessageType.COMPLETE, ''
+
             return ralphlib.types.MessageType.NONE, line
 
         if ptype == 'result':
+            result = payload.get('result', '')
+            if result:
+                for stop in options.stops:
+                    if stop in result:
+                        set_complete(True)
+                        return ralphlib.types.MessageType.COMPLETE, ''
             return ralphlib.types.MessageType.NONE, line
 
         if ptype == 'user':

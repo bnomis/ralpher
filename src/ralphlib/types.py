@@ -9,3 +9,4 @@ class MessageType(enum.IntEnum):
     CONTENT_STOP = 4
     CONTENT_DELTA = 5
     TOOL_USE = 6
+    COMPLETE = 7

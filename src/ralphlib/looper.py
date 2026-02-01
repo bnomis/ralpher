@@ -29,6 +29,7 @@ def loop(options: RalpherOptions) -> None:
 
     ralphlib.printer.prt(options, 'Start\n')
     ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n')
+    ralphlib.printer.prt(options, f'Args:\n{options.args}\n')
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n')
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n')
 
@@ -37,7 +38,11 @@ def loop(options: RalpherOptions) -> None:
         ralphlib.printer.prt(options, f'Iteration {i}/{options.iterations} at {now}\n')
         p = ralphlib.templater.render(options, content, i)
 
-        ralphlib.iteration.run(options, prompt=p, iteration=i)
+        complete = ralphlib.iteration.run(options, prompt=p, iteration=i)
         ralphlib.printer.prt(options, '\n')
+
+        if complete:
+            ralphlib.printer.prt(options, f'Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}.\n')
+            break
 
     ralphlib.printer.prt(options, '\nDone')
