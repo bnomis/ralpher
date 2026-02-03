@@ -35,16 +35,16 @@ def loop(options: RalpherOptions) -> None:
     now = start.isoformat()
 
     ralphlib.printer.prt(options, f'Start at {now}\n\n', 0)
-    ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n', 0)
-    ralphlib.printer.prt(options, f'Args:\n{options.args}\n', 0)
-    ralphlib.printer.prt(options, f'Prompt:\n{content}\n', 0)
-    ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n', 0)
+    ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n\n', 0)
+    ralphlib.printer.prt(options, f'Args:\n{options.args}\n\n', 0)
+    ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
+    ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
     for i in range(1, options.iterations + 1):
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()
 
         p = ralphlib.templater.render(options, content, i)
-        s = f'Starting iteration {i}/{options.iterations} at {now}\nPrompt:\n{p}\n'
+        s = f'\nStarting iteration {i}/{options.iterations} at {now}\nPrompt:\n{p}\n\n'
         ralphlib.printer.prt(options, s, 0)
         ralphlib.printer.prt(options, s, i)
 
@@ -54,16 +54,16 @@ def loop(options: RalpherOptions) -> None:
         now = loop_end.isoformat()
         loop_td = loop_end - loop_start
 
-        s = f'\nEnding iteration {i}/{options.iterations} at {now}'
+        s = f'\nEnding iteration {i}/{options.iterations} at {now}\n'
         ralphlib.printer.prt(options, s, 0)
         ralphlib.printer.prt(options, s, i)
 
-        s = f'Time for iteration {i}: {timedelta_to_readable(loop_td)}\n'
+        s = f'Time for iteration {i}: {timedelta_to_readable(loop_td)}\n\n'
         ralphlib.printer.prt(options, s, 0)
         ralphlib.printer.prt(options, s, i)
 
         if complete:
-            s = f'\n{"=" * 5} Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n'
+            s = f'\n{"=" * 5} Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)
             break
@@ -72,7 +72,7 @@ def loop(options: RalpherOptions) -> None:
     now = end.isoformat()
     td = end - start
 
-    ralphlib.printer.prt(options, f'\n\nEnd at {now}', 0)
+    ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
     ralphlib.printer.prt(options, f'Total time: {timedelta_to_readable(td)}\n', 0)
 
 
