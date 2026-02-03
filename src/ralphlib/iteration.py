@@ -326,13 +326,10 @@ def get_tool_input(content: dict[str, Any]) -> str:
 
 
 def input_field_to_content(input_field: dict[str, Any]) -> str:
-    command = input_field.get('command', '')
-    if command:
-        return command
-
-    file_path = input_field.get('file_path', '')
-    if file_path:
-        return file_path
+    regular_fields = ['command', 'file_path', 'pattern', 'query', 'url']
+    for f in regular_fields:
+        if f in input_field and input_field[f]:
+            return str(input_field[f])
 
     todos = input_field.get('todos', [])
     if todos:
@@ -342,10 +339,6 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
             if td_content:
                 td_contents.append(f'- {td_content}')
         return '\n'.join(td_contents)
-
-    pattern = input_field.get('pattern', '')
-    if pattern:
-        return pattern
 
     return ''
 
