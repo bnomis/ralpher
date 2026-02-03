@@ -14,8 +14,10 @@ if TYPE_CHECKING:
 
     from ralphlib.options import RalpherOptions
 
+globals_lock = threading.Lock()
 complete_value = False
-complete_lock = threading.Lock()
+error_value = False
+
 print_lock = threading.Lock()
 message_type_queue: list[ralphlib.types.MessageType] = []
 tools_used_set = set()
@@ -23,19 +25,33 @@ tools_used_set = set()
 
 def set_complete(value: bool) -> bool:
     global complete_value
-    with complete_lock:
+    with globals_lock:
         complete_value = value
     return value
 
 
 def get_complete() -> bool:
     global complete_value
-    with complete_lock:
+    with globals_lock:
         value = complete_value
     return value
 
 
-def run(options: RalpherOptions, prompt: str, iteration: int) -> bool:
+def set_error(value: bool) -> bool:
+    global error_value
+    with globals_lock:
+        error_value = value
+    return value
+
+
+def get_error() -> bool:
+    global error_value
+    with globals_lock:
+        value = error_value
+    return value
+
+
+def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
     context = make_context(options, prompt, iteration)
     try:
         process(options, context)
@@ -44,7 +60,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> bool:
     finally:
         summary(options, context)
         unmake_context(context)
-    return get_complete()
+    return get_complete(), get_error()
 
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
@@ -144,6 +160,7 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
 def newline_required(message_type: ralphlib.types.MessageType) -> bool:
     newline_types = [
         ralphlib.types.MessageType.COMPLETE,
+        ralphlib.types.MessageType.ERROR,
         ralphlib.types.MessageType.SYSTEM,
         ralphlib.types.MessageType.TOOL_USE,
     ]
@@ -199,6 +216,7 @@ def process_stdout(
 def print_progress(message_type: ralphlib.types.MessageType, message: str) -> None:
     msg_color = {
         ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
+        ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
         ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
         ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
     }
@@ -337,12 +355,22 @@ def process_result(
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
+    subtype = payload.get('subtype', '')
+    is_error = payload.get('is_error', False)
     result = payload.get('result', '')
+
+    # errors
+    if subtype == 'success' and is_error:
+        set_error(True)
+        return ralphlib.types.MessageType.ERROR, result
+
     if result:
+        # stopping
         for stop in options.stops:
             if stop in result:
                 set_complete(True)
                 return ralphlib.types.MessageType.COMPLETE, ''
+
     return ralphlib.types.MessageType.NONE, line
 
 

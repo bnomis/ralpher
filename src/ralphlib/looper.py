@@ -4,6 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import colorama
+from loguru import logger
 
 import ralphlib.iteration
 import ralphlib.logger
@@ -48,7 +49,15 @@ def loop(options: RalpherOptions) -> None:
         ralphlib.printer.prt(options, s, 0)
         ralphlib.printer.prt(options, s, i)
 
-        complete = ralphlib.iteration.run(options, prompt=p, iteration=i)
+        # run the iteration
+        try:
+            complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
+        except Exception as e:
+            logger.exception(f'Exception during iteration {i}: {e}')
+            s = f'\nException during iteration {i}\n'
+            ralphlib.printer.prt(options, s, 0)
+            ralphlib.printer.prt(options, s, i)
+            break
 
         loop_end = datetime.datetime.now()
         now = loop_end.isoformat()
@@ -62,8 +71,13 @@ def loop(options: RalpherOptions) -> None:
         ralphlib.printer.prt(options, s, 0)
         ralphlib.printer.prt(options, s, i)
 
-        if complete:
-            s = f'\n{"=" * 5} Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
+        if complete or error:
+            if complete:
+                word = 'complete'
+            else:
+                word = 'error'
+
+            s = f'\n{"=" * 5} Loop {word} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)
             break
