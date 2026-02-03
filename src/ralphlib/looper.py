@@ -31,8 +31,10 @@ def loop(options: RalpherOptions) -> None:
 
     ralphlib.logger.init(options)
 
-    now = datetime.datetime.now().isoformat()
-    ralphlib.printer.prt(options, f'Start at {now}\n', 0)
+    start = datetime.datetime.now()
+    now = start.isoformat()
+
+    ralphlib.printer.prt(options, f'Start at {now}\n\n', 0)
     ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n', 0)
     ralphlib.printer.prt(options, f'Args:\n{options.args}\n', 0)
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n', 0)
@@ -49,5 +51,38 @@ def loop(options: RalpherOptions) -> None:
             ralphlib.printer.prt(options, f'Loop complete signal received, stopping after {i} iteration{"s" if i != 1 else ""}.\n', i)
             break
 
-    now = datetime.datetime.now().isoformat()
-    ralphlib.printer.prt(options, f'End at {now}\n', 0)
+    end = datetime.datetime.now()
+    now = end.isoformat()
+    td = end - start
+
+    ralphlib.printer.prt(options, f'\nEnd at {now}\n', 0)
+    ralphlib.printer.prt(options, f'Total time: {timedelta_to_readable(td)}\n', 0)
+
+
+def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> str:
+    if td == datetime.timedelta(0):
+        return '0'
+
+    total_seconds = int(td.total_seconds())
+    if total_seconds == 0:
+        return '0'
+
+    # Handle negative durations
+    sign = '-' if total_seconds < 0 else ''
+    total_seconds = abs(total_seconds)
+
+    days, remainder = divmod(total_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    parts = []
+    if days:
+        parts.append(f'{days} days')
+    if hours or days:  # show hours if there are days
+        parts.append(f'{hours} hours')
+    if minutes or hours or days:
+        parts.append(f'{minutes} minutes')
+    if show_seconds or not parts:  # always show seconds if nothing else
+        parts.append(f'{seconds} seconds')
+
+    return sign + ' '.join(parts)
