@@ -216,6 +216,10 @@ def print_error(message: str) -> None:
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
+def indent_lines(s: str, indent: str = '  ') -> str:
+    return '\n'.join(f'{indent}{line}' for line in s.splitlines())
+
+
 def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.MessageType, str]:
     try:
         payload = orjson.loads(line)
@@ -225,69 +229,94 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
             return ralphlib.types.MessageType.SYSTEM, content
 
         if ptype == 'assistant':
-            message = payload.get('message', {})
-            if message:
-                content = message.get('content', [])
-                if content:
-                    for c in content:
-                        ctype = c.get('type', '')
-                        if ctype == 'text':
-                            text = c.get('text', '')
-                            for stop in options.stops:
-                                if stop in text:
-                                    set_complete(True)
-                                    return ralphlib.types.MessageType.COMPLETE, ''
-                        if ctype == 'tool_use':
-                            vals = [c.get('name', '')]
-                            tool_input = c.get('input', {})
-                            if tool_input:
-                                command = tool_input.get('command', '')
-                                if command:
-                                    vals.append(command)
-                            return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
-
-            return ralphlib.types.MessageType.NONE, line
+            return process_assisstant(options, payload, line)
 
         if ptype == 'result':
-            result = payload.get('result', '')
-            if result:
-                for stop in options.stops:
-                    if stop in result:
-                        set_complete(True)
-                        return ralphlib.types.MessageType.COMPLETE, ''
-            return ralphlib.types.MessageType.NONE, line
+            return process_result(options, payload, line)
 
         if ptype == 'user':
             return ralphlib.types.MessageType.NONE, line
 
         if ptype == 'stream_event':
-            event = payload.get('event', {})
-            etype = event.get('type', '')
-
-            if etype in ['message_start', 'message_stop', 'message_delta']:
-                return ralphlib.types.MessageType.NONE, ''
-
-            if etype == 'content_block_start':
-                content_block = event.get('content_block', {})
-                cb_type = content_block.get('type', '')
-                if cb_type == 'text':
-                    return ralphlib.types.MessageType.CONTENT_START, content_block.get('text', '')
-                if cb_type == 'tool_use':
-                    return ralphlib.types.MessageType.NONE, ''
-
-            if etype == 'content_block_stop':
-                return ralphlib.types.MessageType.CONTENT_STOP, ''
-
-            if etype == 'content_block_delta':
-                delta = event.get('delta', {})
-                cb_type = delta.get('type', '')
-                if cb_type == 'text_delta':
-                    return ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', '')
-                if cb_type == 'input_json_delta':
-                    return ralphlib.types.MessageType.NONE, ''
+            return process_stream_event(options, payload, line)
 
         print_error(f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
     except Exception as e:
         print_error(f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_assisstant(
+    options: RalpherOptions,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    message = payload.get('message', {})
+    if message:
+        content = message.get('content', [])
+        if content:
+            for c in content:
+                ctype = c.get('type', '')
+                if ctype == 'text':
+                    text = c.get('text', '')
+                    for stop in options.stops:
+                        if stop in text:
+                            set_complete(True)
+                            return ralphlib.types.MessageType.COMPLETE, ''
+                if ctype == 'tool_use':
+                    vals = [c.get('name', '')]
+                    tool_input = c.get('input', {})
+                    if tool_input:
+                        command = tool_input.get('command', '')
+                        if command:
+                            vals.append(indent_lines(command))
+                    return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
+
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_result(
+    options: RalpherOptions,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    result = payload.get('result', '')
+    if result:
+        for stop in options.stops:
+            if stop in result:
+                set_complete(True)
+                return ralphlib.types.MessageType.COMPLETE, ''
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_stream_event(
+    options: RalpherOptions,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    event = payload.get('event', {})
+    etype = event.get('type', '')
+
+    if etype in ['message_start', 'message_stop', 'message_delta']:
+        return ralphlib.types.MessageType.NONE, ''
+
+    if etype == 'content_block_start':
+        content_block = event.get('content_block', {})
+        cb_type = content_block.get('type', '')
+        if cb_type == 'text':
+            return ralphlib.types.MessageType.CONTENT_START, content_block.get('text', '')
+        if cb_type == 'tool_use':
+            return ralphlib.types.MessageType.NONE, ''
+
+    if etype == 'content_block_stop':
+        return ralphlib.types.MessageType.CONTENT_STOP, ''
+
+    if etype == 'content_block_delta':
+        delta = event.get('delta', {})
+        cb_type = delta.get('type', '')
+        if cb_type == 'text_delta':
+            return ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', '')
+        if cb_type == 'input_json_delta':
+            return ralphlib.types.MessageType.NONE, ''
     return ralphlib.types.MessageType.NONE, line
