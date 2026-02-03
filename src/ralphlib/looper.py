@@ -72,7 +72,7 @@ def loop(options: RalpherOptions) -> None:
     now = end.isoformat()
     td = end - start
 
-    ralphlib.printer.prt(options, f'\nEnd at {now}\n', 0)
+    ralphlib.printer.prt(options, f'\n\nEnd at {now}', 0)
     ralphlib.printer.prt(options, f'Total time: {timedelta_to_readable(td)}\n', 0)
 
 

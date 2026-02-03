@@ -14,4 +14,4 @@ def prt(options: RalpherOptions, s: str, iteration: int) -> None:
 
     if options.quiet:
         return
-    print(s)
+    print(s, end='', flush=True)
