@@ -18,6 +18,7 @@ complete_value = False
 complete_lock = threading.Lock()
 print_lock = threading.Lock()
 message_type_queue: list[ralphlib.types.MessageType] = []
+tools_used_set = set()
 
 
 def set_complete(value: bool) -> bool:
@@ -41,6 +42,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> bool:
     except Exception as e:
         raise Exception(f'Exception: {e}') from e
     finally:
+        summary(options, context)
         unmake_context(context)
     return get_complete()
 
@@ -73,6 +75,25 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[s
 
 def unmake_context(context: dict[str, Any]) -> None:
     pass
+
+
+def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
+    lines = []
+    if tools_used_set:
+        tools = []
+        for t in sorted(tools_used_set):
+            tools.append(f'- {t}')
+        tools_summary = '\n'.join(tools)
+        lines.append(f'\n=-= Tools used:\n{tools_summary}\n')
+
+    if lines:
+        if context['progress']:
+            with context['progress'].open('a', encoding='utf-8') as fd:
+                for line in lines:
+                    fd.write(line)
+        if not options.quiet:
+            for line in lines:
+                print(line, end='', flush=True)
 
 
 def process(options: RalpherOptions, context: dict[str, Any]) -> None:
@@ -261,7 +282,9 @@ def process_assisstant(
                             set_complete(True)
                             return ralphlib.types.MessageType.COMPLETE, ''
                 if ctype == 'tool_use':
-                    vals = [c.get('name', '')]
+                    tool_name = c.get('name', 'UNKNOWN-TOOL')
+                    tools_used_set.add(tool_name)
+                    vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
                         vals.append(tool_input)
