@@ -100,7 +100,7 @@ def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
         for t in sorted(tools_used_set):
             tools.append(f'- {t}')
         tools_summary = '\n'.join(tools)
-        lines.append(f'\n=-= Tools used:\n{tools_summary}\n')
+        lines.append(f'\n= Tools used:\n{tools_summary}\n')
 
     if lines:
         if context['progress']:
