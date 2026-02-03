@@ -68,6 +68,7 @@ def loop(options: RalpherOptions) -> None:
 
         s = f'Time for iteration {i}: {timedelta_to_readable(loop_td)}\n\n'
         print_both(options, s, i)
+        print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
         if complete or error:
             if complete:
