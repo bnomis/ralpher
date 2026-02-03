@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 complete_value = False
 complete_lock = threading.Lock()
 print_lock = threading.Lock()
+message_type_queue: list[ralphlib.types.MessageType] = []
 
 
 def set_complete(value: bool) -> bool:
@@ -119,18 +120,26 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
     stderr_thread.join()
 
 
+def newline_required(message_type: ralphlib.types.MessageType) -> bool:
+    newline_types = [
+        ralphlib.types.MessageType.COMPLETE,
+        ralphlib.types.MessageType.SYSTEM,
+        ralphlib.types.MessageType.TOOL_USE,
+    ]
+    if message_type in newline_types:
+        return True
+    if message_type == ralphlib.types.MessageType.CONTENT_STOP:
+        last_type = message_type_queue[-1] if message_type_queue else None
+        if last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
+            return True
+    return False
+
+
 def process_stdout(
     options: RalpherOptions,
     context: dict[str, Any],
     pipe: io.TextIOWrapper,
 ) -> None:
-    newline_types = [
-        ralphlib.types.MessageType.COMPLETE,
-        ralphlib.types.MessageType.CONTENT_STOP,
-        ralphlib.types.MessageType.SYSTEM,
-        ralphlib.types.MessageType.TOOL_USE,
-    ]
-
     logfd: io.TextIOWrapper | None = None
     progressfd: io.TextIOWrapper | None = None
     if context['stdout']:
@@ -153,15 +162,17 @@ def process_stdout(
         if progressfd:
             if message:
                 progressfd.write(message)
-            if message_type in newline_types:
+            if newline_required(message_type):
                 progressfd.write('\n')
                 progressfd.flush()
 
         if not options.quiet:
             if message:
                 print_progress(message_type, message)
-            if message_type in newline_types:
+            if newline_required(message_type):
                 print_progress_eol()
+
+        message_type_queue.append(message_type)
 
 
 def print_progress(message_type: ralphlib.types.MessageType, message: str) -> None:
