@@ -216,10 +216,6 @@ def print_error(message: str) -> None:
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
-def indent_lines(s: str, indent: str = '  ') -> str:
-    return '\n'.join(f'{indent}{line}' for line in s.splitlines())
-
-
 def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.MessageType, str]:
     try:
         payload = orjson.loads(line)
@@ -266,14 +262,51 @@ def process_assisstant(
                             return ralphlib.types.MessageType.COMPLETE, ''
                 if ctype == 'tool_use':
                     vals = [c.get('name', '')]
-                    tool_input = c.get('input', {})
+                    tool_input = get_tool_input(c)
                     if tool_input:
-                        command = tool_input.get('command', '')
-                        if command:
-                            vals.append(indent_lines(command))
+                        vals.append(tool_input)
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
     return ralphlib.types.MessageType.NONE, line
+
+
+def indent_lines(s: str, indent: str = '  ') -> str:
+    if not s:
+        return ''
+    return '\n'.join(f'{indent}{line}' for line in s.splitlines())
+
+
+def get_tool_input(content: dict[str, Any]) -> str:
+    tool_input = ''
+    input_field = content.get('input', {})
+    if input_field:
+        tool_input = input_field_to_content(input_field)
+    return indent_lines(tool_input)
+
+
+def input_field_to_content(input_field: dict[str, Any]) -> str:
+    command = input_field.get('command', '')
+    if command:
+        return command
+
+    file_path = input_field.get('file_path', '')
+    if file_path:
+        return file_path
+
+    todos = input_field.get('todos', [])
+    if todos:
+        td_contents = []
+        for td in todos:
+            td_content = td.get('content', '')
+            if td_content:
+                td_contents.append(f'- {td_content}')
+        return '\n'.join(td_contents)
+
+    pattern = input_field.get('pattern', '')
+    if pattern:
+        return pattern
+
+    return ''
 
 
 def process_result(
