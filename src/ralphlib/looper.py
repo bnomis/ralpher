@@ -40,14 +40,14 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.printer.prt(options, f'Args:\n{options.args}\n\n', 0)
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
+
     for i in range(1, options.iterations + 1):
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()
 
         p = ralphlib.templater.render(options, content, i)
         s = f'\nStarting iteration {i}/{options.iterations} at {now}\nPrompt:\n{p}\n\n'
-        ralphlib.printer.prt(options, s, 0)
-        ralphlib.printer.prt(options, s, i)
+        print_both(options, s, i)
 
         # run the iteration
         try:
@@ -64,12 +64,10 @@ def loop(options: RalpherOptions) -> None:
         loop_td = loop_end - loop_start
 
         s = f'\nEnding iteration {i}/{options.iterations} at {now}\n'
-        ralphlib.printer.prt(options, s, 0)
-        ralphlib.printer.prt(options, s, i)
+        print_both(options, s, i)
 
         s = f'Time for iteration {i}: {timedelta_to_readable(loop_td)}\n\n'
-        ralphlib.printer.prt(options, s, 0)
-        ralphlib.printer.prt(options, s, i)
+        print_both(options, s, i)
 
         if complete or error:
             if complete:
@@ -78,8 +76,7 @@ def loop(options: RalpherOptions) -> None:
                 word = 'error'
 
             s = f'\n{"=" * 5} Loop {word} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
-            ralphlib.printer.prt(options, s, 0)
-            ralphlib.printer.prt(options, s, i)
+            print_both(options, s, i)
             break
 
     end = datetime.datetime.now()
@@ -88,6 +85,11 @@ def loop(options: RalpherOptions) -> None:
 
     ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
     ralphlib.printer.prt(options, f'Total time: {timedelta_to_readable(td)}\n', 0)
+
+
+def print_both(options: RalpherOptions, s: str, iteration: int) -> None:
+    ralphlib.printer.prt(options, s, 0)
+    ralphlib.printer.prt(options, s, iteration, dont_print=True)
 
 
 def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> str:
