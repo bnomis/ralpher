@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import colorama
 import orjson
+from loguru import logger
 
 import ralphlib.logger
 import ralphlib.types
@@ -277,6 +278,7 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
 
         print_error(f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
     except Exception as e:
+        logger.exception(f'Exception in process_line: {e}')
         print_error(f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
@@ -301,11 +303,15 @@ def process_assisstant(
                             return ralphlib.types.MessageType.COMPLETE, ''
                 if ctype == 'tool_use':
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
+                    if tool_name == 'UNKNOWN-TOOL':
+                        logger.warning(f'Tool use without name: {line}')
                     tools_used_set.add(tool_name)
                     vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
                         vals.append(tool_input)
+                    else:
+                        logger.warning(f'Tool {tool_name} without input: {line}')
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
     return ralphlib.types.MessageType.NONE, line
@@ -326,7 +332,7 @@ def get_tool_input(content: dict[str, Any]) -> str:
 
 
 def input_field_to_content(input_field: dict[str, Any]) -> str:
-    regular_fields = ['command', 'file_path', 'pattern', 'query', 'url']
+    regular_fields = ['command', 'description', 'file_path', 'pattern', 'query', 'url']
     for f in regular_fields:
         if f in input_field and input_field[f]:
             return str(input_field[f])
