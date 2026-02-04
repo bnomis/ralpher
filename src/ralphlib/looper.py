@@ -35,6 +35,7 @@ def loop(options: RalpherOptions) -> None:
     start = datetime.datetime.now()
     now = start.isoformat()
 
+    ralphlib.printer.prt(options, f'\n\n{"-" * 80}\n\n', 0)
     ralphlib.printer.prt(options, f'Start at {now}\n\n', 0)
     ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n\n', 0)
     ralphlib.printer.prt(options, f'Args:\n{options.args}\n\n', 0)
@@ -45,8 +46,9 @@ def loop(options: RalpherOptions) -> None:
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()
 
+        print_both(options, f'\n\n{"-" * 80}\n\n', i)
         p = ralphlib.templater.render(options, content, i)
-        s = f'\nStarting iteration {i}/{options.iterations} at {now}\nPrompt:\n{p}\n\n'
+        s = f'\nStarting iteration {i}/{options.iterations} at {now}\n\nPrompt:\n{p}\n\n'
         print_both(options, s, i)
 
         # run the iteration
