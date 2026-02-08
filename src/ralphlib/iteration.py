@@ -15,41 +15,47 @@ if TYPE_CHECKING:
 
     from ralphlib.options import RalpherOptions
 
-globals_lock = threading.Lock()
+gil = threading.Lock()
 complete_value = False
 error_value = False
 
-print_lock = threading.Lock()
 message_type_queue: list[ralphlib.types.MessageType] = []
 tools_used_set = set()
+unknown_tools = {}
 
 
 def set_complete(value: bool) -> bool:
     global complete_value
-    with globals_lock:
+    with gil:
         complete_value = value
     return value
 
 
 def get_complete() -> bool:
     global complete_value
-    with globals_lock:
+    with gil:
         value = complete_value
     return value
 
 
 def set_error(value: bool) -> bool:
     global error_value
-    with globals_lock:
+    with gil:
         error_value = value
     return value
 
 
 def get_error() -> bool:
     global error_value
-    with globals_lock:
+    with gil:
         value = error_value
     return value
+
+
+def add_unknown_tool(tool_name: str, input_values: dict) -> None:
+    with gil:
+        if tool_name not in unknown_tools:
+            unknown_tools[tool_name] = input_values
 
 
 def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
@@ -102,6 +108,18 @@ def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
             tools.append(f'- {t}')
         tools_summary = '\n'.join(tools)
         lines.append(f'\n= Tools used:\n{tools_summary}\n')
+
+    if unknown_tools:
+        tools = []
+        for t in sorted(unknown_tools.keys()):
+            tools.append(f'- {t}')
+            keys = sorted(unknown_tools[t].keys())
+            for k in keys:
+                v = unknown_tools[t][k]
+                tools.append(f'  - {k}: {v}')
+
+        tools_summary = '\n'.join(tools)
+        lines.append(f'\n= Unknown tools used:\n{tools_summary}\n')
 
     if lines:
         if context['progress']:
@@ -221,12 +239,12 @@ def print_progress(message_type: ralphlib.types.MessageType, message: str) -> No
         ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
         ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
     }
-    with print_lock:
+    with gil:
         print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
 
 
 def print_progress_eol() -> None:
-    with print_lock:
+    with gil:
         print('', flush=True)
 
 
@@ -252,7 +270,7 @@ def process_stderr(
 
 
 def print_error(message: str) -> None:
-    with print_lock:
+    with gil:
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
@@ -312,6 +330,7 @@ def process_assisstant(
                         vals.append(tool_input)
                     else:
                         logger.warning(f'Tool {tool_name} without input: {line}')
+                        add_unknown_tool(tool_name, c.get('input', {}))
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
     return ralphlib.types.MessageType.NONE, line
