@@ -1,7 +1,8 @@
 import datetime
 import os
+import signal
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 import colorama
 from loguru import logger
@@ -15,8 +16,47 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 
+class GracefulTerminator:
+    CTRL_C_PRESS_INTERVAL = 2.5  # seconds
+    FIRST_MESSAGE = 'Ctrl+C pressed → Press **once more** to exit'
+    SECOND_MESSAGE = '→ Exiting now!'
+    EXIT_CODE = 130
+
+    def __init__(self) -> None:
+        self.first_press = None
+        self.is_shutting_down = False
+        signal.signal(signal.SIGINT, self.handler)
+        signal.signal(signal.SIGTERM, self.handler)
+
+    def handler(self, signum, frame) -> None:
+        if self.is_shutting_down:
+            print('\nAlready shutting down — forceful exit!')
+            sys.exit(1)
+
+        sig_name = signal.Signals(signum).name
+        if signum == signal.SIGTERM:
+            print(f'\nReceived {sig_name} → shutting down gracefully...')
+            self.perform_shutdown()
+            return
+
+        if self.first_press:
+            time_since_first_press = (datetime.datetime.now() - self.first_press).total_seconds()
+            if time_since_first_press < self.CTRL_C_PRESS_INTERVAL:
+                print(f'\n{self.SECOND_MESSAGE}\n')
+                sys.exit(self.EXIT_CODE)
+
+        print(f'\n{self.FIRST_MESSAGE}\n')
+        self.first_press = datetime.datetime.now()
+
+    def perform_shutdown(self) -> NoReturn:
+        self.is_shutting_down = True
+        print('Shutdown complete.')
+        sys.exit(0)
+
+
 def loop(options: RalpherOptions) -> None:
     colorama.just_fix_windows_console()
+    _terminator = GracefulTerminator()
 
     if options.cwd:
         os.chdir(options.cwd)
