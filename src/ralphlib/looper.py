@@ -42,6 +42,8 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 
+    loop_times = []
+
     for i in range(1, options.iterations + 1):
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()
@@ -68,7 +70,9 @@ def loop(options: RalpherOptions) -> None:
         s = f'\nEnding iteration {i}/{options.iterations} at {now}\n'
         print_both(options, s, i)
 
-        s = f'Time for iteration {i}: {timedelta_to_readable(loop_td)}\n\n'
+        loop_time_str = timedelta_to_readable(loop_td)
+        loop_times.append(loop_time_str)
+        s = f'Time for iteration {i}: {loop_time_str}\n\n'
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
@@ -81,6 +85,13 @@ def loop(options: RalpherOptions) -> None:
             s = f'\n{"=" * 5} Loop {word} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             print_both(options, s, i)
             break
+
+    ralphlib.printer.prt(options, '\n\nLoop times\n\n', 0)
+    num_loops = len(loop_times)
+    num_loops_str_len = len(str(num_loops))
+    for i, loop_time_str in enumerate(loop_times, start=1):
+        s = f'{i:>{num_loops_str_len}}: {loop_time_str}\n'
+        ralphlib.printer.prt(options, s, 0)
 
     end = datetime.datetime.now()
     now = end.isoformat()
