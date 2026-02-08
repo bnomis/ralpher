@@ -39,14 +39,15 @@ class GracefulTerminator:
             self.perform_shutdown()
             return
 
+        now = datetime.datetime.now()
         if self.first_press:
-            time_since_first_press = (datetime.datetime.now() - self.first_press).total_seconds()
+            time_since_first_press = (now - self.first_press).total_seconds()
             if time_since_first_press < self.CTRL_C_PRESS_INTERVAL:
                 print(f'\n{self.SECOND_MESSAGE}\n')
                 sys.exit(self.EXIT_CODE)
 
         print(f'\n{self.FIRST_MESSAGE}\n')
-        self.first_press = datetime.datetime.now()
+        self.first_press = now
 
     def perform_shutdown(self) -> NoReturn:
         self.is_shutting_down = True
