@@ -2,7 +2,8 @@ import datetime
 import os
 import signal
 import sys
-from typing import TYPE_CHECKING, NoReturn
+import threading
+from typing import TYPE_CHECKING
 
 import colorama
 from loguru import logger
@@ -14,6 +15,20 @@ import ralphlib.templater
 
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
+
+should_exit = False
+should_exit_lock = threading.Lock()
+
+
+def set_should_exit(value: bool) -> None:
+    global should_exit
+    with should_exit_lock:
+        should_exit = value
+
+
+def get_should_exit() -> bool:
+    with should_exit_lock:
+        return should_exit
 
 
 class GracefulTerminator:
@@ -44,15 +59,14 @@ class GracefulTerminator:
             time_since_first_press = (now - self.first_press).total_seconds()
             if time_since_first_press < self.CTRL_C_PRESS_INTERVAL:
                 print(f'\n{self.SECOND_MESSAGE}\n')
-                sys.exit(self.EXIT_CODE)
+                self.perform_shutdown()
 
         print(f'\n{self.FIRST_MESSAGE}\n')
         self.first_press = now
 
-    def perform_shutdown(self) -> NoReturn:
+    def perform_shutdown(self) -> None:
         self.is_shutting_down = True
-        print('Shutdown complete.')
-        sys.exit(0)
+        set_should_exit(True)
 
 
 def loop(options: RalpherOptions) -> None:
@@ -117,13 +131,16 @@ def loop(options: RalpherOptions) -> None:
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
-        if complete or error:
+        if complete or error or get_should_exit():
+            words = []
             if complete:
-                word = 'complete'
-            else:
-                word = 'error'
+                words.append('complete')
+            if error:
+                words.append('error')
+            if get_should_exit():
+                words.append('termination')
 
-            s = f'\n{"=" * 5} Loop {word} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
+            s = f'\n{"=" * 5} Loop {", ".join(words)} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             print_both(options, s, i)
             break
 

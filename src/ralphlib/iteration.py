@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import threading
+import time
 from typing import TYPE_CHECKING, Any
 
 import colorama
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 
     from ralphlib.options import RalpherOptions
 
+SUBPROCESS_POLL_INTERVAL = 3
 gil = threading.Lock()
 complete_value = False
 error_value = False
@@ -132,6 +134,8 @@ def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
 
 
 def process(options: RalpherOptions, context: dict[str, Any]) -> None:
+    import ralphlib.looper
+
     kwargs = {
         'stdout': subprocess.PIPE,
         'stderr': subprocess.PIPE,
@@ -146,6 +150,7 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
         context['cmd'],
         **kwargs,
     )
+    log_msg(options, context, f'Started subprocess {proc.pid}')
 
     # Threads to read and print from each pipe concurrently
     stdout_thread = threading.Thread(
@@ -169,11 +174,37 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
     stderr_thread.start()
 
     # Wait for the process to complete
-    proc.wait()
+    while True:
+        if ralphlib.looper.get_should_exit():
+            log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
+            proc.terminate()
+            break
+
+        if proc.poll() is not None:
+            break
+
+        time.sleep(SUBPROCESS_POLL_INTERVAL)
+
+    log_msg(options, context, f'process {proc.pid} exited with code {proc.returncode}')
 
     # Join threads to ensure all output is read
     stdout_thread.join()
     stderr_thread.join()
+
+
+def log_msg(options: RalpherOptions, context: dict[str, Any], msg: str) -> None:
+    if context['stdout']:
+        with context['stdout'].open('a', encoding='utf-8') as logfd:
+            logfd.write(msg + '\n')
+
+    if context['progress']:
+        with context['progress'].open('a', encoding='utf-8') as progressfd:
+            progressfd.write(msg + '\n')
+            progressfd.flush()
+
+    if not options.quiet:
+        print_progress(ralphlib.types.MessageType.SYSTEM, msg)
+        print_progress_eol()
 
 
 def newline_required(message_type: ralphlib.types.MessageType) -> bool:
@@ -319,6 +350,7 @@ def process_assisstant(
                         if stop in text:
                             set_complete(True)
                             return ralphlib.types.MessageType.COMPLETE, ''
+
                 if ctype == 'tool_use':
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
                     if tool_name == 'UNKNOWN-TOOL':
