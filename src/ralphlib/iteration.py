@@ -1,3 +1,4 @@
+import re
 import subprocess
 import sys
 import threading
@@ -25,6 +26,9 @@ error_value = False
 message_type_queue: list[ralphlib.types.MessageType] = []
 tools_used_set = set()
 unknown_tools = {}
+background_tools = {}
+background_id_to_tool = {}
+tool_id_regex = re.compile(r'Command running in background with ID: (?P<id\w+)\.')
 
 
 def set_complete(value: bool) -> bool:
@@ -59,6 +63,19 @@ def add_unknown_tool(tool_name: str, input_values: dict) -> None:
     with gil:
         if tool_name not in unknown_tools:
             unknown_tools[tool_name] = input_values
+
+
+def add_background_tool(tool_name: str, tool_input: str, tool_id: str) -> None:
+    with gil:
+        background_tools[tool_id] = {
+            'name': tool_name,
+            'input': tool_input,
+        }
+
+
+def add_background_tool_id(tool_id: str, tid: str) -> None:
+    with gil:
+        background_id_to_tool[tid] = tool_id
 
 
 def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
@@ -332,7 +349,7 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
             return process_result(options, payload, line)
 
         if ptype == 'user':
-            return ralphlib.types.MessageType.NONE, line
+            return process_user(options, payload, line)
 
         if ptype == 'stream_event':
             return process_stream_event(options, payload, line)
@@ -345,11 +362,41 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
     return ralphlib.types.MessageType.NONE, line
 
 
+def process_user(
+    options: RalpherOptions,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    message = payload.get('message', {})
+    if message:
+        role = message.get('role', '')
+        if role == 'user':
+            content = message.get('content', [])
+            if content:
+                for c in content:
+                    tool_use_id = c.get('tool_use_id')
+                    if tool_use_id and tool_use_id in background_tools:
+                        tool_type = c.get('type', '')
+                        if tool_type == 'tool_result':
+                            cs = content.get('content', '')
+                            if cs:
+                                m = tool_id_regex.match(cs)
+                                if m:
+                                    tool_id = m.group('id')
+                                    if tool_id:
+                                        add_background_tool_id(tool_use_id, tool_id)
+
+    return ralphlib.types.MessageType.NONE, line
+
+
 def process_assisstant(
     options: RalpherOptions,
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
+    background_tools_list = ['Bash']
+    background_task_tool_name = ['TaskOutput', 'TaskStop']
+
     message = payload.get('message', {})
     if message:
         content = message.get('content', [])
@@ -364,17 +411,35 @@ def process_assisstant(
                             return ralphlib.types.MessageType.COMPLETE, ''
 
                 if ctype == 'tool_use':
+                    run_in_background = get_run_in_background(c)
+
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
                     if tool_name == 'UNKNOWN-TOOL':
                         logger.warning(f'Tool use without name: {line}')
+
                     tools_used_set.add(tool_name)
                     vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
-                        vals.append(tool_input)
+                        if tool_name in background_task_tool_name and tool_input in background_id_to_tool:
+                            tool_id = background_id_to_tool[tool_input]
+                            vals.append(background_tools[tool_id]['name'])
+                            vals.append(background_tools[tool_id]['input'])
+                        else:
+                            vals.append(tool_input)
+                            if run_in_background:
+                                vals.append('(running in background)')
                     else:
                         logger.warning(f'Tool {tool_name} without input: {line}')
                         add_unknown_tool(tool_name, c.get('input', {}))
+
+                    # catch starting background tool uses
+                    if run_in_background:
+                        if tool_name in background_tools_list:
+                            add_background_tool(tool_name, tool_input, c.get('id', ''))
+                        else:
+                            logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
+
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
     return ralphlib.types.MessageType.NONE, line
@@ -386,6 +451,15 @@ def indent_lines(s: str, indent: str = '  ') -> str:
     return '\n'.join(f'{indent}{line}' for line in s.splitlines())
 
 
+def get_run_in_background(content: dict[str, Any]) -> bool:
+    input_field = content.get('input', {})
+    if input_field:
+        run_in_background = input_field.get('run_in_background', False)
+        if isinstance(run_in_background, bool):
+            return run_in_background
+    return False
+
+
 def get_tool_input(content: dict[str, Any]) -> str:
     tool_input = ''
     input_field = content.get('input', {})
@@ -395,7 +469,7 @@ def get_tool_input(content: dict[str, Any]) -> str:
 
 
 def input_field_to_content(input_field: dict[str, Any]) -> str:
-    regular_fields = ['command', 'description', 'file_path', 'pattern', 'query', 'url']
+    regular_fields = ['command', 'description', 'file_path', 'pattern', 'query', 'url', 'task_id']
     for f in regular_fields:
         if f in input_field and input_field[f]:
             return str(input_field[f])
