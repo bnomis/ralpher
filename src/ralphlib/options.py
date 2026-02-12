@@ -37,11 +37,13 @@ class RalpherOptions:
     ] = False
     vars: Annotated[
         list[str],
-        cappa.Arg(long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts. Can be given multiple times.'),
+        cappa.Arg(
+            long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts. Can be given multiple times.'
+        ),
     ] = dataclasses.field(default_factory=list)
     logdir: Annotated[
         str | None,
-        cappa.Arg(long=True, help='Directory to prepend to stdout/stderr/progress filenames'),
+        cappa.Arg(long=True, help='Directory to prepend to stdout/stderr/progress/state filenames'),
     ] = None
     stdout: Annotated[
         str | None,
@@ -55,13 +57,20 @@ class RalpherOptions:
         str | None,
         cappa.Arg(long=True, help='Write parsed agent stdout to PROGRESS file in logdir, iteration numbers are appended to the filename'),
     ] = None
+    state: Annotated[
+        str | None,
+        cappa.Arg(long=True, help='Write ralpher state to JSON STATE file in logdir. Useful for debugging.'),
+    ] = None
     cwd: Annotated[
         str | None,
         cappa.Arg(long=True, help='Current working directory for the agent command'),
     ] = None
     stops: Annotated[
         list[str],
-        cappa.Arg(long=True, help='Completion marker strings to look for in agent output to indicate completion. Can be given multiple times. Default: ["<promise>COMPLETE</promise>"]'),
+        cappa.Arg(
+            long=True,
+            help='Completion marker strings to look for in agent output to indicate completion. Can be given multiple times. Default: ["<promise>COMPLETE</promise>"]',
+        ),
     ] = dataclasses.field(
         default_factory=lambda: [
             '<promise>COMPLETE</promise>',

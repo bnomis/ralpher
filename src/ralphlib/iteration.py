@@ -9,6 +9,7 @@ import orjson
 from loguru import logger
 
 import ralphlib.logger
+import ralphlib.state
 import ralphlib.types
 
 if TYPE_CHECKING:
@@ -67,7 +68,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     except Exception as e:
         raise Exception(f'Exception: {e}') from e
     finally:
-        summary(options, context)
+        summary(options, context, iteration)
         unmake_context(context)
     return get_complete(), get_error()
 
@@ -102,18 +103,22 @@ def unmake_context(context: dict[str, Any]) -> None:
     pass
 
 
-def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
+def summary(options: RalpherOptions, context: dict[str, Any], iteration: int) -> None:
+    state_payload = {}
     lines = []
     if tools_used_set:
+        state_payload['tools_used'] = sorted(tools_used_set)
         tools = []
         for t in sorted(tools_used_set):
             tools.append(f'- {t}')
         tools_summary = '\n'.join(tools)
-        lines.append(f'\n= Tools used:\n{tools_summary}\n')
+        lines.append(f'\nTools used:\n{tools_summary}\n')
 
     if unknown_tools:
+        state_payload['unknown_tools'] = {}
         tools = []
         for t in sorted(unknown_tools.keys()):
+            state_payload['unknown_tools'][t] = unknown_tools[t]
             tools.append(f'- {t}')
             keys = sorted(unknown_tools[t].keys())
             for k in keys:
@@ -121,7 +126,7 @@ def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
                 tools.append(f'  - {k}: {v}')
 
         tools_summary = '\n'.join(tools)
-        lines.append(f'\n= Unknown tools used:\n{tools_summary}\n')
+        lines.append(f'\nUnknown tools used:\n{tools_summary}\n')
 
     if lines:
         if context['progress']:
@@ -131,6 +136,13 @@ def summary(options: RalpherOptions, context: dict[str, Any]) -> None:
         if not options.quiet:
             for line in lines:
                 print(line, end='', flush=True)
+
+        ralphlib.state.add_to_state(
+            options,
+            state_payload,
+            key1='iterations',
+            key2=ralphlib.logger.interation_to_str(options, iteration),
+        )
 
 
 def process(options: RalpherOptions, context: dict[str, Any]) -> None:

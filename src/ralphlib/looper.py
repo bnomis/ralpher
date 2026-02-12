@@ -11,6 +11,7 @@ from loguru import logger
 import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.printer
+import ralphlib.state
 import ralphlib.templater
 
 if TYPE_CHECKING:
@@ -97,6 +98,16 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 
+    # state json
+    new_state = {
+        'start': now,
+        'agent': options.agent,
+        'args': options.args,
+        'prompt': content,
+        'max_iterations': options.iterations,
+    }
+    ralphlib.state.add_to_state(options, new_state)
+
     loop_times = []
 
     for i in range(1, options.iterations + 1):
@@ -107,6 +118,13 @@ def loop(options: RalpherOptions) -> None:
         p = ralphlib.templater.render(options, content, i)
         s = f'\nStarting iteration {i}/{options.iterations} at {now}\n\nPrompt:\n{p}\n\n'
         print_both(options, s, i)
+
+        # state json
+        iterations_key = ralphlib.logger.interation_to_str(options, i)
+        state_payload = {
+            'start': loop_start.isoformat(),
+        }
+        ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
 
         # run the iteration
         try:
@@ -131,6 +149,14 @@ def loop(options: RalpherOptions) -> None:
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
+        # state json
+        state_payload = {
+            'end': loop_end.isoformat(),
+            'time_readable': loop_time_str,
+            'time_seconds': loop_td.total_seconds(),
+        }
+        ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
+
         if complete or error or get_should_exit():
             words = []
             if complete:
@@ -154,9 +180,18 @@ def loop(options: RalpherOptions) -> None:
     end = datetime.datetime.now()
     now = end.isoformat()
     td = end - start
+    readable = timedelta_to_readable(td)
 
     ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
-    ralphlib.printer.prt(options, f'Total time: {timedelta_to_readable(td)}\n', 0)
+    ralphlib.printer.prt(options, f'Total time: {readable}\n', 0)
+
+    # state json
+    new_state = {
+        'end': now,
+        'total_time_readable': readable,
+        'total_time_seconds': td.total_seconds(),
+    }
+    ralphlib.state.add_to_state(options, new_state)
 
 
 def print_both(options: RalpherOptions, s: str, iteration: int) -> None:
@@ -182,12 +217,12 @@ def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> 
 
     parts = []
     if days:
-        parts.append(f'{days} days')
+        parts.append(f'{days} day{"s" if days != 1 else ""}')
     if hours or days:  # show hours if there are days
-        parts.append(f'{hours} hours')
+        parts.append(f'{hours} hour{"s" if hours != 1 else ""}')
     if minutes or hours or days:
-        parts.append(f'{minutes} minutes')
+        parts.append(f'{minutes} minute{"s" if minutes != 1 else ""}')
     if show_seconds or not parts:  # always show seconds if nothing else
-        parts.append(f'{seconds} seconds')
+        parts.append(f'{seconds} second{"s" if seconds != 1 else ""}')
 
     return sign + ' '.join(parts)

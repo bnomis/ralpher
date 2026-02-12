@@ -31,3 +31,13 @@ def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path
         logdir = log_dir(options)
         path = logdir / path
     return path
+
+
+def state_file(options: RalpherOptions) -> pathlib.Path | None:
+    if not options.state:
+        return None
+    path = pathlib.Path(options.state)
+    if options.logdir:
+        logdir = log_dir(options)
+        return logdir / path
+    return path
