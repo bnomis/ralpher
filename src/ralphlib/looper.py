@@ -3,6 +3,7 @@ import os
 import signal
 import sys
 import threading
+import types
 from typing import TYPE_CHECKING
 
 import colorama
@@ -44,7 +45,7 @@ class GracefulTerminator:
         signal.signal(signal.SIGINT, self.handler)
         signal.signal(signal.SIGTERM, self.handler)
 
-    def handler(self, signum, frame) -> None:
+    def handler(self, signum: int, frame: types.FrameType | None) -> None:
         if self.is_shutting_down:
             print('\nAlready shutting down — forceful exit!')
             sys.exit(1)
