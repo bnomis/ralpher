@@ -1,4 +1,5 @@
 import re
+import shlex
 import subprocess
 import sys
 import threading
@@ -92,7 +93,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
     cmd = [options.agent]
-    cmd.extend(options.args.split())
+    cmd.extend(shlex.split(options.args))
     cmd.append(prompt)
     context: dict[str, Any] = {
         'iteration': iteration,
