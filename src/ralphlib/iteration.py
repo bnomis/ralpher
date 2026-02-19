@@ -215,7 +215,7 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
 
         time.sleep(SUBPROCESS_POLL_INTERVAL)
 
-    log_msg(options, context, f'process {proc.pid} exited with code {proc.returncode}')
+    log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
 
     # Join threads to ensure all output is read
     stdout_thread.join()
@@ -223,10 +223,6 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
 
 
 def log_msg(options: RalpherOptions, context: dict[str, Any], msg: str) -> None:
-    if context['stdout']:
-        with context['stdout'].open('a', encoding='utf-8') as logfd:
-            logfd.write(msg + '\n')
-
     if context['progress']:
         with context['progress'].open('a', encoding='utf-8') as progressfd:
             progressfd.write(msg + '\n')
