@@ -20,63 +20,51 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 SUBPROCESS_POLL_INTERVAL = 3
-gil = threading.Lock()
-complete_value = False
-error_value = False
 
-message_type_queue: list[ralphlib.types.MessageType] = []
-tools_used_set = set()
-unknown_tools = {}
-background_tools = {}
-background_id_to_tool = {}
 tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
 
 
-def set_complete(value: bool) -> bool:
-    global complete_value
-    with gil:
-        complete_value = value
+def set_complete(context: dict, value: bool) -> bool:
+    with context['gil']:
+        context['complete'] = value
     return value
 
 
-def get_complete() -> bool:
-    global complete_value
-    with gil:
-        value = complete_value
+def get_complete(context: dict) -> bool:
+    with context['gil']:
+        value = context['complete']
     return value
 
 
-def set_error(value: bool) -> bool:
-    global error_value
-    with gil:
-        error_value = value
+def set_error(context: dict, value: bool) -> bool:
+    with context['gil']:
+        context['error'] = value
     return value
 
 
-def get_error() -> bool:
-    global error_value
-    with gil:
-        value = error_value
+def get_error(context: dict) -> bool:
+    with context['gil']:
+        value = context['error']
     return value
 
 
-def add_unknown_tool(tool_name: str, input_values: dict) -> None:
-    with gil:
-        if tool_name not in unknown_tools:
-            unknown_tools[tool_name] = input_values
+def add_unknown_tool(context: dict, tool_name: str, input_values: dict) -> None:
+    with context['gil']:
+        if tool_name not in context['unknown_tools']:
+            context['unknown_tools'][tool_name] = input_values
 
 
-def add_background_tool(tool_name: str, tool_input: str, tool_id: str) -> None:
-    with gil:
-        background_tools[tool_id] = {
+def add_background_tool(context: dict, tool_name: str, tool_input: str, tool_id: str) -> None:
+    with context['gil']:
+        context['background_tools'][tool_id] = {
             'name': tool_name,
             'input': tool_input,
         }
 
 
-def add_background_tool_id(tool_id: str, tid: str) -> None:
-    with gil:
-        background_id_to_tool[tid] = tool_id
+def add_background_tool_id(context: dict, tool_id: str, tid: str) -> None:
+    with context['gil']:
+        context['background_id_to_tool'][tid] = tool_id
 
 
 def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
@@ -89,7 +77,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     finally:
         summary(options, context, iteration)
         unmake_context(context)
-    return get_complete(), get_error()
+    return context['complete'], context['error']
 
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[str, Any]:
@@ -97,12 +85,20 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[s
     cmd.extend(shlex.split(options.args))
     cmd.append(prompt)
     context: dict[str, Any] = {
-        'iteration': iteration,
-        'prompt': prompt,
+        'background_id_to_tool': {},
+        'background_tools': {},
         'cmd': cmd,
-        'stdout': None,
-        'stderr': None,
+        'complete': False,
+        'error': False,
+        'gil': threading.Lock(),
+        'iteration': iteration,
+        'message_type_queue': [],
         'progress': None,
+        'prompt': prompt,
+        'stderr': None,
+        'stdout': None,
+        'tools_used_set': set(),
+        'unknown_tools': {},
     }
     try:
         if options.stdout:
@@ -124,23 +120,23 @@ def unmake_context(context: dict[str, Any]) -> None:
 def summary(options: RalpherOptions, context: dict[str, Any], iteration: int) -> None:
     state_payload = {}
     lines = []
-    if tools_used_set:
-        state_payload['tools_used'] = sorted(tools_used_set)
+    if context['tools_used_set']:
+        state_payload['tools_used'] = sorted(context['tools_used_set'])
         tools = []
-        for t in sorted(tools_used_set):
+        for t in sorted(context['tools_used_set']):
             tools.append(f'- {t}')
         tools_summary = '\n'.join(tools)
         lines.append(f'\nTools used:\n{tools_summary}\n')
 
-    if unknown_tools:
+    if context['unknown_tools']:
         state_payload['unknown_tools'] = {}
         tools = []
-        for t in sorted(unknown_tools.keys()):
-            state_payload['unknown_tools'][t] = unknown_tools[t]
+        for t in sorted(context['unknown_tools'].keys()):
+            state_payload['unknown_tools'][t] = context['unknown_tools'][t]
             tools.append(f'- {t}')
-            keys = sorted(unknown_tools[t].keys())
+            keys = sorted(context['unknown_tools'][t].keys())
             for k in keys:
-                v = unknown_tools[t][k]
+                v = context['unknown_tools'][t][k]
                 tools.append(f'  - {k}: {v}')
 
         tools_summary = '\n'.join(tools)
@@ -229,11 +225,11 @@ def log_msg(options: RalpherOptions, context: dict[str, Any], msg: str) -> None:
             progressfd.flush()
 
     if not options.quiet:
-        print_progress(ralphlib.types.MessageType.SYSTEM, msg)
-        print_progress_eol()
+        print_progress(context, ralphlib.types.MessageType.SYSTEM, msg)
+        print_progress_eol(context)
 
 
-def newline_required(message_type: ralphlib.types.MessageType) -> bool:
+def newline_required(context: dict[str, Any], message_type: ralphlib.types.MessageType) -> bool:
     newline_types = [
         ralphlib.types.MessageType.COMPLETE,
         ralphlib.types.MessageType.ERROR,
@@ -243,7 +239,7 @@ def newline_required(message_type: ralphlib.types.MessageType) -> bool:
     if message_type in newline_types:
         return True
     if message_type == ralphlib.types.MessageType.CONTENT_STOP:
-        last_type = message_type_queue[-1] if message_type_queue else None
+        last_type = context['message_type_queue'][-1] if context['message_type_queue'] else None
         if last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
             return True
     return False
@@ -270,24 +266,24 @@ def process_stdout(
             if logfd:
                 logfd.write(line + '\n')
 
-            message_type, message = process_line(options, line)
+            message_type, message = process_line(options, context, line)
             if message_type == ralphlib.types.MessageType.NONE:
                 continue
 
             if progressfd:
                 if message:
                     progressfd.write(message)
-                if newline_required(message_type):
+                if newline_required(context, message_type):
                     progressfd.write('\n')
                     progressfd.flush()
 
             if not options.quiet:
                 if message:
-                    print_progress(message_type, message)
-                if newline_required(message_type):
-                    print_progress_eol()
+                    print_progress(context, message_type, message)
+                if newline_required(context, message_type):
+                    print_progress_eol(context)
 
-            message_type_queue.append(message_type)
+            context['message_type_queue'].append(message_type)
     finally:
         if logfd:
             logfd.flush()
@@ -297,19 +293,23 @@ def process_stdout(
             progressfd.close()
 
 
-def print_progress(message_type: ralphlib.types.MessageType, message: str) -> None:
+def print_progress(
+    context: dict[str, Any],
+    message_type: ralphlib.types.MessageType,
+    message: str,
+) -> None:
     msg_color = {
         ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
         ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
         ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
         ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
     }
-    with gil:
+    with context['gil']:
         print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
 
 
-def print_progress_eol() -> None:
-    with gil:
+def print_progress_eol(context: dict[str, Any]) -> None:
+    with context['gil']:
         print('', flush=True)
 
 
@@ -332,19 +332,23 @@ def process_stderr(
                 logfd.write(line + '\n')
 
             if not options.quiet:
-                print_error(line)
+                print_error(context, line)
     finally:
         if logfd:
             logfd.flush()
             logfd.close()
 
 
-def print_error(message: str) -> None:
-    with gil:
+def print_error(context: dict[str, Any], message: str) -> None:
+    with context['gil']:
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
-def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.MessageType, str]:
+def process_line(
+    options: RalpherOptions,
+    context: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
     try:
         payload = orjson.loads(line)
         ptype = payload.get('type')
@@ -353,27 +357,28 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
             return ralphlib.types.MessageType.SYSTEM, content
 
         if ptype == 'assistant':
-            return process_assistant(options, payload, line)
+            return process_assistant(options, context, payload, line)
 
         if ptype == 'result':
-            return process_result(options, payload, line)
+            return process_result(options, context, payload, line)
 
         if ptype == 'user':
-            return process_user(options, payload, line)
+            return process_user(options, context, payload, line)
 
         if ptype == 'stream_event':
-            return process_stream_event(options, payload, line)
+            return process_stream_event(options, context, payload, line)
 
-        print_error(f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
+        print_error(context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
     except Exception as e:
         logger.exception(f'Exception in process_line: {e}')
-        print_error(f'\nprocess_line: exception: {e}\n{line}\n')
+        print_error(context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
 
 
 def process_user(
     options: RalpherOptions,
+    context: dict[str, Any],
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
@@ -385,7 +390,7 @@ def process_user(
             if content:
                 for c in content:
                     tool_use_id = c.get('tool_use_id')
-                    if tool_use_id and tool_use_id in background_tools:
+                    if tool_use_id and tool_use_id in context['background_tools']:
                         tool_type = c.get('type', '')
                         if tool_type == 'tool_result':
                             cs = c.get('content', '')
@@ -394,13 +399,14 @@ def process_user(
                                 if m:
                                     tool_id = m.group('id')
                                     if tool_id:
-                                        add_background_tool_id(tool_use_id, tool_id)
+                                        add_background_tool_id(context, tool_use_id, tool_id)
 
     return ralphlib.types.MessageType.NONE, line
 
 
 def process_assistant(
     options: RalpherOptions,
+    context: dict[str, Any],
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
@@ -417,7 +423,7 @@ def process_assistant(
                     text = c.get('text', '')
                     for stop in options.stops:
                         if stop in text:
-                            set_complete(True)
+                            set_complete(context, True)
                             return ralphlib.types.MessageType.COMPLETE, ''
 
                 if ctype == 'tool_use':
@@ -427,26 +433,26 @@ def process_assistant(
                     if tool_name == 'UNKNOWN-TOOL':
                         logger.warning(f'Tool use without name: {line}')
 
-                    tools_used_set.add(tool_name)
+                    context['tools_used_set'].add(tool_name)
                     vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
-                        if tool_name in background_task_tool_name and tool_input in background_id_to_tool:
-                            tool_id = background_id_to_tool[tool_input]
-                            vals.append(background_tools[tool_id]['name'])
-                            vals.append(background_tools[tool_id]['input'])
+                        if tool_name in background_task_tool_name and tool_input in context['background_id_to_tool']:
+                            tool_id = context['background_id_to_tool'][tool_input]
+                            vals.append(context['background_tools'][tool_id]['name'])
+                            vals.append(context['background_tools'][tool_id]['input'])
                         else:
                             vals.append(tool_input)
                             if run_in_background:
                                 vals.append('(running in background)')
                     else:
                         logger.warning(f'Tool {tool_name} without input: {line}')
-                        add_unknown_tool(tool_name, c.get('input', {}))
+                        add_unknown_tool(context, tool_name, c.get('input', {}))
 
                     # catch starting background tool uses
                     if run_in_background:
                         if tool_name in background_tools_list:
-                            add_background_tool(tool_name, tool_input, c.get('id', ''))
+                            add_background_tool(context, tool_name, tool_input, c.get('id', ''))
                         else:
                             logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
 
@@ -498,6 +504,7 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
 
 def process_result(
     options: RalpherOptions,
+    context: dict[str, Any],
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
@@ -507,14 +514,14 @@ def process_result(
 
     # errors
     if subtype == 'success' and is_error:
-        set_error(True)
+        set_error(context, True)
         return ralphlib.types.MessageType.ERROR, result
 
     if result:
         # stopping
         for stop in options.stops:
             if stop in result:
-                set_complete(True)
+                set_complete(context, True)
                 return ralphlib.types.MessageType.COMPLETE, ''
 
     return ralphlib.types.MessageType.NONE, line
@@ -522,6 +529,7 @@ def process_result(
 
 def process_stream_event(
     options: RalpherOptions,
+    context: dict[str, Any],
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
