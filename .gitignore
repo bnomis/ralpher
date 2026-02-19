@@ -1,5 +1,6 @@
 .build
 .env
+.envrc
 .venv
 .vscode
 **/*.egg-info/
