@@ -10,21 +10,26 @@ if TYPE_CHECKING:
 def load_state(options: RalpherOptions) -> dict | None:
     if not options.state:
         return None
+
     path = ralphlib.logger.state_file(options)
     if not path:
         raise Exception('None state file path')
+
     if path.exists():
         with path.open('r') as fp:
             return json.load(fp)
+
     return {}
 
 
 def save_state(options: RalpherOptions, state: dict) -> None:
     if not options.state:
-        return None
+        return
+
     path = ralphlib.logger.state_file(options)
     if not path:
         raise Exception('None state file path')
+
     with path.open('w') as fp:
         json.dump(state, fp, indent=2, sort_keys=True)
 
