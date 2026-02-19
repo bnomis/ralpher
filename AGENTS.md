@@ -25,7 +25,7 @@ ralpher is developed using the following tools and libraries:
 - Containerisation: Docker <https://docs.docker.com/>
 - Testing: `pytest` <https://docs.pytest.org/en/stable/>
 - Property based testing: hypothesis <https://hypothesis.works/>
-- Environment variables: `direnv` <https://direnv.net/> read from the `.env` file
+- Environment variables: `direnv` <https://direnv.net/> read from the `.envrc` file
 
 ## Bash guidelines
 
