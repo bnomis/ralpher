@@ -42,7 +42,6 @@ ralpher is developed using the following tools and libraries:
 
 - Main programming language: Python version 3.14 <https://docs.python.org/release/3.14.2/>
 - Package and virtual environment management: uv <https://docs.astral.sh/uv/>
-- Network http[s] requests: `httpx` <https://www.python-httpx.org/>
 - Logging: `loguru` <https://loguru.readthedocs.io/en/stable/overview.html>
 - Command line argument processing: `cappa` <https://cappa.readthedocs.io/en/latest/index.html>
 - Coding standards, quality and lint: ruff <https://docs.astral.sh/ruff/>
@@ -151,7 +150,6 @@ Do **not** alphabetise lists where order is semantically meaningful (e.g., proce
 ### Error handling
 
 - Let unexpected exceptions propagate rather than silently catching them
-- Use `httpx` exception hierarchy for network errors
 
 ### Comments
 
