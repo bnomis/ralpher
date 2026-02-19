@@ -28,7 +28,7 @@ tools_used_set = set()
 unknown_tools = {}
 background_tools = {}
 background_id_to_tool = {}
-tool_id_regex = re.compile(r'Command running in background with ID: (?P<id\w+)\.')
+tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
 
 
 def set_complete(value: bool) -> bool:
@@ -111,8 +111,6 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[s
             context['progress'] = ralphlib.logger.log_file(options, options.progress, iteration)
     except Exception as e:
         raise Exception(f'Exception: {e}') from e
-    finally:
-        unmake_context(context)
     return context
 
 
@@ -158,7 +156,7 @@ def summary(options: RalpherOptions, context: dict[str, Any], iteration: int) ->
             options,
             state_payload,
             key1='iterations',
-            key2=ralphlib.logger.interation_to_str(options, iteration),
+            key2=ralphlib.logger.iteration_to_str(options, iteration),
         )
 
 
@@ -343,7 +341,7 @@ def process_line(options: RalpherOptions, line: str) -> tuple[ralphlib.types.Mes
             return ralphlib.types.MessageType.SYSTEM, content
 
         if ptype == 'assistant':
-            return process_assisstant(options, payload, line)
+            return process_assistant(options, payload, line)
 
         if ptype == 'result':
             return process_result(options, payload, line)
@@ -378,7 +376,7 @@ def process_user(
                     if tool_use_id and tool_use_id in background_tools:
                         tool_type = c.get('type', '')
                         if tool_type == 'tool_result':
-                            cs = content.get('content', '')
+                            cs = c.get('content', '')
                             if cs:
                                 m = tool_id_regex.match(cs)
                                 if m:
@@ -389,7 +387,7 @@ def process_user(
     return ralphlib.types.MessageType.NONE, line
 
 
-def process_assisstant(
+def process_assistant(
     options: RalpherOptions,
     payload: dict[str, Any],
     line: str,

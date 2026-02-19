@@ -120,7 +120,7 @@ def loop(options: RalpherOptions) -> None:
         print_both(options, s, i)
 
         # state json
-        iterations_key = ralphlib.logger.interation_to_str(options, i)
+        iterations_key = ralphlib.logger.iteration_to_str(options, i)
         state_payload = {
             'start': loop_start.isoformat(),
         }

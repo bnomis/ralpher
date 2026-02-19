@@ -17,14 +17,14 @@ def log_dir(options: RalpherOptions) -> pathlib.Path:
     return pathlib.Path(options.logdir).expanduser().absolute()
 
 
-def interation_to_str(options: RalpherOptions, iteration: int) -> str:
+def iteration_to_str(options: RalpherOptions, iteration: int) -> str:
     max_iterations = options.iterations
     width = len(str(max_iterations))
     return str(iteration).zfill(width)
 
 
 def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path:
-    iteration_str = interation_to_str(options, iteration)
+    iteration_str = iteration_to_str(options, iteration)
     path = pathlib.Path(file)
     path = pathlib.Path(path.stem + '-' + iteration_str + path.suffix)
     if options.logdir:
