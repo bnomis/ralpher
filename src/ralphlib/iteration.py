@@ -258,37 +258,45 @@ def process_stdout(
 ) -> None:
     logfd: io.TextIOWrapper | None = None
     progressfd: io.TextIOWrapper | None = None
-    if context['stdout']:
-        logfd = context['stdout'].open('a', encoding='utf-8')
-    if context['progress']:
-        progressfd = context['progress'].open('a', encoding='utf-8')
+    try:
+        if context['stdout']:
+            logfd = context['stdout'].open('a', encoding='utf-8')
+        if context['progress']:
+            progressfd = context['progress'].open('a', encoding='utf-8')
 
-    for line in iter(pipe.readline, ''):
-        line = line.strip()
-        if not line:
-            continue
+        for line in iter(pipe.readline, ''):
+            line = line.strip()
+            if not line:
+                continue
 
+            if logfd:
+                logfd.write(line + '\n')
+
+            message_type, message = process_line(options, line)
+            if message_type == ralphlib.types.MessageType.NONE:
+                continue
+
+            if progressfd:
+                if message:
+                    progressfd.write(message)
+                if newline_required(message_type):
+                    progressfd.write('\n')
+                    progressfd.flush()
+
+            if not options.quiet:
+                if message:
+                    print_progress(message_type, message)
+                if newline_required(message_type):
+                    print_progress_eol()
+
+            message_type_queue.append(message_type)
+    finally:
         if logfd:
-            logfd.write(line + '\n')
-
-        message_type, message = process_line(options, line)
-        if message_type == ralphlib.types.MessageType.NONE:
-            continue
-
+            logfd.flush()
+            logfd.close()
         if progressfd:
-            if message:
-                progressfd.write(message)
-            if newline_required(message_type):
-                progressfd.write('\n')
-                progressfd.flush()
-
-        if not options.quiet:
-            if message:
-                print_progress(message_type, message)
-            if newline_required(message_type):
-                print_progress_eol()
-
-        message_type_queue.append(message_type)
+            progressfd.flush()
+            progressfd.close()
 
 
 def print_progress(message_type: ralphlib.types.MessageType, message: str) -> None:
@@ -313,19 +321,24 @@ def process_stderr(
     pipe: io.TextIOWrapper,
 ) -> None:
     logfd: io.TextIOWrapper | None = None
-    if context['stderr']:
-        logfd = context['stderr'].open('a', encoding='utf-8')
+    try:
+        if context['stderr']:
+            logfd = context['stderr'].open('a', encoding='utf-8')
 
-    for line in iter(pipe.readline, ''):
-        line = line.strip()
-        if not line:
-            continue
+        for line in iter(pipe.readline, ''):
+            line = line.strip()
+            if not line:
+                continue
 
+            if logfd:
+                logfd.write(line + '\n')
+
+            if not options.quiet:
+                print_error(line)
+    finally:
         if logfd:
-            logfd.write(line + '\n')
-
-        if not options.quiet:
-            print_error(line)
+            logfd.flush()
+            logfd.close()
 
 
 def print_error(message: str) -> None:
