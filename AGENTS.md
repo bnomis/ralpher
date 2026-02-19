@@ -150,7 +150,6 @@ Do **not** alphabetise lists where order is semantically meaningful (e.g., proce
 
 ### Error handling
 
-- Use specific exception types, not bare `except:`
 - Let unexpected exceptions propagate rather than silently catching them
 - Use `httpx` exception hierarchy for network errors
 
