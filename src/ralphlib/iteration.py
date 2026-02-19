@@ -84,7 +84,8 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     try:
         process(options, context)
     except Exception as e:
-        raise Exception(f'Exception: {e}') from e
+        logger.exception(f'Exception in run: {e}')
+        raise
     finally:
         summary(options, context, iteration)
         unmake_context(context)
@@ -111,7 +112,8 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> dict[s
         if options.progress:
             context['progress'] = ralphlib.logger.log_file(options, options.progress, iteration)
     except Exception as e:
-        raise Exception(f'Exception: {e}') from e
+        logger.exception(f'Exception in make_context: {e}')
+        raise
     return context
 
 
