@@ -56,20 +56,20 @@ Notes: Use `tmp_path` fixture for filesystem assertions where needed.
 
 ---
 
-## Task 4: Test `state.add_to_state` / `load_state` / `save_state`
+## Task 4: Test `state.add_to_state` / `load_state` / `save_state` `done`
 
 Nested key update logic with 3 branches (no keys, key1, key1+key2) and error cases for non-dict values.
 
-- [ ] `add_to_state` with no keys merges into top-level state
-- [ ] `add_to_state` with `key1` only creates/updates a nested dict
-- [ ] `add_to_state` with `key1` and `key2` creates/updates a doubly-nested dict
-- [ ] Sequential `add_to_state` calls accumulate state correctly
-- [ ] `add_to_state` when `options.state` is None is a no-op
-- [ ] `ValueNotADict` raised when `key1` path hits a non-dict value
-- [ ] `ValueNotADict` raised when `key1/key2` path hits a non-dict value
-- [ ] `load_state` returns empty dict for non-existent file
-- [ ] `load_state` returns `None` when `options.state` is not set
-- [ ] `save_state` is a no-op when `options.state` is not set
+- [x] `add_to_state` with no keys merges into top-level state
+- [x] `add_to_state` with `key1` only creates/updates a nested dict
+- [x] `add_to_state` with `key1` and `key2` creates/updates a doubly-nested dict
+- [x] Sequential `add_to_state` calls accumulate state correctly
+- [x] `add_to_state` when `options.state` is None is a no-op
+- [x] `ValueNotADict` raised when `key1` path hits a non-dict value
+- [x] `ValueNotADict` raised when `key1/key2` path hits a non-dict value
+- [x] `load_state` returns empty dict for non-existent file
+- [x] `load_state` returns `None` when `options.state` is not set
+- [x] `save_state` is a no-op when `options.state` is not set
 
 Notes: Depends on Task 3 (uses `logger.state_file` and `logger.log_file`). Use `tmp_path` fixture for file I/O.
 
