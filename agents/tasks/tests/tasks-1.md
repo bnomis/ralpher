@@ -38,19 +38,19 @@ Notes: None.
 
 ---
 
-## Task 3: Test `logger` path construction functions
+## Task 3: Test `logger` path construction functions `done`
 
 `iteration_to_str`, `log_file`, and `state_file` have path manipulation logic and branching on `logdir`.
 
-- [ ] `iteration_to_str` zero-pads based on `options.iterations` width (e.g. iterations=100, iteration=3 → `'003'`)
-- [ ] `iteration_to_str` with single-digit max (iterations=5, iteration=3 → `'3'`)
-- [ ] `log_file` constructs correct path with logdir set
-- [ ] `log_file` constructs correct path without logdir (relative path)
-- [ ] `log_file` handles filenames with multiple dots (e.g. `output.log.txt`)
-- [ ] `state_file` returns `None` when `options.state` is not set
-- [ ] `state_file` prepends logdir when set
-- [ ] `state_file` returns plain path when logdir is not set
-- [ ] `log_dir` raises `ValueError` when logdir is not set
+- [x] `iteration_to_str` zero-pads based on `options.iterations` width (e.g. iterations=100, iteration=3 → `'003'`)
+- [x] `iteration_to_str` with single-digit max (iterations=5, iteration=3 → `'3'`)
+- [x] `log_file` constructs correct path with logdir set
+- [x] `log_file` constructs correct path without logdir (relative path)
+- [x] `log_file` handles filenames with multiple dots (e.g. `output.log.txt`)
+- [x] `state_file` returns `None` when `options.state` is not set
+- [x] `state_file` prepends logdir when set
+- [x] `state_file` returns plain path when logdir is not set
+- [x] `log_dir` raises `ValueError` when logdir is not set
 
 Notes: Use `tmp_path` fixture for filesystem assertions where needed.
 
