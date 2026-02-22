@@ -7,9 +7,6 @@ if TYPE_CHECKING:
 
 
 def render(options: RalpherOptions, prompt: str, iteration: int) -> str:
-    if not options.vars:
-        return prompt
-
     context: dict[str, str] = {
         'iteration': str(iteration),
     }
