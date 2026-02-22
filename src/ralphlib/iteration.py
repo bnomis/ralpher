@@ -89,6 +89,18 @@ def add_background_tool_id(context: IterationContext, tool_id: str, tid: str) ->
         context.background_id_to_tool[tid] = tool_id
 
 
+def append_message_type(context: IterationContext, message_type: ralphlib.types.MessageType) -> None:
+    with context.gil:
+        context.message_type_queue.append(message_type)
+
+
+def last_message_type(context: IterationContext) -> ralphlib.types.MessageType | None:
+    with context.gil:
+        if context.message_type_queue:
+            return context.message_type_queue[-1]
+    return None
+
+
 def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
     context = make_context(options, prompt, iteration)
     try:
@@ -248,8 +260,8 @@ def newline_required(context: IterationContext, message_type: ralphlib.types.Mes
     if message_type in newline_types:
         return True
     if message_type == ralphlib.types.MessageType.CONTENT_STOP:
-        last_type = context.message_type_queue[-1] if context.message_type_queue else None
-        if last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
+        last_type = last_message_type(context)
+        if last_type and last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
             return True
     return False
 
@@ -292,7 +304,7 @@ def process_stdout(
                 if newline_required(context, message_type):
                     print_progress_eol(context)
 
-            context.message_type_queue.append(message_type)
+            append_message_type(context, message_type)
     finally:
         if logfd:
             logfd.flush()
