@@ -35,6 +35,7 @@ class IterationContext:
     gil: threading.Lock = dataclasses.field(default_factory=threading.Lock)
     message_type_queue: list[ralphlib.types.MessageType] = dataclasses.field(default_factory=list)
     progress: pathlib.Path | None = None
+    errors: pathlib.Path | None = None
     stderr: pathlib.Path | None = None
     stdout: pathlib.Path | None = None
     tools_used_set: set[str] = dataclasses.field(default_factory=set)
@@ -42,6 +43,7 @@ class IterationContext:
     progressfd: io.TextIOWrapper | None = None
     stdoutfd: io.TextIOWrapper | None = None
     stderrfd: io.TextIOWrapper | None = None
+    errorsfd: io.TextIOWrapper | None = None
 
 
 SUBPROCESS_POLL_INTERVAL = 3
@@ -141,6 +143,9 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
         if options.progress:
             context.progress = ralphlib.logger.log_file(options, options.progress, iteration)
             context.progressfd = context.progress.open('a', encoding='utf-8')
+        if options.errors:
+            context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
+            context.errorsfd = context.errors.open('a', encoding='utf-8')
     except Exception as e:
         logger.exception(f'Exception in make_context: {e}')
         raise
@@ -157,6 +162,9 @@ def unmake_context(context: IterationContext) -> None:
     if context.progressfd:
         context.progressfd.flush()
         context.progressfd.close()
+    if context.errorsfd:
+        context.errorsfd.flush()
+        context.errorsfd.close()
 
 
 def summary(options: RalpherOptions, context: IterationContext, iteration: int) -> None:
@@ -236,12 +244,27 @@ def print_error(options: RalpherOptions, context: IterationContext, message: str
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
+def print_error_eol(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if options.quiet:
+        return
+    with context.gil:
+        print('\n', file=sys.stderr)
+
+
 def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> None:
     write_progress(options, context, msg)
     write_progress_eol(options, context)
 
     print_progress(options, context, ralphlib.types.MessageType.SYSTEM, msg)
     print_progress_eol(options, context)
+
+
+def log_error(options: RalpherOptions, context: IterationContext, msg: str) -> None:
+    write_error(options, context, msg)
+    write_error_eol(options, context)
+
+    print_error(options, context, msg)
+    print_error_eol(options, context, msg)
 
 
 def write_progress(options: RalpherOptions, context: IterationContext, message: str) -> None:
@@ -262,6 +285,19 @@ def write_progress_eol(options: RalpherOptions, context: IterationContext) -> No
         with context.gil:
             context.progressfd.write('\n')
             context.progressfd.flush()
+
+
+def write_error(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if context.errorsfd:
+        with context.gil:
+            context.errorsfd.write(message)
+
+
+def write_error_eol(options: RalpherOptions, context: IterationContext) -> None:
+    if context.errorsfd:
+        with context.gil:
+            context.errorsfd.write('\n')
+            context.errorsfd.flush()
 
 
 def write_stdout(options: RalpherOptions, context: IterationContext, message: str) -> None:
@@ -414,10 +450,10 @@ def process_line(
         if ptype == 'stream_event':
             return process_stream_event(options, context, payload, line)
 
-        print_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
+        log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
     except Exception as e:
         logger.exception(f'Exception in process_line: {e}')
-        print_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
+        log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
 
