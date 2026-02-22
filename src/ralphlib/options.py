@@ -57,6 +57,10 @@ class RalpherOptions:
         str | None,
         cappa.Arg(long=True, help='Write parsed agent stdout to PROGRESS file in logdir, iteration numbers are appended to the filename'),
     ] = None
+    errors: Annotated[
+        str | None,
+        cappa.Arg(long=True, help='Write errors to ERRORS file in logdir, iteration numbers are appended to the filename'),
+    ] = None
     state: Annotated[
         str | None,
         cappa.Arg(long=True, help='Write ralpher state to JSON STATE file in logdir. Useful for debugging.'),
