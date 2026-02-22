@@ -140,21 +140,21 @@ Notes: None.
 
 ---
 
-## Task 9: Test `iteration` helper functions
+## Task 9: Test `iteration` helper functions `done`
 
 Small utility functions with branching logic.
 
-- [ ] `input_field_to_content` returns first matching regular field value
-- [ ] `input_field_to_content` returns formatted todos when no regular fields match
-- [ ] `input_field_to_content` returns empty string when no fields match
-- [ ] `get_run_in_background` returns `True` when `run_in_background` is boolean `True`
-- [ ] `get_run_in_background` returns `False` when field is missing or non-boolean
-- [ ] `indent_lines` indents multi-line string
-- [ ] `indent_lines` returns empty string for empty input
-- [ ] `newline_required` returns `True` for `COMPLETE`, `ERROR`, `SYSTEM`, `TOOL_USE`
-- [ ] `newline_required` returns `True` for `CONTENT_STOP` after `CONTENT_START` or `CONTENT_DELTA`
-- [ ] `newline_required` returns `False` for `CONTENT_STOP` without preceding content type
-- [ ] `newline_required` returns `False` for `CONTENT_DELTA`
+- [x] `input_field_to_content` returns first matching regular field value
+- [x] `input_field_to_content` returns formatted todos when no regular fields match
+- [x] `input_field_to_content` returns empty string when no fields match
+- [x] `get_run_in_background` returns `True` when `run_in_background` is boolean `True`
+- [x] `get_run_in_background` returns `False` when field is missing or non-boolean
+- [x] `indent_lines` indents multi-line string
+- [x] `indent_lines` returns empty string for empty input
+- [x] `newline_required` returns `True` for `COMPLETE`, `ERROR`, `SYSTEM`, `TOOL_USE`
+- [x] `newline_required` returns `True` for `CONTENT_STOP` after `CONTENT_START` or `CONTENT_DELTA`
+- [x] `newline_required` returns `False` for `CONTENT_STOP` without preceding content type
+- [x] `newline_required` returns `False` for `CONTENT_DELTA`
 
 Notes: None.
 

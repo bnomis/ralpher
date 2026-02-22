@@ -558,3 +558,143 @@ def test_process_stream_event_unknown_event_type_returns_none_with_line() -> Non
 
     assert message_type == ralphlib.types.MessageType.NONE
     assert message == line
+
+
+# --- Task 9: Test iteration helper functions ---
+
+
+def test_input_field_to_content_returns_first_matching_regular_field() -> None:
+    input_field = {'command': 'ls -la', 'description': 'list files'}
+    result = ralphlib.iteration.input_field_to_content(input_field)
+    assert result == 'ls -la'
+
+
+def test_input_field_to_content_returns_file_path_field() -> None:
+    input_field = {'file_path': '/home/user/test.py'}
+    result = ralphlib.iteration.input_field_to_content(input_field)
+    assert result == '/home/user/test.py'
+
+
+def test_input_field_to_content_returns_formatted_todos_when_no_regular_fields() -> None:
+    input_field = {
+        'todos': [
+            {'content': 'first task', 'status': 'pending'},
+            {'content': 'second task', 'status': 'done'},
+        ],
+    }
+    result = ralphlib.iteration.input_field_to_content(input_field)
+    assert result == '- first task\n- second task'
+
+
+def test_input_field_to_content_skips_todos_without_content() -> None:
+    input_field = {
+        'todos': [
+            {'content': 'has content'},
+            {'status': 'pending'},
+            {'content': ''},
+        ],
+    }
+    result = ralphlib.iteration.input_field_to_content(input_field)
+    assert result == '- has content'
+
+
+def test_input_field_to_content_returns_empty_string_when_no_fields_match() -> None:
+    input_field = {'some_other_field': 'value'}
+    result = ralphlib.iteration.input_field_to_content(input_field)
+    assert result == ''
+
+
+def test_input_field_to_content_returns_empty_string_for_empty_dict() -> None:
+    result = ralphlib.iteration.input_field_to_content({})
+    assert result == ''
+
+
+def test_get_run_in_background_returns_true_when_boolean_true() -> None:
+    content = {'input': {'run_in_background': True}}
+    assert ralphlib.iteration.get_run_in_background(content) is True
+
+
+def test_get_run_in_background_returns_false_when_boolean_false() -> None:
+    content = {'input': {'run_in_background': False}}
+    assert ralphlib.iteration.get_run_in_background(content) is False
+
+
+def test_get_run_in_background_returns_false_when_field_missing() -> None:
+    content = {'input': {'command': 'ls'}}
+    assert ralphlib.iteration.get_run_in_background(content) is False
+
+
+def test_get_run_in_background_returns_false_when_input_missing() -> None:
+    content = {}
+    assert ralphlib.iteration.get_run_in_background(content) is False
+
+
+def test_get_run_in_background_returns_false_when_non_boolean() -> None:
+    content = {'input': {'run_in_background': 'yes'}}
+    assert ralphlib.iteration.get_run_in_background(content) is False
+
+
+def test_indent_lines_indents_multi_line_string() -> None:
+    result = ralphlib.iteration.indent_lines('line1\nline2\nline3')
+    assert result == '  line1\n  line2\n  line3'
+
+
+def test_indent_lines_indents_single_line() -> None:
+    result = ralphlib.iteration.indent_lines('hello')
+    assert result == '  hello'
+
+
+def test_indent_lines_custom_indent() -> None:
+    result = ralphlib.iteration.indent_lines('a\nb', indent='>>> ')
+    assert result == '>>> a\n>>> b'
+
+
+def test_indent_lines_returns_empty_string_for_empty_input() -> None:
+    assert ralphlib.iteration.indent_lines('') == ''
+
+
+@pytest.mark.parametrize(
+    'message_type',
+    [
+        ralphlib.types.MessageType.COMPLETE,
+        ralphlib.types.MessageType.ERROR,
+        ralphlib.types.MessageType.SYSTEM,
+        ralphlib.types.MessageType.TOOL_USE,
+    ],
+)
+def test_newline_required_returns_true_for_newline_types(message_type: ralphlib.types.MessageType) -> None:
+    context = make_context()
+    assert ralphlib.iteration.newline_required(context, message_type) is True
+
+
+def test_newline_required_returns_true_for_content_stop_after_content_start() -> None:
+    context = make_context()
+    ralphlib.iteration.append_message_type(context, ralphlib.types.MessageType.CONTENT_START)
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.CONTENT_STOP) is True
+
+
+def test_newline_required_returns_true_for_content_stop_after_content_delta() -> None:
+    context = make_context()
+    ralphlib.iteration.append_message_type(context, ralphlib.types.MessageType.CONTENT_DELTA)
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.CONTENT_STOP) is True
+
+
+def test_newline_required_returns_false_for_content_stop_without_preceding_content() -> None:
+    context = make_context()
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.CONTENT_STOP) is False
+
+
+def test_newline_required_returns_false_for_content_stop_after_non_content_type() -> None:
+    context = make_context()
+    ralphlib.iteration.append_message_type(context, ralphlib.types.MessageType.SYSTEM)
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.CONTENT_STOP) is False
+
+
+def test_newline_required_returns_false_for_content_delta() -> None:
+    context = make_context()
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.CONTENT_DELTA) is False
+
+
+def test_newline_required_returns_false_for_none_type() -> None:
+    context = make_context()
+    assert ralphlib.iteration.newline_required(context, ralphlib.types.MessageType.NONE) is False
