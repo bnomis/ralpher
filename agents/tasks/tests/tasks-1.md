@@ -106,19 +106,19 @@ Notes: None.
 
 ---
 
-## Task 7: Test `iteration.process_assistant`
+## Task 7: Test `iteration.process_assistant` `done`
 
 Completion detection via stop markers in text blocks, tool use tracking, and background tool handling.
 
-- [ ] Text content containing stop marker sets complete and returns `COMPLETE`
-- [ ] Text content without stop marker returns `NONE`
-- [ ] Tool use adds tool name to `tools_used_set`
-- [ ] Tool use returns `TOOL_USE` with formatted tool name and input
-- [ ] Tool with `run_in_background=True` in known tools list is tracked in `background_tools`
-- [ ] Tool with `run_in_background=True` not in known tools list logs warning
-- [ ] Tool use for a `TaskOutput`/`TaskStop` referencing a known background ID resolves to the original tool info
-- [ ] Tool use without `name` field logs warning and uses `'UNKNOWN-TOOL'`
-- [ ] Empty message/content returns `NONE`
+- [x] Text content containing stop marker sets complete and returns `COMPLETE`
+- [x] Text content without stop marker returns `NONE`
+- [x] Tool use adds tool name to `tools_used_set`
+- [x] Tool use returns `TOOL_USE` with formatted tool name and input
+- [x] Tool with `run_in_background=True` in known tools list is tracked in `background_tools`
+- [x] Tool with `run_in_background=True` not in known tools list logs warning
+- [x] Tool use for a `TaskOutput`/`TaskStop` referencing a known background ID resolves to the original tool info
+- [x] Tool use without `name` field logs warning and uses `'UNKNOWN-TOOL'`
+- [x] Empty message/content returns `NONE`
 
 Notes: Depends on Task 6 conceptually (shared `IterationContext`), but can be implemented independently.
 

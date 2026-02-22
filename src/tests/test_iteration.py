@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import orjson
+import pytest
 
 import ralphlib.iteration
 import ralphlib.options
@@ -179,6 +180,263 @@ def test_process_result_empty_result_returns_none() -> None:
     line = orjson.dumps(payload).decode()
 
     message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+# --- Task 7: Test process_assistant ---
+
+
+def test_process_assistant_text_with_stop_marker_sets_complete() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {'type': 'text', 'text': 'output with <promise>COMPLETE</promise> marker'},
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.COMPLETE
+    assert message == ''
+    assert ralphlib.iteration.get_complete(context) is True
+
+
+def test_process_assistant_text_without_stop_marker_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {'type': 'text', 'text': 'just some normal text'},
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+    assert ralphlib.iteration.get_complete(context) is False
+
+
+def test_process_assistant_tool_use_adds_to_tools_used_set() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': 'Read',
+                    'id': 'tool_1',
+                    'input': {'file_path': '/home/user/test.py'},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert 'Read' in context.tools_used_set
+
+
+def test_process_assistant_tool_use_returns_tool_use_with_formatted_output() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': 'Bash',
+                    'id': 'tool_1',
+                    'input': {'command': 'ls -la'},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert 'Bash' in message
+    assert 'ls -la' in message
+
+
+def test_process_assistant_tool_run_in_background_known_tool_tracked() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': 'Bash',
+                    'id': 'tool_abc',
+                    'input': {'command': 'sleep 10', 'run_in_background': True},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert 'tool_abc' in context.background_tools
+    assert context.background_tools['tool_abc']['name'] == 'Bash'
+
+
+def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': 'UnknownTool',
+                    'id': 'tool_xyz',
+                    'input': {'query': 'test', 'run_in_background': True},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    with patch('loguru.logger.warning') as mock_warning:
+        ralphlib.iteration.process_assistant(options, context, payload, line)
+        mock_warning.assert_called()
+        warning_msg = mock_warning.call_args[0][0]
+        assert 'UnknownTool' in warning_msg
+        assert 'not in known background tools list' in warning_msg
+
+    assert 'tool_xyz' not in context.background_tools
+
+
+def test_process_assistant_task_output_resolves_background_tool() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+
+    # get_tool_input indents task_id via indent_lines, so the lookup key is indented
+    indented_id = '  bg_123'
+    context.background_tools['tool_orig'] = {'name': 'Bash', 'input': '  sleep 10'}
+    context.background_id_to_tool[indented_id] = 'tool_orig'
+
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': 'TaskOutput',
+                    'id': 'tool_2',
+                    'input': {'task_id': 'bg_123'},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert 'TaskOutput' in message
+    assert 'Bash' in message
+    assert 'sleep 10' in message
+
+
+@pytest.mark.parametrize('tool_name_cls', ['TaskOutput', 'TaskStop'])
+def test_process_assistant_task_tools_resolve_background(tool_name_cls: str) -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+
+    indented_id = '  bg_456'
+    context.background_tools['tool_orig'] = {'name': 'Bash', 'input': '  echo hi'}
+    context.background_id_to_tool[indented_id] = 'tool_orig'
+
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'name': tool_name_cls,
+                    'id': 'tool_3',
+                    'input': {'task_id': 'bg_456'},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert tool_name_cls in message
+    assert 'Bash' in message
+
+
+def test_process_assistant_tool_use_without_name_logs_warning() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'assistant',
+        'message': {
+            'content': [
+                {
+                    'type': 'tool_use',
+                    'id': 'tool_4',
+                    'input': {'file_path': '/home/user/test.py'},
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    with patch('loguru.logger.warning') as mock_warning:
+        message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+        mock_warning.assert_called()
+
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert 'UNKNOWN-TOOL' in message
+    assert 'UNKNOWN-TOOL' in context.tools_used_set
+
+
+def test_process_assistant_empty_message_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'assistant', 'message': {}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+def test_process_assistant_empty_content_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'assistant', 'message': {'content': []}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
 
     assert message_type == ralphlib.types.MessageType.NONE
     assert message == line
