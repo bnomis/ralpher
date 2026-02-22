@@ -24,15 +24,15 @@ Notes: Use `hypothesis` with `st.timedeltas()` for property-based edge-case disc
 
 ---
 
-## Task 2: Test `templater.render` — additional edge cases
+## Task 2: Test `templater.render` — additional edge cases `done`
 
 Existing test covers basic variable substitution. Gaps remain around missing vars, the auto-injected `iteration` variable, and vars without `=`.
 
-- [ ] `iteration` context variable is set to the string of the iteration number
-- [ ] Var without `=` sign is silently skipped
-- [ ] Var with multiple `=` signs splits only on first (e.g. `key=val=ue`)
-- [ ] Empty vars list — only `iteration` is available
-- [ ] Template referencing undefined variable raises or returns empty (document actual behaviour)
+- [x] `iteration` context variable is set to the string of the iteration number
+- [x] Var without `=` sign is silently skipped
+- [x] Var with multiple `=` signs splits only on first (e.g. `key=val=ue`)
+- [x] Empty vars list — only `iteration` is available
+- [x] Template referencing undefined variable raises or returns empty (document actual behaviour)
 
 Notes: None.
 
