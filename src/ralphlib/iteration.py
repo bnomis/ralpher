@@ -11,6 +11,7 @@ import orjson
 from loguru import logger
 
 import ralphlib.logger
+import ralphlib.signals
 import ralphlib.state
 import ralphlib.types
 
@@ -160,8 +161,6 @@ def summary(options: RalpherOptions, context: dict[str, Any], iteration: int) ->
 
 
 def process(options: RalpherOptions, context: dict[str, Any]) -> None:
-    import ralphlib.looper
-
     kwargs = {
         'stdout': subprocess.PIPE,
         'stderr': subprocess.PIPE,
@@ -201,7 +200,7 @@ def process(options: RalpherOptions, context: dict[str, Any]) -> None:
 
     # Wait for the process to complete
     while True:
-        if ralphlib.looper.get_should_exit():
+        if ralphlib.signals.get_should_exit():
             log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
             proc.terminate()
             break
