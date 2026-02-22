@@ -2,6 +2,7 @@ import json
 import threading
 from typing import TYPE_CHECKING
 
+import ralphlib.exceptions
 import ralphlib.logger
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ def load_state(options: RalpherOptions) -> dict | None:
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise Exception('None state file path')
+        raise ralphlib.exceptions.NoStateFilePath()
 
     if path.exists():
         with path.open('r') as fp:
@@ -31,7 +32,7 @@ def save_state(options: RalpherOptions, state: dict) -> None:
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise Exception('None state file path')
+        raise ralphlib.exceptions.NoStateFilePath()
 
     with path.open('w') as fp:
         json.dump(state, fp, indent=2, sort_keys=True)
@@ -54,11 +55,11 @@ def add_to_state(
         if key1 is not None:
             current_value = state.get(key1, {})
             if not isinstance(current_value, dict):
-                raise Exception(f'Current value for key {key1} is not a dict')
+                raise ralphlib.exceptions.ValueNotADict(f'{key1}')
             if key2 is not None:
                 current_value2 = current_value.get(key2, {})
                 if not isinstance(current_value2, dict):
-                    raise Exception(f'Current value for key {key1}/{key2} is not a dict')
+                    raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
                 current_value2.update(value)
                 current_value[key2] = current_value2
             else:
