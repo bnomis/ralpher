@@ -99,7 +99,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     finally:
         summary(options, context, iteration)
         unmake_context(context)
-    return context.complete, context.error
+    return get_complete(context), get_error(context)
 
 
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> IterationContext:
