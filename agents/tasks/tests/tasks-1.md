@@ -160,16 +160,16 @@ Notes: None.
 
 ---
 
-## Task 10: Test `signals.GracefulTerminator`
+## Task 10: Test `signals.GracefulTerminator` `done`
 
 State machine with double-press detection, interval window, and SIGTERM handling.
 
-- [ ] First SIGINT sets `first_press` but does not shut down
-- [ ] Second SIGINT within interval triggers shutdown and sets `should_exit`
-- [ ] Second SIGINT after interval resets (acts like first press again)
-- [ ] SIGTERM immediately triggers shutdown
-- [ ] Calling handler when `is_shutting_down=True` calls `sys.exit(1)`
-- [ ] `set_should_exit` / `get_should_exit` round-trip correctly
+- [x] First SIGINT sets `first_press` but does not shut down
+- [x] Second SIGINT within interval triggers shutdown and sets `should_exit`
+- [x] Second SIGINT after interval resets (acts like first press again)
+- [x] SIGTERM immediately triggers shutdown
+- [x] Calling handler when `is_shutting_down=True` calls `sys.exit(1)`
+- [x] `set_should_exit` / `get_should_exit` round-trip correctly
 
 Notes: Mock `signal.signal` to avoid modifying real signal handlers. Test the handler method directly rather than sending real signals.
 
