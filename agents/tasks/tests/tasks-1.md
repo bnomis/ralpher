@@ -75,18 +75,18 @@ Notes: Depends on Task 3 (uses `logger.state_file` and `logger.log_file`). Use `
 
 ---
 
-## Task 5: Test `iteration.process_line` — JSON dispatch
+## Task 5: Test `iteration.process_line` — JSON dispatch `done`
 
 Top-level dispatcher that parses JSON and routes to sub-processors. Focus on dispatch logic and error handling rather than duplicating sub-processor tests.
 
-- [ ] Valid `system` type returns `SYSTEM` message with subtype content
-- [ ] Valid `assistant` type dispatches correctly (mock `process_assistant`)
-- [ ] Valid `result` type dispatches correctly (mock `process_result`)
-- [ ] Valid `user` type dispatches correctly (mock `process_user`)
-- [ ] Valid `stream_event` type dispatches correctly (mock `process_stream_event`)
-- [ ] Unknown `ptype` returns `NONE` (and calls `print_error`)
-- [ ] Invalid JSON returns `ERROR` message type
-- [ ] Exception during processing returns `ERROR` message type
+- [x] Valid `system` type returns `SYSTEM` message with subtype content
+- [x] Valid `assistant` type dispatches correctly (mock `process_assistant`)
+- [x] Valid `result` type dispatches correctly (mock `process_result`)
+- [x] Valid `user` type dispatches correctly (mock `process_user`)
+- [x] Valid `stream_event` type dispatches correctly (mock `process_stream_event`)
+- [x] Unknown `ptype` returns `NONE` (and calls `print_error`)
+- [x] Invalid JSON returns `ERROR` message type
+- [x] Exception during processing returns `ERROR` message type
 
 Notes: Use mocks for the sub-processor functions to keep this test focused on dispatch.
 
