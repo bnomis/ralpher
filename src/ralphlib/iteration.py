@@ -39,11 +39,19 @@ class IterationContext:
     stdout: pathlib.Path | None = None
     tools_used_set: set[str] = dataclasses.field(default_factory=set)
     unknown_tools: dict[str, dict[str, Any]] = dataclasses.field(default_factory=dict)
+    progressfd: io.TextIOWrapper | None = None
+    stdoutfd: io.TextIOWrapper | None = None
+    stderrfd: io.TextIOWrapper | None = None
 
 
 SUBPROCESS_POLL_INTERVAL = 3
 
+# regex to extract tool IDs from tool results that indicate a background tool has started, e.g. "Command running in background with ID: abc123."
 tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
+# list of tools that are known to run in the background, and thus should be tracked for their IDs
+background_tools_list = ['Bash']
+# list tool names used to track background tasks
+background_task_tool_name = ['TaskOutput', 'TaskStop']
 
 
 def set_complete(context: IterationContext, value: bool) -> bool:
@@ -126,10 +134,13 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
     try:
         if options.stdout:
             context.stdout = ralphlib.logger.log_file(options, options.stdout, iteration)
+            context.stdoutfd = context.stdout.open('a', encoding='utf-8')
         if options.stderr:
             context.stderr = ralphlib.logger.log_file(options, options.stderr, iteration)
+            context.stderrfd = context.stderr.open('a', encoding='utf-8')
         if options.progress:
             context.progress = ralphlib.logger.log_file(options, options.progress, iteration)
+            context.progressfd = context.progress.open('a', encoding='utf-8')
     except Exception as e:
         logger.exception(f'Exception in make_context: {e}')
         raise
@@ -137,7 +148,15 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
 
 
 def unmake_context(context: IterationContext) -> None:
-    pass
+    if context.stdoutfd:
+        context.stdoutfd.flush()
+        context.stdoutfd.close()
+    if context.stderrfd:
+        context.stderrfd.flush()
+        context.stderrfd.close()
+    if context.progressfd:
+        context.progressfd.flush()
+        context.progressfd.close()
 
 
 def summary(options: RalpherOptions, context: IterationContext, iteration: int) -> None:
@@ -166,13 +185,8 @@ def summary(options: RalpherOptions, context: IterationContext, iteration: int) 
         lines.append(f'\nUnknown tools used:\n{tools_summary}\n')
 
     if lines:
-        if context.progress:
-            with context.progress.open('a', encoding='utf-8') as fd:
-                for line in lines:
-                    fd.write(line)
-        if not options.quiet:
-            for line in lines:
-                print(line, end='', flush=True)
+        print_progress_lines(options, context, lines)
+        write_progress_lines(options, context, lines)
 
         ralphlib.state.add_to_state(
             options,
@@ -180,6 +194,102 @@ def summary(options: RalpherOptions, context: IterationContext, iteration: int) 
             key1='iterations',
             key2=ralphlib.logger.iteration_to_str(options, iteration),
         )
+
+
+def print_progress_lines(options: RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+    if options.quiet:
+        return
+    with context.gil:
+        for line in lines:
+            print(line, end='', flush=True)
+
+
+def print_progress(
+    options: RalpherOptions,
+    context: IterationContext,
+    message_type: ralphlib.types.MessageType,
+    message: str,
+) -> None:
+    if options.quiet:
+        return
+    msg_color = {
+        ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
+        ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
+        ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
+        ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
+    }
+    with context.gil:
+        print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
+
+
+def print_progress_eol(options: RalpherOptions, context: IterationContext) -> None:
+    if options.quiet:
+        return
+    with context.gil:
+        print('', flush=True)
+
+
+def print_error(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if options.quiet:
+        return
+    with context.gil:
+        print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
+
+
+def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> None:
+    write_progress(options, context, msg)
+    write_progress_eol(options, context)
+
+    print_progress(options, context, ralphlib.types.MessageType.SYSTEM, msg)
+    print_progress_eol(options, context)
+
+
+def write_progress(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if context.progressfd:
+        with context.gil:
+            context.progressfd.write(message)
+
+
+def write_progress_lines(options: RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+    if context.progressfd:
+        with context.gil:
+            for line in lines:
+                context.progressfd.write(line)
+
+
+def write_progress_eol(options: RalpherOptions, context: IterationContext) -> None:
+    if context.progressfd:
+        with context.gil:
+            context.progressfd.write('\n')
+            context.progressfd.flush()
+
+
+def write_stdout(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if context.stdoutfd:
+        with context.gil:
+            context.stdoutfd.write(message)
+
+
+def write_stderr(options: RalpherOptions, context: IterationContext, message: str) -> None:
+    if context.stderrfd:
+        with context.gil:
+            context.stderrfd.write(message)
+
+
+def newline_required(context: IterationContext, message_type: ralphlib.types.MessageType) -> bool:
+    newline_types = [
+        ralphlib.types.MessageType.COMPLETE,
+        ralphlib.types.MessageType.ERROR,
+        ralphlib.types.MessageType.SYSTEM,
+        ralphlib.types.MessageType.TOOL_USE,
+    ]
+    if message_type in newline_types:
+        return True
+    if message_type == ralphlib.types.MessageType.CONTENT_STOP:
+        last_type = last_message_type(context)
+        if last_type and last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
+            return True
+    return False
 
 
 def process(options: RalpherOptions, context: IterationContext) -> None:
@@ -232,38 +342,11 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
 
         time.sleep(SUBPROCESS_POLL_INTERVAL)
 
-    log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
-
     # Join threads to ensure all output is read
     stdout_thread.join()
     stderr_thread.join()
 
-
-def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> None:
-    if context.progress:
-        with context.progress.open('a', encoding='utf-8') as progressfd:
-            progressfd.write(msg + '\n')
-            progressfd.flush()
-
-    if not options.quiet:
-        print_progress(context, ralphlib.types.MessageType.SYSTEM, msg)
-        print_progress_eol(context)
-
-
-def newline_required(context: IterationContext, message_type: ralphlib.types.MessageType) -> bool:
-    newline_types = [
-        ralphlib.types.MessageType.COMPLETE,
-        ralphlib.types.MessageType.ERROR,
-        ralphlib.types.MessageType.SYSTEM,
-        ralphlib.types.MessageType.TOOL_USE,
-    ]
-    if message_type in newline_types:
-        return True
-    if message_type == ralphlib.types.MessageType.CONTENT_STOP:
-        last_type = last_message_type(context)
-        if last_type and last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
-            return True
-    return False
+    log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
 
 
 def process_stdout(
@@ -271,67 +354,26 @@ def process_stdout(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
-    logfd: io.TextIOWrapper | None = None
-    progressfd: io.TextIOWrapper | None = None
-    try:
-        if context.stdout:
-            logfd = context.stdout.open('a', encoding='utf-8')
-        if context.progress:
-            progressfd = context.progress.open('a', encoding='utf-8')
+    for line in iter(pipe.readline, ''):
+        line = line.strip()
+        if not line:
+            continue
 
-        for line in iter(pipe.readline, ''):
-            line = line.strip()
-            if not line:
-                continue
+        write_stdout(options, context, line + '\n')
 
-            if logfd:
-                logfd.write(line + '\n')
+        message_type, message = process_line(options, context, line)
+        if message_type == ralphlib.types.MessageType.NONE:
+            continue
 
-            message_type, message = process_line(options, context, line)
-            if message_type == ralphlib.types.MessageType.NONE:
-                continue
+        if message:
+            write_progress(options, context, message)
+            print_progress(options, context, message_type, message)
 
-            if progressfd:
-                if message:
-                    progressfd.write(message)
-                if newline_required(context, message_type):
-                    progressfd.write('\n')
-                    progressfd.flush()
+        if newline_required(context, message_type):
+            write_progress_eol(options, context)
+            print_progress_eol(options, context)
 
-            if not options.quiet:
-                if message:
-                    print_progress(context, message_type, message)
-                if newline_required(context, message_type):
-                    print_progress_eol(context)
-
-            append_message_type(context, message_type)
-    finally:
-        if logfd:
-            logfd.flush()
-            logfd.close()
-        if progressfd:
-            progressfd.flush()
-            progressfd.close()
-
-
-def print_progress(
-    context: IterationContext,
-    message_type: ralphlib.types.MessageType,
-    message: str,
-) -> None:
-    msg_color = {
-        ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
-        ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
-        ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
-        ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
-    }
-    with context.gil:
-        print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
-
-
-def print_progress_eol(context: IterationContext) -> None:
-    with context.gil:
-        print('', flush=True)
+        append_message_type(context, message_type)
 
 
 def process_stderr(
@@ -339,30 +381,13 @@ def process_stderr(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
-    logfd: io.TextIOWrapper | None = None
-    try:
-        if context.stderr:
-            logfd = context.stderr.open('a', encoding='utf-8')
+    for line in iter(pipe.readline, ''):
+        line = line.strip()
+        if not line:
+            continue
 
-        for line in iter(pipe.readline, ''):
-            line = line.strip()
-            if not line:
-                continue
-
-            if logfd:
-                logfd.write(line + '\n')
-
-            if not options.quiet:
-                print_error(context, line)
-    finally:
-        if logfd:
-            logfd.flush()
-            logfd.close()
-
-
-def print_error(context: IterationContext, message: str) -> None:
-    with context.gil:
-        print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
+        write_stderr(options, context, line + '\n')
+        print_error(options, context, line)
 
 
 def process_line(
@@ -389,10 +414,10 @@ def process_line(
         if ptype == 'stream_event':
             return process_stream_event(options, context, payload, line)
 
-        print_error(context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
+        print_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
     except Exception as e:
         logger.exception(f'Exception in process_line: {e}')
-        print_error(context, f'\nprocess_line: exception: {e}\n{line}\n')
+        print_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
 
@@ -431,9 +456,6 @@ def process_assistant(
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    background_tools_list = ['Bash']
-    background_task_tool_name = ['TaskOutput', 'TaskStop']
-
     message = payload.get('message', {})
     if message:
         content = message.get('content', [])
