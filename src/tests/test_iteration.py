@@ -116,3 +116,69 @@ def test_process_line_exception_returns_error() -> None:
         message_type, message = ralphlib.iteration.process_line(options, context, line)
         assert message_type == ralphlib.types.MessageType.ERROR
         assert message == line
+
+
+def test_process_result_success_with_is_error_sets_error_flag() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'is_error': True, 'result': 'something failed'}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.ERROR
+    assert message == 'something failed'
+    assert ralphlib.iteration.get_error(context) is True
+
+
+def test_process_result_with_stop_marker_sets_complete() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    result_text = 'output with <promise>COMPLETE</promise> marker'
+    payload = {'type': 'result', 'subtype': 'success', 'result': result_text}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.COMPLETE
+    assert message == ''
+    assert ralphlib.iteration.get_complete(context) is True
+
+
+def test_process_result_no_stop_marker_no_error_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'result': 'normal output'}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+    assert ralphlib.iteration.get_complete(context) is False
+    assert ralphlib.iteration.get_error(context) is False
+
+
+def test_process_result_custom_stop_markers_respected() -> None:
+    options = make_options(quiet=True, stops=['DONE', 'FINISHED'])
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'result': 'task is FINISHED now'}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.COMPLETE
+    assert message == ''
+    assert ralphlib.iteration.get_complete(context) is True
+
+
+def test_process_result_empty_result_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'result': ''}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line

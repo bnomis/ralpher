@@ -92,15 +92,15 @@ Notes: Use mocks for the sub-processor functions to keep this test focused on di
 
 ---
 
-## Task 6: Test `iteration.process_result`
+## Task 6: Test `iteration.process_result` `done`
 
 Error detection and completion marker detection with branching on `subtype`, `is_error`, and stop markers.
 
-- [ ] `subtype='success'` with `is_error=True` sets error flag and returns `ERROR`
-- [ ] Result containing a stop marker sets complete flag and returns `COMPLETE`
-- [ ] Result without stop marker and no error returns `NONE`
-- [ ] Custom stop markers in `options.stops` are respected
-- [ ] Empty result string returns `NONE`
+- [x] `subtype='success'` with `is_error=True` sets error flag and returns `ERROR`
+- [x] Result containing a stop marker sets complete flag and returns `COMPLETE`
+- [x] Result without stop marker and no error returns `NONE`
+- [x] Custom stop markers in `options.stops` are respected
+- [x] Empty result string returns `NONE`
 
 Notes: None.
 
