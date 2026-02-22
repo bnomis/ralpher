@@ -34,8 +34,8 @@ def get_should_exit() -> bool:
 
 
 class GracefulTerminator:
-    CTRL_C_PRESS_INTERVAL = 2.5  # seconds
-    FIRST_MESSAGE = 'Ctrl+C pressed → Press **once more** to exit'
+    CTRL_C_PRESS_INTERVAL = 3  # seconds
+    FIRST_MESSAGE = f'Ctrl+C pressed → Press **once more** within {CTRL_C_PRESS_INTERVAL} seconds to exit'
     SECOND_MESSAGE = '→ Exiting now!'
     EXIT_CODE = 130
 
@@ -62,6 +62,7 @@ class GracefulTerminator:
             if time_since_first_press < self.CTRL_C_PRESS_INTERVAL:
                 print(f'\n{self.SECOND_MESSAGE}\n')
                 self.perform_shutdown()
+                return
 
         print(f'\n{self.FIRST_MESSAGE}\n')
         self.first_press = now
