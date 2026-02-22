@@ -12,7 +12,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=9.0.2"]
+dev = [
+    "hypothesis>=6.151.9",
+    "pytest>=9.0.2",
+]
 
 
 [tool.ruff]
