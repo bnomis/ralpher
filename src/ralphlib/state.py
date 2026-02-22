@@ -37,7 +37,15 @@ def save_state(options: RalpherOptions, state: dict) -> None:
         json.dump(state, fp, indent=2, sort_keys=True)
 
 
-def add_to_state(options: RalpherOptions, value: dict, key1: str | None = None, key2: str | None = None) -> None:
+def add_to_state(
+    options: RalpherOptions,
+    value: dict,
+    key1: str | None = None,
+    key2: str | None = None,
+) -> None:
+    if not options.state:
+        return
+
     with gil:
         state = load_state(options)
         if state is None:
