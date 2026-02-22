@@ -44,6 +44,7 @@ class IterationContext:
     stdoutfd: io.TextIOWrapper | None = None
     stderrfd: io.TextIOWrapper | None = None
     errorsfd: io.TextIOWrapper | None = None
+    unknown_ptype_set: set[str] = dataclasses.field(default_factory=set)
 
 
 SUBPROCESS_POLL_INTERVAL = 3
@@ -78,6 +79,11 @@ def get_error(context: IterationContext) -> bool:
     with context.gil:
         value = context.error
     return value
+
+
+def add_unknown_ptype(context: IterationContext, ptype: str) -> None:
+    with context.gil:
+        context.unknown_ptype_set.add(ptype)
 
 
 def add_unknown_tool(context: IterationContext, tool_name: str, input_values: dict) -> None:
@@ -191,6 +197,11 @@ def summary(options: RalpherOptions, context: IterationContext, iteration: int) 
 
         tools_summary = '\n'.join(tools)
         lines.append(f'\nUnknown tools used:\n{tools_summary}\n')
+
+    if context.unknown_ptype_set:
+        state_payload['unknown_ptypes'] = sorted(context.unknown_ptype_set)
+        ptypes_summary = '\n'.join(f'- {t}' for t in sorted(context.unknown_ptype_set))
+        lines.append(f'\nUnknown message types received:\n{ptypes_summary}\n')
 
     if lines:
         print_progress_lines(options, context, lines)
@@ -433,7 +444,7 @@ def process_line(
 ) -> tuple[ralphlib.types.MessageType, str]:
     try:
         payload = orjson.loads(line)
-        ptype = payload.get('type')
+        ptype = payload.get('type', 'MISSING_PTYPE')
         if ptype == 'system':
             content = payload.get('subtype', '')
             return ralphlib.types.MessageType.SYSTEM, content
@@ -450,7 +461,11 @@ def process_line(
         if ptype == 'stream_event':
             return process_stream_event(options, context, payload, line)
 
+        if ptype == 'rate_limit_event':
+            return process_rate_limit_event(options, context, payload, line)
+
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
+        add_unknown_ptype(context, ptype)
     except Exception as e:
         logger.exception(f'Exception in process_line: {e}')
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
@@ -636,4 +651,13 @@ def process_stream_event(
             return ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', '')
         if cb_type == 'input_json_delta':
             return ralphlib.types.MessageType.NONE, ''
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_rate_limit_event(
+    options: RalpherOptions,
+    context: IterationContext,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
     return ralphlib.types.MessageType.NONE, line
