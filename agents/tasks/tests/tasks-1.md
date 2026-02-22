@@ -124,17 +124,17 @@ Notes: Depends on Task 6 conceptually (shared `IterationContext`), but can be im
 
 ---
 
-## Task 8: Test `iteration.process_stream_event`
+## Task 8: Test `iteration.process_stream_event` `done`
 
 Event type routing for streaming output.
 
-- [ ] `message_start`, `message_stop`, `message_delta` return `NONE` with empty string
-- [ ] `content_block_start` with `type=text` returns `CONTENT_START` with text
-- [ ] `content_block_start` with `type=tool_use` returns `NONE`
-- [ ] `content_block_stop` returns `CONTENT_STOP`
-- [ ] `content_block_delta` with `type=text_delta` returns `CONTENT_DELTA` with text
-- [ ] `content_block_delta` with `type=input_json_delta` returns `NONE`
-- [ ] Unknown event type returns `NONE` with original line
+- [x] `message_start`, `message_stop`, `message_delta` return `NONE` with empty string
+- [x] `content_block_start` with `type=text` returns `CONTENT_START` with text
+- [x] `content_block_start` with `type=tool_use` returns `NONE`
+- [x] `content_block_stop` returns `CONTENT_STOP`
+- [x] `content_block_delta` with `type=text_delta` returns `CONTENT_DELTA` with text
+- [x] `content_block_delta` with `type=input_json_delta` returns `NONE`
+- [x] Unknown event type returns `NONE` with original line
 
 Notes: None.
 

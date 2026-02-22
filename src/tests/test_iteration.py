@@ -440,3 +440,121 @@ def test_process_assistant_empty_content_returns_none() -> None:
 
     assert message_type == ralphlib.types.MessageType.NONE
     assert message == line
+
+
+# --- Task 8: Test process_stream_event ---
+
+
+@pytest.mark.parametrize('event_type', ['message_start', 'message_stop', 'message_delta'])
+def test_process_stream_event_message_types_return_none(event_type: str) -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'stream_event', 'event': {'type': event_type}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == ''
+
+
+def test_process_stream_event_content_block_start_text_returns_content_start() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {
+            'type': 'content_block_start',
+            'content_block': {'type': 'text', 'text': 'hello'},
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.CONTENT_START
+    assert message == 'hello'
+
+
+def test_process_stream_event_content_block_start_tool_use_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {
+            'type': 'content_block_start',
+            'content_block': {'type': 'tool_use', 'id': 'tool_1', 'name': 'Read'},
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == ''
+
+
+def test_process_stream_event_content_block_stop_returns_content_stop() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {'type': 'content_block_stop'},
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.CONTENT_STOP
+    assert message == ''
+
+
+def test_process_stream_event_content_block_delta_text_returns_content_delta() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {
+            'type': 'content_block_delta',
+            'delta': {'type': 'text_delta', 'text': 'world'},
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.CONTENT_DELTA
+    assert message == 'world'
+
+
+def test_process_stream_event_content_block_delta_input_json_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {
+            'type': 'content_block_delta',
+            'delta': {'type': 'input_json_delta', 'partial_json': '{"key":'},
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == ''
+
+
+def test_process_stream_event_unknown_event_type_returns_none_with_line() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'stream_event',
+        'event': {'type': 'some_unknown_event'},
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
