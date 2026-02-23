@@ -1,6 +1,8 @@
 import json
-import threading
 from typing import TYPE_CHECKING
+
+import filelock
+import loguru
 
 import ralphlib.exceptions
 import ralphlib.logger
@@ -8,7 +10,7 @@ import ralphlib.logger
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
-gil = threading.Lock()
+STATE_LOCK_TIMEOUT = 10
 
 
 def load_state(options: RalpherOptions) -> dict | None:
@@ -47,24 +49,32 @@ def add_to_state(
     if not options.state:
         return
 
-    with gil:
-        state = load_state(options)
-        if state is None:
-            return
+    lock_path = ralphlib.logger.state_lock_file(options)
+    if not lock_path:
+        raise ralphlib.exceptions.NoStateLockFilePath()
+    lock = filelock.FileLock(lock_path)
 
-        if key1 is not None:
-            current_value = state.get(key1, {})
-            if not isinstance(current_value, dict):
-                raise ralphlib.exceptions.ValueNotADict(f'{key1}')
-            if key2 is not None:
-                current_value2 = current_value.get(key2, {})
-                if not isinstance(current_value2, dict):
-                    raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
-                current_value2.update(value)
-                current_value[key2] = current_value2
+    try:
+        with lock.acquire(timeout=STATE_LOCK_TIMEOUT):
+            state = load_state(options)
+            if state is None:
+                return
+
+            if key1 is not None:
+                current_value = state.get(key1, {})
+                if not isinstance(current_value, dict):
+                    raise ralphlib.exceptions.ValueNotADict(f'{key1}')
+                if key2 is not None:
+                    current_value2 = current_value.get(key2, {})
+                    if not isinstance(current_value2, dict):
+                        raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
+                    current_value2.update(value)
+                    current_value[key2] = current_value2
+                else:
+                    current_value.update(value)
+                state[key1] = current_value
             else:
-                current_value.update(value)
-            state[key1] = current_value
-        else:
-            state.update(value)
-        save_state(options, state)
+                state.update(value)
+            save_state(options, state)
+    except filelock.Timeout:
+        loguru.logger.exception(f'Could not acquire state lock after {STATE_LOCK_TIMEOUT} seconds')
