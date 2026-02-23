@@ -41,3 +41,13 @@ def state_file(options: RalpherOptions) -> pathlib.Path | None:
         logdir = log_dir(options)
         return logdir / path
     return path
+
+
+def state_lock_file(options: RalpherOptions) -> pathlib.Path | None:
+    if not options.state:
+        return None
+    path = pathlib.Path(options.state + '.lock')
+    if options.logdir:
+        logdir = log_dir(options)
+        return logdir / path
+    return path
