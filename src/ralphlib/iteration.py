@@ -11,8 +11,8 @@ import time
 from typing import TYPE_CHECKING, Any
 
 import colorama
+import loguru
 import orjson
-from loguru import logger
 
 import ralphlib.logger
 import ralphlib.signals
@@ -124,7 +124,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     try:
         process(options, context)
     except Exception as e:
-        logger.exception(f'Exception in run: {e}')
+        loguru.logger.exception(f'Exception in run: {e}')
         raise
     finally:
         summary(options, context, iteration)
@@ -155,7 +155,7 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
             context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
             context.errorsfd = context.errors.open('a', encoding='utf-8')
     except Exception as e:
-        logger.exception(f'Exception in make_context: {e}')
+        loguru.logger.exception(f'Exception in make_context: {e}')
         raise
     return context
 
@@ -474,7 +474,7 @@ def process_line(
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
         add_unknown_ptype(context, ptype)
     except Exception as e:
-        logger.exception(f'Exception in process_line: {e}')
+        loguru.logger.exception(f'Exception in process_line: {e}')
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
@@ -532,7 +532,7 @@ def process_assistant(
 
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
                     if tool_name == 'UNKNOWN-TOOL':
-                        logger.warning(f'Tool use without name: {line}')
+                        loguru.logger.warning(f'Tool use without name: {line}')
 
                     context.tools_used_set.add(tool_name)
                     vals = [tool_name]
@@ -547,7 +547,7 @@ def process_assistant(
                             if run_in_background:
                                 vals.append('(running in background)')
                     else:
-                        logger.warning(f'Tool {tool_name} without input: {line}')
+                        loguru.logger.warning(f'Tool {tool_name} without input: {line}')
                         add_unknown_tool(context, tool_name, c.get('input', {}))
 
                     # catch starting background tool uses
@@ -555,7 +555,7 @@ def process_assistant(
                         if tool_name in background_tools_list:
                             add_background_tool(context, tool_name, tool_input, c.get('id', ''))
                         else:
-                            logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
+                            loguru.logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
 
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 

@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import colorama
-from loguru import logger
+import loguru
 
 import ralphlib.iteration
 import ralphlib.logger
@@ -80,7 +80,7 @@ def loop(options: RalpherOptions) -> None:
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
         except Exception as e:
-            logger.exception(f'Exception during iteration {i}: {e}')
+            loguru.logger.exception(f'Exception during iteration {i}: {e}')
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)
