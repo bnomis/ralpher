@@ -13,10 +13,10 @@ Usage: $(basename "$0") [OPTIONS] ITERATIONS PROMPT TASKS LOGDIR
 Arguments:
   ITERATIONS      number of iterations
   PROMPT          prompt file (e.g., PROMPT.md)
-  TASKS           tasks file (e.g., tasks.txt)
+  TASKS           tasks file (e.g., tasks.txt), substituted into prompt as {{task_file}}
   LOGDIR          directory to hold logs
 
-You must set the $RALPHER_PATH env var, so this script knows where to find ralpher.
+You must set the RALPHER_PATH env var, so this script knows where to find ralpher.
 EOF
     exit 1
 }
@@ -31,7 +31,7 @@ tasks="$3"
 logdir=$4
 
 if [[ -z $RALPHER_PATH ]]; then
-    echo "missing or blank $RALPHER_PATH env var"
+    echo "missing or blank RALPHER_PATH env var"
     exit 1
 fi
 
