@@ -8,3 +8,7 @@ class ValueNotADict(Exception):
 
 class InvalidVarFormat(Exception):
     pass
+
+
+class NoStateLockFilePath(Exception):
+    pass
