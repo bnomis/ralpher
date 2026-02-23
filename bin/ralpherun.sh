@@ -8,41 +8,56 @@ parent=$(dirname "$THIS_DIR")
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [OPTIONS] ITERATIONS PROMPT TASKS LOGDIR
+Usage: $(basename "$0") ITERATIONS PROMPT LOGDIR [TASKS]
 
 Arguments:
   ITERATIONS      number of iterations
   PROMPT          prompt file (e.g., PROMPT.md)
-  TASKS           tasks file (e.g., tasks.txt), substituted into prompt as {{task_file}}
-  LOGDIR          directory to hold logs
+                  prompt file will be processed with Jinja2
+                  {{iteration}} will be substituted with the current iteration number (starting from 1)
+                  {{task_file}} will be substituted with the value of TASKS, if provided
+  LOGDIR          directory to hold logs and state (will be created if it doesn't exist)
+  TASKS           value substituted into prompt as {{task_file}} (e.g., tasks.txt),
+                  if your prompt doesn't use {{task_file}} you can pass any string here
+                  you can also omit this argument if your prompt doesn't use {{task_file}}
 
-You must set the RALPHER_PATH env var, so this script knows where to find ralpher.
+Note: You must set the RALPHER_PATH env var, so this script knows where to find ralpher.
 EOF
     exit 1
 }
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 3 ] && [ $# -ne 4 ]; then
     usage
+fi
+
+if [[ -z $RALPHER_PATH ]]; then
+    echo "Missing or blank RALPHER_PATH env var"
+    exit 1
 fi
 
 iterations="$1"
 prompt="$2"
-tasks="$3"
-logdir=$4
+logdir="$3"
 
-if [[ -z $RALPHER_PATH ]]; then
-    echo "missing or blank RALPHER_PATH env var"
-    exit 1
+# make command array
+cmd=(
+    "$RALPHER_PATH/bin/ralpher.sh"
+    --cwd="$parent"
+    --logdir="$logdir"
+    --stdout=stdout.jsonl
+    --stderr=stderr.jsonl
+    --progress=progress.log
+    --errors=errors.log
+    --state=state.json
+    --iterations="$iterations"
+    --prompt="$prompt"
+)
+
+if [ $# -eq 4 ]; then
+    cmd+=(
+         --vars=task_file="$4"
+    )
 fi
 
-"$RALPHER_PATH/bin/ralpher.sh" \
-    --cwd="$parent" \
-    --logdir="$logdir" \
-    --stdout=stdout.jsonl \
-    --stderr=stderr.jsonl \
-    --progress=progress.log \
-    --errors=errors.log \
-    --state=state.json \
-    --iterations="$iterations" \
-    --prompt="$prompt" \
-    --vars=task_file="$tasks"
+# run the command
+"${cmd[@]}"
