@@ -56,6 +56,7 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.state.add_to_state(options, new_state)
 
     loop_times = []
+    exit_reason = 'completed all iterations'
 
     for i in range(1, options.iterations + 1):
         loop_start = datetime.datetime.now()
@@ -112,8 +113,9 @@ def loop(options: RalpherOptions) -> None:
                 words.append('error')
             if ralphlib.signals.get_should_exit():
                 words.append('termination')
+            exit_reason = ', '.join(words)
 
-            s = f'\n{"=" * 5} Loop {", ".join(words)} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
+            s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             print_both(options, s, i)
             break
 
@@ -135,6 +137,8 @@ def loop(options: RalpherOptions) -> None:
     # state json
     new_state = {
         'end': now,
+        'exit_reason': exit_reason,
+        'iterations': num_loops,
         'total_time_readable': readable,
         'total_time_seconds': td.total_seconds(),
     }
