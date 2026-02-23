@@ -3,7 +3,8 @@
     "allow": [
       "Bash(.venv/bin/python:*)",
       "Bash(.venv/bin/pytest:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(python:*)"
     ]
   }
 }
