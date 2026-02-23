@@ -1,7 +1,9 @@
 import dataclasses
+import os
 import pathlib
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import threading
@@ -346,6 +348,7 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
         'bufsize': 1,  # line-buffered
         'text': True,
         'errors': 'replace',
+        'start_new_session': True,
     }
     if options.cwd:
         kwargs['cwd'] = options.cwd
@@ -381,7 +384,10 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     while True:
         if ralphlib.signals.get_should_exit():
             log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
-            proc.terminate()
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except OSError:
+                proc.terminate()
             break
 
         if proc.poll() is not None:
