@@ -343,6 +343,7 @@ def newline_required(context: IterationContext, message_type: ralphlib.types.Mes
 
 def process(options: RalpherOptions, context: IterationContext) -> None:
     kwargs = {
+        'stdin': subprocess.DEVNULL,
         'stdout': subprocess.PIPE,
         'stderr': subprocess.PIPE,
         'bufsize': 1,  # line-buffered
