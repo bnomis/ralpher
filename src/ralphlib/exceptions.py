@@ -4,3 +4,7 @@ class NoStateFilePath(Exception):
 
 class ValueNotADict(Exception):
     pass
+
+
+class InvalidVarFormat(Exception):
+    pass

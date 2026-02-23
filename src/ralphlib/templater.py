@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING
 
 import jinja2
 
+import ralphlib.exceptions
+
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
@@ -12,7 +14,7 @@ def render(options: RalpherOptions, prompt: str, iteration: int) -> str:
     }
     for var in options.vars:
         if '=' not in var:
-            continue
+            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var format: '{var}', expected key=value")
         key, value = var.split('=', 1)
         context[key] = value
 
