@@ -30,6 +30,8 @@ def loop(options: RalpherOptions) -> None:
             content = f.read()
     elif options.prompts:
         content = options.prompts
+
+    content = content.strip()
     if not content:
         sys.exit('Error: No prompt provided. Use --prompt or provide a prompt as a positional argument.')
 
@@ -138,7 +140,7 @@ def loop(options: RalpherOptions) -> None:
     new_state = {
         'end': now,
         'exit_reason': exit_reason,
-        'iterations': num_loops,
+        'iterations_completed': num_loops,
         'total_time_readable': readable,
         'total_time_seconds': td.total_seconds(),
     }
