@@ -24,9 +24,12 @@ def load_state(options: RalpherOptions) -> dict | None:
     if not path:
         raise ralphlib.exceptions.NoStateFilePath()
 
-    if path.exists():
-        with path.open('r') as fp:
-            return json.load(fp)
+    try:
+        if path.exists():
+            with path.open('r') as fp:
+                return json.load(fp)
+    except Exception as e:
+        loguru.logger.exception(f'Exception in load_state: {e}')
 
     return {}
 
