@@ -83,6 +83,11 @@ def get_error(context: IterationContext) -> bool:
     return value
 
 
+def add_tool_used(context: IterationContext, tool_name: str) -> None:
+    with context.gil:
+        context.tools_used_set.add(tool_name)
+
+
 def add_unknown_ptype(context: IterationContext, ptype: str) -> None:
     with context.gil:
         context.unknown_ptype_set.add(ptype)
@@ -534,7 +539,7 @@ def process_assistant(
                     if tool_name == 'UNKNOWN-TOOL':
                         loguru.logger.warning(f'Tool use without name: {line}')
 
-                    context.tools_used_set.add(tool_name)
+                    add_tool_used(context, tool_name)
                     vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
