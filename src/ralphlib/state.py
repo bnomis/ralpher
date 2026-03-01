@@ -65,10 +65,12 @@ def add_to_state(
         s = f'Exception in add_to_state: {e}'
         loguru.logger.exception(s)
         print(s, file=sys.stderr, flush=True)
+        raise
 
 
 @tenacity.retry(
     reraise=True,
+    retry=tenacity.retry_if_exception_type(filelock.Timeout),
     wait=tenacity.wait_fixed(1),
     stop=tenacity.stop_after_attempt(3),
 )
