@@ -161,23 +161,29 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
             context.errorsfd = context.errors.open('a', encoding='utf-8')
     except Exception as e:
         loguru.logger.exception(f'Exception in make_context: {e}')
+        unmake_context(context)
         raise
     return context
 
 
+def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
+    try:
+        if fd:
+            fd.flush()
+            fd.close()
+    except Exception as e:
+        loguru.logger.exception(f'Exception in flush_and_close_fd: {e}')
+
+
 def unmake_context(context: IterationContext) -> None:
     if context.stdoutfd:
-        context.stdoutfd.flush()
-        context.stdoutfd.close()
+        flush_and_close_fd(context.stdoutfd)
     if context.stderrfd:
-        context.stderrfd.flush()
-        context.stderrfd.close()
+        flush_and_close_fd(context.stderrfd)
     if context.progressfd:
-        context.progressfd.flush()
-        context.progressfd.close()
+        flush_and_close_fd(context.progressfd)
     if context.errorsfd:
-        context.errorsfd.flush()
-        context.errorsfd.close()
+        flush_and_close_fd(context.errorsfd)
 
 
 def summary(options: RalpherOptions, context: IterationContext, iteration: int) -> None:
