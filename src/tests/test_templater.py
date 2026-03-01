@@ -1,3 +1,6 @@
+import pytest
+
+import ralphlib.exceptions
 import ralphlib.options
 import ralphlib.templater
 
@@ -28,11 +31,12 @@ def test_iteration_context_variable_is_string() -> None:
     assert rendered == '42'
 
 
-def test_var_without_equals_is_skipped() -> None:
+def test_var_without_equals_raises_an_error() -> None:
     options = ralphlib.options.RalpherOptions(vars=['noequals', 'valid=yes'])
     prompt = '{{ valid }}'
-    rendered = ralphlib.templater.render(options, prompt, 1)
-    assert rendered == 'yes'
+
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormat):
+        ralphlib.templater.render(options, prompt, 1)
 
 
 def test_var_with_multiple_equals_splits_on_first() -> None:
