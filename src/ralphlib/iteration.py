@@ -268,7 +268,7 @@ def print_error(options: RalpherOptions, context: IterationContext, message: str
         print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
 
 
-def print_error_eol(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def print_error_eol(options: RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
@@ -288,7 +288,7 @@ def log_error(options: RalpherOptions, context: IterationContext, msg: str) -> N
     write_error_eol(options, context)
 
     print_error(options, context, msg)
-    print_error_eol(options, context, msg)
+    print_error_eol(options, context)
 
 
 def write_progress(options: RalpherOptions, context: IterationContext, message: str) -> None:
