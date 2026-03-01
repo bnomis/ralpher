@@ -543,14 +543,15 @@ def process_assistant(
                     vals = [tool_name]
                     tool_input = get_tool_input(c)
                     if tool_input:
-                        if tool_name in background_task_tool_name and tool_input in context.background_id_to_tool:
-                            tool_id = context.background_id_to_tool[tool_input]
-                            vals.append(context.background_tools[tool_id]['name'])
-                            vals.append(context.background_tools[tool_id]['input'])
-                        else:
-                            vals.append(tool_input)
-                            if run_in_background:
-                                vals.append('(running in background)')
+                        with context.gil:
+                            if tool_name in background_task_tool_name and tool_input in context.background_id_to_tool:
+                                tool_id = context.background_id_to_tool[tool_input]
+                                vals.append(context.background_tools[tool_id]['name'])
+                                vals.append(context.background_tools[tool_id]['input'])
+                            else:
+                                vals.append(tool_input)
+                                if run_in_background:
+                                    vals.append('(running in background)')
                     else:
                         loguru.logger.warning(f'Tool {tool_name} without input: {line}')
                         add_unknown_tool(context, tool_name, c.get('input', {}))
