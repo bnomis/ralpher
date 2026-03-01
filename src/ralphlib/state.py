@@ -1,8 +1,11 @@
 import json
+import pathlib
+import sys
 from typing import TYPE_CHECKING
 
 import filelock
 import loguru
+import tenacity
 
 import ralphlib.exceptions
 import ralphlib.logger
@@ -52,6 +55,27 @@ def add_to_state(
     lock_path = ralphlib.logger.state_lock_file(options)
     if not lock_path:
         raise ralphlib.exceptions.NoStateLockFilePath()
+
+    try:
+        add_to_state_work(options, lock_path, value, key1, key2)
+    except Exception as e:
+        s = f'Exception in add_to_state: {e}'
+        loguru.logger.exception(s)
+        print(s, file=sys.stderr, flush=True)
+
+
+@tenacity.retry(
+    reraise=True,
+    wait=tenacity.wait_fixed(1),
+    stop=tenacity.stop_after_attempt(3),
+)
+def add_to_state_work(
+    options: RalpherOptions,
+    lock_path: pathlib.Path,
+    value: dict,
+    key1: str | None = None,
+    key2: str | None = None,
+) -> None:
     lock = filelock.FileLock(lock_path)
 
     try:
