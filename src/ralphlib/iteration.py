@@ -601,7 +601,16 @@ def get_tool_input(content: dict[str, Any]) -> str:
 
 
 def input_field_to_content(input_field: dict[str, Any]) -> str:
-    regular_fields = ['command', 'description', 'file_path', 'pattern', 'query', 'url', 'task_id']
+    regular_fields = [
+        'command',
+        'description',
+        'file_path',
+        'pattern',
+        'query',
+        'url',
+        'task_id',
+        'question',
+    ]
     for f in regular_fields:
         if f in input_field and input_field[f]:
             return str(input_field[f])
