@@ -51,11 +51,12 @@ cmd=(
     --state=state.json
     --iterations="$iterations"
     --prompt="$prompt"
+    --worktree
 )
 
 if [ $# -eq 4 ]; then
     cmd+=(
-         --vars=task_file="$4"
+         --task_file="$4"
     )
 fi
 

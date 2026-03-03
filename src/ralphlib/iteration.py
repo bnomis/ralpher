@@ -146,9 +146,39 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     return get_complete(context), get_error(context)
 
 
+def slugify(value: str) -> str:
+    value = value.lower()
+    value = re.sub(r'[^a-z0-9]+', '-', value)
+    value = value.strip().strip('-')
+    return value
+
+
+def task_file_slug(task_file: str) -> str:
+    path = pathlib.Path(task_file)
+    parts = path.parts
+    if len(parts) >= 2:
+        slug = parts[-2] + '-' + path.stem
+    else:
+        slug = path.stem
+    return slugify(slug)
+
+
+def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
+    # dont add twice
+    if '--worktree' in cmd or '-w' in cmd:
+        return cmd
+
+    if options.worktree:
+        cmd.append('--worktree')
+        if options.task_file:
+            cmd.append(task_file_slug(options.task_file))
+    return cmd
+
+
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> IterationContext:
     cmd = [options.agent]
     cmd.extend(shlex.split(options.args))
+    add_worktree_arg(options, cmd)
     cmd.append(prompt)
     context = IterationContext(
         cmd=cmd,
@@ -367,6 +397,8 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     }
     if options.cwd:
         kwargs['cwd'] = options.cwd
+
+    log_msg(options, context, f'Forking subprocess {context.cmd}')
 
     proc = subprocess.Popen(  # noqa: S603
         context.cmd,

@@ -31,9 +31,20 @@ class RalpherOptions:
         str | None,
         cappa.Arg(help='Prompt as a positional argument, does not override --prompt', value_name='PROMPT'),
     ] = None
+    task_file: Annotated[
+        str | None,
+        cappa.Arg(
+            long='--task-file',
+            help='Path to tasks file. If --worktree is set, the worktree will be named after the tasks file (without extension)',
+        ),
+    ] = None
     quiet: Annotated[
         bool,
         cappa.Arg(long=True, help='Suppress output'),
+    ] = False
+    worktree: Annotated[
+        bool,
+        cappa.Arg(long=True, help='Use worktrees (add --worktree) named for the tasks file if it exists'),
     ] = False
     vars: Annotated[
         list[str],
