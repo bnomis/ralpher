@@ -56,7 +56,7 @@ cmd=(
 
 if [ $# -eq 4 ]; then
     cmd+=(
-         --task_file="$4"
+         --task-file="$4"
     )
 fi
 
