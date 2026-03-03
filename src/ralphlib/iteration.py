@@ -398,13 +398,12 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     if options.cwd:
         kwargs['cwd'] = options.cwd
 
-    log_msg(options, context, f'Forking subprocess {context.cmd}')
-
+    # log_msg(options, context, f'Forking subprocess {context.cmd}')
     proc = subprocess.Popen(  # noqa: S603
         context.cmd,
         **kwargs,
     )
-    log_msg(options, context, f'Started subprocess {proc.pid}')
+    log_msg(options, context, f'Started agent process {proc.pid}')
 
     # Threads to read and print from each pipe concurrently
     stdout_thread = threading.Thread(
