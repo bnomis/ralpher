@@ -24,16 +24,35 @@ def loop(options: RalpherOptions) -> None:
     if options.cwd:
         os.chdir(options.cwd)
 
+    # check prompt file exists and has content
     content = ''
     if options.prompt:
+        if not os.path.isfile(options.prompt):
+            sys.exit(f'Error: Prompt file "{options.prompt}" does not exist.')
+
         with open(options.prompt, 'r', encoding='utf-8') as f:
-            content = f.read()
+            content = f.read().strip()
+        if not content:
+            sys.exit(f'Error: Prompt file "{options.prompt}" is empty.')
+
     elif options.prompts:
-        content = options.prompts
+        content = options.prompts.strip()
+        if not content:
+            sys.exit('Error: Prompts provided via --prompts is empty.')
 
     content = content.strip()
     if not content:
-        sys.exit('Error: No prompt provided. Use --prompt or provide a prompt as a positional argument.')
+        sys.exit('Error: No prompt provided. Use --prompt to read from a file or --prompts to provide on the cmd line.')
+
+    # check task file exists and has content
+    if options.task_file:
+        if not os.path.isfile(options.task_file):
+            sys.exit(f'Error: Task file "{options.task_file}" does not exist.')
+
+        with open(options.task_file, 'r', encoding='utf-8') as f:
+            task_content = f.read().strip()
+        if not task_content:
+            sys.exit(f'Error: Task file "{options.task_file}" is empty.')
 
     ralphlib.logger.init(options)
 
