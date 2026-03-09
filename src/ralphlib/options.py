@@ -46,6 +46,10 @@ class RalpherOptions:
         bool,
         cappa.Arg(long=True, help='Use worktrees (add --worktree) named for the tasks file if it exists'),
     ] = False
+    skip_git_check: Annotated[
+        bool,
+        cappa.Arg(long='--skip-git-check', help='Dont do git checks (not committed/pushed etc.) before starting'),
+    ] = False
     vars: Annotated[
         list[str],
         cappa.Arg(

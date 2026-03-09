@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import colorama
 import loguru
 
+import ralphlib.giter
 import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.printer
@@ -24,6 +25,9 @@ def loop(options: RalpherOptions) -> None:
 
     if options.cwd:
         os.chdir(options.cwd)
+
+    # check git status
+    ralphlib.giter.check_git(options)
 
     # check prompt file exists and has content
     content = ''
