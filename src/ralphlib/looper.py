@@ -1,4 +1,5 @@
 import datetime
+import functools
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -77,6 +78,7 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.state.add_to_state(options, new_state)
 
     loop_times = []
+    loop_tds = []
     exit_reason = 'completed all iterations'
 
     for i in range(1, options.iterations + 1):
@@ -108,6 +110,7 @@ def loop(options: RalpherOptions) -> None:
         loop_end = datetime.datetime.now()
         now = loop_end.isoformat()
         loop_td = loop_end - loop_start
+        loop_tds.append(loop_td)
 
         s = f'\nEnding iteration {i}/{options.iterations} at {now}\n'
         print_both(options, s, i)
@@ -149,11 +152,17 @@ def loop(options: RalpherOptions) -> None:
 
     end = datetime.datetime.now()
     now = end.isoformat()
+
     td = end - start
     readable = timedelta_to_readable(td)
 
+    total_loop_time_td = functools.reduce(lambda acc, td: acc + td, loop_tds, datetime.timedelta(0))
+    readable_loop_time = timedelta_to_readable(total_loop_time_td)
+    ralpher_overhead_td = td - total_loop_time_td
+    readable_overhead_time = timedelta_to_readable(ralpher_overhead_td)
+
     ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
-    ralphlib.printer.prt(options, f'Total time: {readable}\n', 0)
+    ralphlib.printer.prt(options, f'Total time: {readable}, loop time: {readable_loop_time}, overhead: {readable_overhead_time}\n', 0)
 
     # state json
     new_state = {
@@ -162,6 +171,10 @@ def loop(options: RalpherOptions) -> None:
         'iterations_completed': num_loops,
         'total_time_readable': readable,
         'total_time_seconds': td.total_seconds(),
+        'loop_time_readable': readable_loop_time,
+        'loop_time_seconds': total_loop_time_td.total_seconds(),
+        'overhead_time_readable': readable_overhead_time,
+        'overhead_time_seconds': ralpher_overhead_td.total_seconds(),
     }
     ralphlib.state.add_to_state(options, new_state)
 
