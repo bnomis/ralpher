@@ -163,7 +163,12 @@ def loop(options: RalpherOptions) -> None:
     total_loop_time_td = functools.reduce(lambda acc, td: acc + td, loop_tds, datetime.timedelta(0))
     readable_loop_time = timedelta_to_readable(total_loop_time_td)
     ralpher_overhead_td = td - total_loop_time_td
-    readable_overhead_time = timedelta_to_readable(ralpher_overhead_td)
+    if ralpher_overhead_td.total_seconds() < 1:
+        readable_overhead_time = 'none'
+    else:
+        readable_overhead_time = timedelta_to_readable(ralpher_overhead_td)
+        if readable_overhead_time == '0':
+            readable_overhead_time = 'none'
 
     ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
     ralphlib.printer.prt(options, f'Total time: {readable}, loop time: {readable_loop_time}, overhead: {readable_overhead_time}\n', 0)
