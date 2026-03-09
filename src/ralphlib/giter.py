@@ -103,11 +103,13 @@ def has_unpushed_commits(repo: pygit2.Repository) -> bool:
     (usually origin/<branch>).
     """
 
+    callbacks = pygit2.RemoteCallbacks(credentials=pygit2.KeypairFromAgent('git'))
+
     # Optional but strongly recommended: fetch latest remote state first
     # (otherwise ahead/behind can be outdated)
     try:
         origin = repo.remotes['origin']
-        origin.fetch()
+        origin.fetch(callbacks=callbacks)
     except KeyError:
         print("No 'origin' remote found")
         return False
