@@ -171,7 +171,11 @@ def loop(options: RalpherOptions) -> None:
             readable_overhead_time = 'none'
 
     ralphlib.printer.prt(options, f'\n\nEnd at {now}\n', 0)
-    ralphlib.printer.prt(options, f'Total time: {readable}, loop time: {readable_loop_time}, overhead: {readable_overhead_time}\n', 0)
+    lines = [f'Total time: {readable}']
+    if readable_overhead_time != 'none':
+        lines.append(f'loop time: {readable_loop_time}')
+        lines.append(f'overhead: {readable_overhead_time}')
+    ralphlib.printer.prt(options, f'{", ".join(lines)}\n', 0)
 
     # state json
     new_state = {
