@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 def render(options: RalpherOptions, prompt: str, iteration: int) -> str:
     context: dict[str, str] = {
         'iteration': str(iteration),
+        'iterations': str(options.iterations),
     }
     if options.task_file:
         context['task_file'] = options.task_file
