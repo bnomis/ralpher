@@ -6,7 +6,8 @@
       "Bash(tail:*)",
       "Bash(python:*)",
       "Bash(uv:*)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__deepwiki__ask_question"
     ]
   }
 }
