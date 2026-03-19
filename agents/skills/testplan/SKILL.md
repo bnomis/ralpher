@@ -1,77 +1,160 @@
 ---
 name: testplan
-description: Develop tasks lists to implement tests
-when_to_use: Triggers on: test plan, testing gaps, plan tests
+description: Analyse source code and tests to produce a plan for filling testing gaps
+when_to_use: |
+    Use this skill whenever the user mentions:
+        - test plan
+        - testing gaps
+        - plan tests
 allowed_tools: [Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, Skill]
 ---
 
-# Task development
+# Test plan development
 
-Develop unit tests using pytest or property based tests using hypothesis - whichever makes the most sense for the code under test.
+Invoke as:
+    /testplan [scope]
 
-Examine the existing tests and source code and produce a list of tasks needed to fill any testing gaps. The goal is not 100% test coverage. Focus on functions with complex logic, edge cases, or that have caused bugs. Skip trivial getters/setters and simple pass-through functions. Focus on functions with branching logic, error handling, and state transitions
+Where `[scope]` is an optional argument specifying what to plan tests for. If no argument is provided, plan tests for the entire project.
 
-Write the task list into a new tasks file in the `@agents/tasks/tests/` folder.
+Scope examples:
 
-## Tests location
+- `/testplan` -- full test plan (all source modules)
+- `/testplan src/<project>/<file>.py` -- test plan for a single module
+- `/testplan <spec>` -- test plan for a spec and its implementation
 
-Tests are in the `@src/tests/` directory.
+## Goals
 
-Test files start with `test_`, testing function names start with `test_`.
+Develop unit tests using pytest or property-based tests using hypothesis — whichever makes the most sense for the code under test.
 
-## Running tests
+The goal is not 100% test coverage. Focus on:
 
-After activating the environment with the command `source bin/activate.sh`
-Run tests with the command `pytest`
+- Functions with branching logic, error handling, or state transitions
+- Edge cases and boundary conditions
+- Code that has caused bugs
+
+Skip trivial getters/setters and simple pass-through functions.
 
 ## Workflow
 
-1. Read any existing `tasks-*.md` files in `@agents/tasks/tests/` to understand prior work
-2. Run pytest to identify current coverage and failures
-3. Analyse the source code and existing tests and produce an implementation plan to increase the test coverage
-4. Write the new task list into a new file in `@agents/tasks/tests/`
+### 1. Establish scope
 
-## Task sizing
+- **Full plan** (no argument): analyse all source modules under `src/` and their tests under `src/tests/`
+- **Module plan** (file path given): analyse that module and its corresponding test file
+- **Spec plan** (spec name given): resolve to `agents/specs/<SLUG>/spec.md` (see the `specdev` skill for slugification rules), identify the implementation modules, and analyse their tests
 
-The plan should consist of small, self-contained tasks. A self-contained task:
+### 2. Gather context
 
-- Is a logical unit that can be implemented, tested, and integrated without breaking the system
-- Typically corresponds to a single Python module or a focused change across a few files
-- Should be completable in a single working session
+1. Read `AGENTS.md` for project structure and testing conventions
+2. Read the source modules in scope
+3. Read existing test files for modules in scope
+4. Read any prior plan files in `agents/test-plans/` to avoid repeating recommendations
+5. List available tests with `uv run pytest --co -q` scoped to modules in scope
 
-## Task ordering
+### 3. Identify gaps
 
-Tasks should be in implementation order. Take into account:
+For each source module in scope:
 
-- Dependencies between tasks (explicit: "Task 3 depends on Task 1")
-- Priority (high-priority tasks first when dependencies allow)
-- Complexity (consider front-loading simpler tasks to build momentum)
+1. Map public functions and classes
+2. Check which have corresponding test cases
+3. Assess whether existing tests cover meaningful scenarios (not just happy path)
+4. Note functions that lack tests but warrant them per the [Goals](#goals)
 
-## File output
+### 4. Write the plan file
 
-Write the implementation plan to `@agents/tasks/tests/tasks-N.md`, where N is an index starting from 1.
+Cap the plan at 20 recommendations. If more gaps exist, note the total count in the Summary and recommend a focused follow-up plan.
 
-If the file already exists DO NOT overwrite it. Instead increment N to create a unique filename (e.g., tasks-2.md, tasks-3.md).
+Write findings to `agents/test-plans/plan-N.md` using the [Plan template](#plan-template) below.
 
-## Task template
+To determine N: check existing files in `agents/test-plans/` and use the next available number starting from 1. If the directory does not exist, create it.
 
-```markdown
----
+**Do not overwrite existing plan files.** Always increment N.
 
-## Task N: Test <module/function>
-- [ ] test case 1
-- [ ] test case 2
-Notes: <any context>
+### 5. Act on findings
 
----
+- **If there are recommendations:** use the `taskdev` skill to create a task list.
+
+```
+/taskdev agents/test-plans/plan-N.md
 ```
 
-## Completion checklist
+- **If there are no recommendations:** tell the user where the plan file was written.
 
-Before finalising the task list, verify:
+### 6. Version control
 
-- [ ] No task is so large it should be split further
-- [ ] Dependencies between tasks are explicitly stated
-- [ ] Existing completed work is marked as done
-- [ ] Task order respects dependency chains
-- [ ] Prior task files were reviewed to avoid duplicating already-planned work
+1. Check for uncommitted changes with `git status`
+2. If uncommitted changes exist, ask the user if they want to commit them first
+3. After writing the plan, stage it: `git add agents/test-plans/plan-N.md`
+4. Ask the user if they'd like to commit
+5. Commit with message: `"testplan: add plan-N"`
+6. Do not push unless the user asks
+
+## Test plan index
+
+Maintain an index at `agents/test-plans/index.md`. When creating or updating a plan, add or update its entry. If the index does not exist, create it.
+
+Format:
+
+```markdown
+# Test Plan Index
+
+| Scope | Plan | Date |
+|-------|------|------|
+| full | [plan-1.md](plan-1.md) | 2026-03-19 |
+```
+
+## Testing conventions
+
+Reference these conventions when assessing gaps and writing recommendations.
+
+### Test file layout
+
+- Test files live in `src/tests/` and mirror the source layout:
+  - `src/<project>/<name>.py` -> `src/tests/test_<name>.py`
+  - `src/<project>/<pkg>/<file>.py` -> `src/tests/<pkg>/test_<file>.py`
+- Test functions are prefixed with `test_`
+- Make and use re-usable pytest fixtures
+- Place fixture files in `src/tests/fixtures/` with names that mirror the source module names
+- Load fixtures in the `src/tests/conftest.py` file
+- Use hypothesis for functions with well-defined input domains
+- Use `pytest.raises` for expected exceptions
+
+### Performance guardrails
+
+- Mark tests that load large models or process real datasets with `@pytest.mark.slow`
+- Skip slow tests during development with `pytest -m "not slow"`
+- The `slow` marker is registered in `pyproject.toml`
+- Hypothesis tests must always use `@settings(max_examples=20, deadline=10000)` to keep run times predictable
+- Do not increase `max_examples` without good reason — the default of 20 balances coverage and speed
+- If a single test takes more than 10 seconds, it should be marked `@pytest.mark.slow`
+
+## Plan template
+
+```markdown
+# Test Plan N
+
+**Date:** YYYY-MM-DD
+**Scope:** <what was analysed -- "full" or specific modules>
+
+## Summary
+
+<2-3 sentence overview of testing gaps found>
+
+## Gaps
+
+### Gap 1: <module or function name>
+
+- **Module:** `path/to/module.py`
+- **Function(s):** `function_name`
+- **Test file:** `path/to/test_file.py` (existing) or "missing"
+- **What's missing:** <description of what isn't tested>
+- **Suggested approach:** pytest / hypothesis / both
+- **Priority:** high / medium / low
+
+### Gap 2: <module or function name>
+
+...
+
+## Well-covered modules
+
+List modules that were checked and have adequate test coverage. Only include this section if there are modules with no gaps.
+```

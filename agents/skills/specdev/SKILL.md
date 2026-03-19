@@ -41,14 +41,14 @@ Specs must be detailed enough that the [taskdev](../taskdev/SKILL.md) skill can 
 
 ## Spec size
 
-If a spec covers multiple independent components, consider splitting into separate specs and linking them.
+A single spec should cover one module or one cohesive feature. If a spec exceeds ~200 lines or has more than 8 top-level sections, it is likely too broad — split into separate specs and link them.
 
 ## Workflow
 
 Follow this decision tree:
 
 1. **Does a spec exist at `<SPEC-PATH>`?**
-   - **NO** -> Interview the user -> Write initial draft -> Update `agents/specs/index.md` with a link to the new spec
+   - **NO** -> Interview the user -> Write initial draft -> Update `agents/specs/index.md` with a link to the new spec (create the index if it doesn't exist)
    - **YES** -> Read the spec, then:
      1. **Does implementation code exist at the module location stated in the spec?**
         - **YES** -> Run drift detection (see [Drift detection](#drift-detection) below)
@@ -70,7 +70,7 @@ Use the AskUserQuestion tool to gather information not already present in the sp
 - Are there configurable behaviors? (settings)
 - What external services or libraries does it depend on? (external dependencies)
 
-Ask questions iteratively, not all at once. Stop when you can fill every required template section with concrete content (not placeholders) as described in [Purpose](#purpose).
+Ask questions iteratively, not all at once. Stop when you can fill every required template section with concrete content (not placeholders) as described in [Purpose](#purpose). If the user is unsure about a section, mark it as **TBD** in the spec and add a validation warning in the file header.
 
 ## Spec template
 
@@ -120,6 +120,20 @@ Also:
 - API sections must include concrete function signatures with type annotations and docstrings
 - Implementation sections must describe the approach, not just restate the API
 - Settings must include defaults and value types
+
+## Spec index
+
+Maintain an index at `agents/specs/index.md`. When creating or updating a spec, add or update its entry. If the index does not exist, create it.
+
+Format:
+
+```markdown
+# Spec Index
+
+| Spec | Path | Description |
+|------|------|-------------|
+| [Searcher](searcher/spec.md) | `src/<project>/searcher.py` | Search functionality |
+```
 
 ## Cross-referencing
 

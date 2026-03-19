@@ -17,14 +17,34 @@ allowed_tools: [Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, Skill]
 
 Invoke as:
     /taskdev <SPEC-NAME>
+    /taskdev <SPEC-PATH>
 
-Where <SPEC-NAME> is the title of the spec.
+Where:
+
+- <SPEC-NAME> is the title of the spec
+- <SPEC-PATH> is the path to a spec or a review, it can be distinguished because it will have slashes "/" in it
 
 If no argument is provided, list existing specs from agents/specs/index.md and ask the user to pick one.
 
 ## Spec location
 
+If you are given a <SPEC-NAME> you can find the spec with the following rules.
+
 The spec file is at `agents/specs/<SLUG>/spec.md`, where `<SLUG>` is the slugified version of <SPEC-NAME> (lowercase, spaces to hyphens, non-alphanumeric characters removed). See the [specdev skill](../specdev/SKILL.md) for full slugification rules.
+
+If you are given a <SPEC-PATH> read the spec at that path. The <SLUG> in this case will be the name of the directory containing the spec. For example, for a spec at path `agents/audit-reviews/review-1.md` the <SLUG> is `audit-reviews`.
+
+## Non-spec input
+
+A document is a spec if its path is under agents/specs/ and the filename is spec.md. All other paths are treated as non-spec input.
+
+When the input document is not a spec (e.g., an audit review file):
+
+- Step 3: skip the specdev invocation — mark ambiguous items with **Caveat:** instead
+- Step 6: skip API signature comparison — check only whether implementation code exists for the described changes
+- Step 9: verify every actionable finding/recommendation has a corresponding task (instead of verifying spec section coverage)
+- File header: use **Source:** `<input path>` instead of **Spec:**
+- Task template: use **Source Reference:** `<finding number>` instead of **Spec Reference:**
 
 ## Workflow
 
