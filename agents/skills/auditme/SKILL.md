@@ -51,7 +51,16 @@ If ruff reports violations, add a single finding summarising the count and list 
 
 ### 4. Manual audit
 
-Evaluate each area in the [Audit checklist](#audit-checklist) below. For every finding, record the category, severity, location, and a concrete recommendation.
+Audit **file-by-file**, not category-by-category. This ensures every file is explicitly reviewed and nothing is skipped due to LLM attention drift.
+
+1. Use `Glob` to build a complete list of source files in scope (e.g. `src/**/*.py`)
+2. Iterate through each file in the list:
+   a. Read the file
+   b. Evaluate it against **every applicable category** in the [Audit checklist](#audit-checklist) below
+   c. Record any findings with category, severity, location, and a concrete recommendation
+3. Track which files you have reviewed — this list is written to the review file (see [Review template](#review-template))
+
+Do not move on from a file until you have checked all applicable checklist categories against it. This prevents the common failure mode of scanning by category and missing files.
 
 ### 5. Spec review
 
@@ -185,6 +194,14 @@ Assess by reading test files — do not run the test suite.
 ### Finding 2: <title>
 
 ...
+
+## Files reviewed
+
+List every file that was explicitly read and audited during this review. This ensures coverage is visible and reproducible.
+
+- `src/example/module.py` -- checked: standards, security, testing, performance, architecture
+- `src/example/other.py` -- checked: standards, security, testing
+- ...
 
 ## Recommendations
 
