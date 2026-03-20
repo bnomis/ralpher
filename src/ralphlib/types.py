@@ -10,3 +10,4 @@ class MessageType(enum.IntEnum):
     CONTENT_DELTA = 5
     TOOL_USE = 6
     COMPLETE = 7
+    REGULAR = 8

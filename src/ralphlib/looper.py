@@ -14,6 +14,7 @@ import ralphlib.printer
 import ralphlib.signals
 import ralphlib.state
 import ralphlib.templater
+import ralphlib.types
 
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
@@ -135,16 +136,18 @@ def loop(options: RalpherOptions) -> None:
 
         if complete or error or ralphlib.signals.get_should_exit():
             words = []
+            message_type = ralphlib.types.MessageType.SYSTEM
             if complete:
                 words.append('complete')
             if error:
                 words.append('error')
+                message_type = ralphlib.types.MessageType.ERROR
             if ralphlib.signals.get_should_exit():
                 words.append('termination')
             exit_reason = ', '.join(words)
 
             s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
-            print_both(options, s, i)
+            print_both(options, s, i, message_type=message_type)
             break
 
     ralphlib.printer.prt(options, '\n\nLoop times\n\n', 0)
@@ -192,9 +195,14 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.state.add_to_state(options, new_state)
 
 
-def print_both(options: RalpherOptions, s: str, iteration: int) -> None:
-    ralphlib.printer.prt(options, s, 0)
-    ralphlib.printer.prt(options, s, iteration, dont_print=True)
+def print_both(
+    options: RalpherOptions,
+    s: str,
+    iteration: int,
+    message_type: ralphlib.types.MessageType = ralphlib.types.MessageType.REGULAR,
+) -> None:
+    ralphlib.printer.prt(options, s, 0, message_type=message_type)
+    ralphlib.printer.prt(options, s, iteration, dont_print=True, message_type=message_type)
 
 
 def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> str:
