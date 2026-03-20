@@ -62,7 +62,7 @@ ralpher is developed using the following tools and libraries:
 
 Do not pipe output through `head`, `tail`, `less` or `more` when monitoring or checking command output
 
-Do not use `| head -n X` or `| tail -x X` to truncate output, these cause buffering problems
+Do not use `| head -n X` or `| tail -n X` to truncate output, these cause buffering problems
 
 Let commands complete fully or use command line flags to limit output if supported, for example `--max-lines` or `--maxlines`
 
@@ -72,7 +72,7 @@ For log monitoring, prefer reading files directly rather than piping through fil
 
 Run commands directly without pipes when possible
 
-If you need to limit output, use command specific flags. For example, use `git log -n 10` instead of `git log | head -10`
+If you need to limit output, use command specific flags. For example, use `git log -n 10` instead of `git log | head -n 10`
 
 Avoid chained pipes, these can cause output to buffer indefinitely
 
