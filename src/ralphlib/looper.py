@@ -4,7 +4,6 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-import colorama
 import loguru
 
 import ralphlib.giter
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
 
 
 def loop(options: RalpherOptions) -> None:
-    colorama.just_fix_windows_console()
     _terminator = ralphlib.signals.GracefulTerminator()
 
     if options.cwd:

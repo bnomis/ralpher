@@ -10,11 +10,12 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
-import colorama
 import loguru
 import orjson
+import rich.console
 
 import ralphlib.logger
+import ralphlib.printer
 import ralphlib.signals
 import ralphlib.state
 import ralphlib.types
@@ -48,6 +49,9 @@ class IterationContext:
     errorsfd: io.TextIOWrapper | None = None
     unknown_ptype_set: set[str] = dataclasses.field(default_factory=set)
 
+
+console = rich.console.Console(highlight=False)
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 SUBPROCESS_POLL_INTERVAL = 3
 
@@ -283,14 +287,9 @@ def print_progress(
 ) -> None:
     if options.quiet:
         return
-    msg_color = {
-        ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
-        ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
-        ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
-        ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
-    }
+
     with context.gil:
-        print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
+        console.print(message, style=ralphlib.printer.type_to_style(message_type), end='', soft_wrap=True)
 
 
 def print_progress_eol(options: RalpherOptions, context: IterationContext) -> None:
@@ -304,7 +303,7 @@ def print_error(options: RalpherOptions, context: IterationContext, message: str
     if options.quiet:
         return
     with context.gil:
-        print(colorama.Fore.RED + message + colorama.Style.RESET_ALL, file=sys.stderr)
+        console_stderr.print(message, style='red', end='', soft_wrap=True)
 
 
 def print_error_eol(options: RalpherOptions, context: IterationContext) -> None:

@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING
 
-import colorama
+import rich.console
 
 import ralphlib.logger
 import ralphlib.types
+
+console = rich.console.Console(highlight=False)
 
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
@@ -24,11 +26,22 @@ def prt(
     if options.quiet or dont_print:
         return
 
-    msg_color = {
-        ralphlib.types.MessageType.REGULAR: colorama.Fore.WHITE,
-        ralphlib.types.MessageType.CONTENT_DELTA: colorama.Fore.CYAN,
-        ralphlib.types.MessageType.ERROR: colorama.Fore.RED,
-        ralphlib.types.MessageType.SYSTEM: colorama.Fore.YELLOW,
-        ralphlib.types.MessageType.TOOL_USE: colorama.Fore.MAGENTA,
-    }
-    print(msg_color.get(message_type, colorama.Fore.WHITE) + message + colorama.Style.RESET_ALL, end='', flush=True)
+    console_print(message, message_type)
+
+
+def console_print(
+    message: str,
+    message_type: ralphlib.types.MessageType = ralphlib.types.MessageType.REGULAR,
+) -> None:
+    console.print(message, style=type_to_style(message_type), end='', soft_wrap=True)
+
+
+def type_to_style(message_type: ralphlib.types.MessageType) -> str:
+    return {
+        ralphlib.types.MessageType.REGULAR: 'grey30',
+        ralphlib.types.MessageType.CONTENT_DELTA: 'cyan',
+        ralphlib.types.MessageType.ERROR: 'red',
+        ralphlib.types.MessageType.SYSTEM: 'yellow',
+        ralphlib.types.MessageType.TOOL_USE: 'magenta',
+        ralphlib.types.MessageType.ALERT: 'bold red',
+    }.get(message_type, 'grey30')

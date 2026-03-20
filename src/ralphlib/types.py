@@ -11,3 +11,4 @@ class MessageType(enum.IntEnum):
     TOOL_USE = 6
     COMPLETE = 7
     REGULAR = 8
+    ALERT = 9

@@ -276,7 +276,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cappa" },
-    { name = "colorama" },
     { name = "filelock" },
     { name = "jinja2" },
     { name = "loguru" },
@@ -295,7 +294,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cappa", specifier = ">=0.31.0" },
-    { name = "colorama", specifier = ">=0.4.6" },
     { name = "filelock", specifier = ">=3.24.3" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
