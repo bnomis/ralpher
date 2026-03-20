@@ -1,3 +1,5 @@
 # ralpher notes
 
-settings for colours
+settings for colours/themes
+
+hooks
