@@ -5,7 +5,6 @@ import re
 import shlex
 import signal
 import subprocess
-import sys
 import threading
 import time
 from typing import TYPE_CHECKING, Any
@@ -276,7 +275,7 @@ def print_progress_lines(options: RalpherOptions, context: IterationContext, lin
         return
     with context.gil:
         for line in lines:
-            print(line, end='', flush=True)
+            console.print(line, end='', soft_wrap=True)
 
 
 def print_progress(
@@ -296,7 +295,7 @@ def print_progress_eol(options: RalpherOptions, context: IterationContext) -> No
     if options.quiet:
         return
     with context.gil:
-        print('', flush=True)
+        console.print('')
 
 
 def print_error(options: RalpherOptions, context: IterationContext, message: str) -> None:
@@ -310,7 +309,7 @@ def print_error_eol(options: RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
-        print('\n', file=sys.stderr)
+        console_stderr.print('\n')
 
 
 def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> None:

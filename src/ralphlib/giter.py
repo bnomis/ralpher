@@ -2,11 +2,14 @@ import pathlib
 import sys
 
 import pygit2
+import rich.console
 import rich.prompt
 import rich.text
 
 import ralphlib.printer
 import ralphlib.types
+
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 class YNConfirm(rich.prompt.Confirm):
@@ -118,10 +121,10 @@ def has_unpushed_commits(repo: pygit2.Repository) -> bool:
         origin = repo.remotes['origin']
         origin.fetch(callbacks=callbacks)
     except KeyError:
-        print("No 'origin' remote found")
+        console_stderr.print("No 'origin' remote found")
         return False
     except Exception as e:
-        print(f'Fetch failed: {e}')
+        console_stderr.print(f'Fetch failed: {e}')
         return False
 
     head = repo.head
@@ -129,7 +132,7 @@ def has_unpushed_commits(repo: pygit2.Repository) -> bool:
 
     upstream = get_upstream_branch(repo)
     if upstream is None:
-        print(f'No upstream branch set for the {short_name} branch')
+        console_stderr.print(f'No upstream branch set for the {short_name} branch')
         return False
 
     # This is the key call
@@ -141,12 +144,12 @@ def has_unpushed_commits(repo: pygit2.Repository) -> bool:
 
 def get_upstream_branch(repo: pygit2.Repository) -> pygit2.Branch | None:
     if repo.head_is_detached:
-        print('Detached HEAD — no current branch')
+        console_stderr.print('Detached HEAD — no current branch')
         return None
 
     branch_name = repo.head.shorthand
     current_branch = repo.branches.get(branch_name)
     if current_branch is None:
-        print(f'Current branch "{branch_name}" not found in repository')
+        console_stderr.print(f'Current branch "{branch_name}" not found in repository')
         return None
     return current_branch.upstream

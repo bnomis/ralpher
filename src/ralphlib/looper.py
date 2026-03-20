@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import loguru
 
 import ralphlib.giter
+import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.printer
@@ -70,6 +71,13 @@ def loop(options: RalpherOptions) -> None:
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 
+    # hook
+    ralphlib.hooks.event(
+        options,
+        event_type=ralphlib.types.RalpherEventType.START,
+        event_context={'iteration': 0, 'prompt': content},
+    )
+
     # state json
     new_state = {
         'start': now,
@@ -83,6 +91,7 @@ def loop(options: RalpherOptions) -> None:
     loop_times = []
     loop_tds = []
     exit_reason = 'completed all iterations'
+    error = False
 
     for i in range(1, options.iterations + 1):
         loop_start = datetime.datetime.now()
@@ -99,6 +108,13 @@ def loop(options: RalpherOptions) -> None:
             'start': loop_start.isoformat(),
         }
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
+
+        # hook
+        ralphlib.hooks.event(
+            options,
+            event_type=ralphlib.types.RalpherEventType.ITERATION_START,
+            event_context={'iteration': i, 'prompt': p},
+        )
 
         # run the iteration
         try:
@@ -127,10 +143,21 @@ def loop(options: RalpherOptions) -> None:
         # state json
         state_payload = {
             'end': loop_end.isoformat(),
-            'time_readable': loop_time_str,
-            'time_seconds': loop_td.total_seconds(),
+            'iteration_time_readable': loop_time_str,
+            'iteration_time_seconds': loop_td.total_seconds(),
         }
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
+
+        # hook
+        ralphlib.hooks.event(
+            options,
+            event_type=ralphlib.types.RalpherEventType.ITERATION_END,
+            event_context={
+                'iteration': i,
+                'iteration_time_readable': loop_time_str,
+                'iteration_time_seconds': loop_td.total_seconds(),
+            },
+        )
 
         if complete or error or ralphlib.signals.get_should_exit():
             words = []
@@ -191,6 +218,26 @@ def loop(options: RalpherOptions) -> None:
         'overhead_time_seconds': ralpher_overhead_td.total_seconds(),
     }
     ralphlib.state.add_to_state(options, new_state)
+
+    # hook
+    if error:
+        ralphlib.hooks.event(
+            options,
+            event_type=ralphlib.types.RalpherEventType.ERROR,
+            event_context={'iteration': 0},
+        )
+
+    ralphlib.hooks.event(
+        options,
+        event_type=ralphlib.types.RalpherEventType.END,
+        event_context={
+            'iteration': 0,
+            'exit_reason': exit_reason,
+            'iterations_completed': num_loops,
+            'total_time_readable': readable,
+            'total_time_seconds': td.total_seconds(),
+        },
+    )
 
 
 def print_both(

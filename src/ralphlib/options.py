@@ -3,6 +3,8 @@ from typing import Annotated
 
 import cappa
 
+import ralphlib.settings
+
 
 @dataclasses.dataclass
 class RalpherOptions:
@@ -36,6 +38,13 @@ class RalpherOptions:
         cappa.Arg(
             long='--task-file',
             help='Path to tasks file. If --worktree is set, the worktree will be named after the tasks file (without extension)',
+        ),
+    ] = None
+    settings_file: Annotated[
+        str | None,
+        cappa.Arg(
+            long='--settings-file',
+            help='Path to settings file. Overrides ~/.ralpher/settings.json',
         ),
     ] = None
     quiet: Annotated[
@@ -95,8 +104,10 @@ class RalpherOptions:
             '<promise>COMPLETE</promise>',
         ]
     )
+    settings: dict = dataclasses.field(init=False, default_factory=dict)
 
 
 def parse_options() -> RalpherOptions:
     options: RalpherOptions = cappa.parse(RalpherOptions)
+    options = ralphlib.settings.load_settings(options)
     return options
