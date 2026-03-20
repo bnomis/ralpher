@@ -12,3 +12,22 @@ class MessageType(enum.IntEnum):
     COMPLETE = 7
     REGULAR = 8
     ALERT = 9
+
+
+class RalpherEventType(enum.IntEnum):
+    NONE = 0
+    START = 1
+    ITERATION_START = 2
+    ITERATION_END = 3
+    END = 4
+    ERROR = 5
+
+
+ralpher_event_type_to_str = {
+    RalpherEventType.NONE: 'none',
+    RalpherEventType.START: 'start',
+    RalpherEventType.ITERATION_START: 'iteration_start',
+    RalpherEventType.ITERATION_END: 'iteration_end',
+    RalpherEventType.END: 'end',
+    RalpherEventType.ERROR: 'error',
+}

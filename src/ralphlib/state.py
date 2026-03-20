@@ -1,10 +1,10 @@
 import json
 import pathlib
-import sys
 from typing import TYPE_CHECKING
 
 import filelock
 import loguru
+import rich.console
 import tenacity
 
 import ralphlib.exceptions
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 STATE_LOCK_TIMEOUT = 10
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 def load_state(options: RalpherOptions) -> dict | None:
@@ -64,7 +65,7 @@ def add_to_state(
     except Exception as e:
         s = f'Exception in add_to_state: {e}'
         loguru.logger.exception(s)
-        print(s, file=sys.stderr, flush=True)
+        console_stderr.print(s)
         raise
 
 

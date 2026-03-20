@@ -1,0 +1,77 @@
+import datetime
+import shlex
+import subprocess
+import time
+import zoneinfo
+from typing import TYPE_CHECKING, Any
+
+import jinja2
+import loguru
+
+import ralphlib.types
+
+if TYPE_CHECKING:
+    from ralphlib.options import RalpherOptions
+    from ralphlib.types import RalpherEventType
+
+
+def event(
+    options: RalpherOptions,
+    event_type: RalpherEventType,
+    event_context: dict[str, Any],
+) -> None:
+    hooks = options.settings.get('hooks', {})
+    if not hooks:
+        return
+    event_type_string = ralphlib.types.ralpher_event_type_to_str.get(event_type, 'unknown')
+    if event_type_string not in hooks:
+        return
+
+    hook_templates = options.settings.get('hook_templates', True)
+    context = {}
+    if hook_templates:
+        context = make_context(options, event_type, event_context)
+
+    for cmd in hooks[event_type_string]:
+        if hook_templates:
+            cmd = preprocess_hook(cmd, context)
+        run_hook(cmd)
+
+
+def make_context(
+    options: RalpherOptions,
+    event_type: RalpherEventType,
+    event_context: dict[str, Any],
+) -> dict[str, Any]:
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    local_tz = datetime.datetime.now().astimezone().tzinfo
+    now_local = datetime.datetime.now(zoneinfo.ZoneInfo(str(local_tz)))
+    context: dict[str, str] = {
+        'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
+        'iterations': str(options.iterations),
+        'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
+        'datetime_local': now_local.isoformat(),
+        'time_epoch': str(int(time.time())),
+    }
+    if options.task_file:
+        context['task_file'] = options.task_file
+    context.update(event_context)
+    return context
+
+
+def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
+    template = jinja2.Template(cmd)
+    return template.render(**context)
+
+
+def run_hook(cmd: str) -> None:
+    args = shlex.split(cmd)
+    try:
+        subprocess.Popen(  # noqa: S603
+            args,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception as e:
+        loguru.logger.exception(f'Exception running hook: "{cmd}": {e}')
