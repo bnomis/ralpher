@@ -18,6 +18,13 @@ class YNConfirm(rich.prompt.Confirm):
         return prompt
 
 
+def lines_to_text(lines: list[str]) -> rich.text.Text:
+    return rich.text.Text(
+        '\n'.join(lines),
+        style=ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT),
+    )
+
+
 def check_git(options, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
@@ -25,11 +32,7 @@ def check_git(options, path: pathlib.Path | str | None = None) -> None:
     repo_path = discover_repo_path(path=path)
     if repo_path is None:
         lines = ['Warning: not in a git repository.']
-        text = rich.text.Text(
-            '\n'.join(lines),
-            style=ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT),
-        )
-        decision = YNConfirm.ask(text, default=False)
+        decision = YNConfirm.ask(lines_to_text(lines), default=False)
         if not decision:
             sys.exit('Aborting due to not being in a git repository.')
         return
@@ -61,11 +64,7 @@ def check_repo_clean(options, repo_path: str) -> None:
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to commit and push before continuing. Continue?')
-        text = rich.text.Text(
-            '\n'.join(lines),
-            style=ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT),
-        )
-        decision = YNConfirm.ask(text, default=False)
+        decision = YNConfirm.ask(lines_to_text(lines), default=False)
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
@@ -74,11 +73,7 @@ def check_repo_clean(options, repo_path: str) -> None:
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to push before continuing. Continue?')
-        text = rich.text.Text(
-            '\n'.join(lines),
-            style=ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT),
-        )
-        decision = YNConfirm.ask(text, default=False)
+        decision = YNConfirm.ask(lines_to_text(lines), default=False)
         if not decision:
             sys.exit('Aborting due to unpushed commits.')
 
