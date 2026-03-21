@@ -218,7 +218,7 @@
 
 ## Task 7: Test printer.py — type_to_style
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Gap 10
@@ -227,14 +227,14 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_printer.py`
-- [ ] Test each defined `MessageType` maps to expected style string (parametrize)
-- [ ] Test fallback to `'grey30'` for an unknown/unmapped message type (e.g. `NONE`, `CONTENT_START`)
+- [x] Create `src/tests/test_printer.py`
+- [x] Test each defined `MessageType` maps to expected style string (parametrize)
+- [x] Test fallback to `'grey30'` for an unknown/unmapped message type (e.g. `NONE`, `CONTENT_START`)
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_printer.py`
-- [ ] Every `MessageType` that has a defined style is verified
+- [x] All tests pass with `uv run pytest src/tests/test_printer.py`
+- [x] Every `MessageType` that has a defined style is verified
 
 **Notes:**
 
