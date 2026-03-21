@@ -31,7 +31,7 @@ class RalpherOptions:
     ] = None
     prompts: Annotated[
         str | None,
-        cappa.Arg(help='Prompt as a positional argument, does not override --prompt', value_name='PROMPT'),
+        cappa.Arg(long=True, help='Prompt as a positional argument, does not override --prompt', value_name='PROMPT'),
     ] = None
     task_file: Annotated[
         str | None,
@@ -97,7 +97,7 @@ class RalpherOptions:
         list[str],
         cappa.Arg(
             long=True,
-            help='Completion marker strings to look for in agent output to indicate completion. Can be given multiple times. Default: ["<promise>COMPLETE</promise>"]',
+            help='Completion marker strings to look for in agent output to indicate completion. Can be given multiple times. Default: ["&lt;promise&gt;COMPLETE&lt;/promise&gt;"]',
         ),
     ] = dataclasses.field(
         default_factory=lambda: [
@@ -109,5 +109,4 @@ class RalpherOptions:
 
 def parse_options() -> RalpherOptions:
     options: RalpherOptions = cappa.parse(RalpherOptions)
-    options = ralphlib.settings.load_settings(options)
-    return options
+    return ralphlib.settings.load_settings(options)
