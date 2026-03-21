@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import orjson
 import pytest
+from hypothesis import given, settings as hypothesis_settings, strategies as st
 
 import ralphlib.iteration
 import ralphlib.options
@@ -791,3 +792,81 @@ def test_process_child_stdin_is_devnull_integration() -> None:
     )
     proc.wait()
     assert proc.returncode == 0, 'Child should see stdin as non-TTY when stdin=DEVNULL'
+
+
+# --- Task 2: Test slugify, task_file_slug, add_worktree_arg ---
+
+
+def test_slugify_lowercases_input() -> None:
+    assert ralphlib.iteration.slugify('HELLO') == 'hello'
+
+
+def test_slugify_replaces_non_alphanumeric_with_hyphens() -> None:
+    assert ralphlib.iteration.slugify('hello world!') == 'hello-world'
+
+
+def test_slugify_strips_leading_trailing_hyphens() -> None:
+    assert ralphlib.iteration.slugify('--hello--') == 'hello'
+
+
+def test_slugify_collapses_consecutive_special_chars() -> None:
+    assert ralphlib.iteration.slugify('a!!!b') == 'a-b'
+
+
+def test_slugify_returns_empty_string_for_empty_input() -> None:
+    assert ralphlib.iteration.slugify('') == ''
+
+
+@given(st.text())
+@hypothesis_settings(max_examples=20, deadline=10000)
+def test_slugify_output_contains_only_valid_chars(value: str) -> None:
+    result = ralphlib.iteration.slugify(value)
+    assert all(c in 'abcdefghijklmnopqrstuvwxyz0123456789-' for c in result)
+    assert not result.startswith('-')
+    assert not result.endswith('-')
+
+
+def test_task_file_slug_with_multipart_path_uses_parent_stem() -> None:
+    result = ralphlib.iteration.task_file_slug('agents/tasks/my_task.md')
+    assert result == 'tasks-my-task'
+
+
+def test_task_file_slug_with_single_part_path_uses_stem_only() -> None:
+    result = ralphlib.iteration.task_file_slug('my_task.md')
+    assert result == 'my-task'
+
+
+def test_add_worktree_arg_appends_worktree_when_enabled() -> None:
+    options = make_options(worktree=True)
+    cmd = ['claude', '--verbose']
+    result = ralphlib.iteration.add_worktree_arg(options, cmd)
+    assert '--worktree' in result
+
+
+def test_add_worktree_arg_appends_task_file_slug_when_task_file_set() -> None:
+    options = make_options(worktree=True, task_file='agents/tasks/my_task.md')
+    cmd = ['claude', '--verbose']
+    result = ralphlib.iteration.add_worktree_arg(options, cmd)
+    assert '--worktree' in result
+    assert 'tasks-my-task' in result
+
+
+def test_add_worktree_arg_does_not_add_if_worktree_already_present() -> None:
+    options = make_options(worktree=True)
+    cmd = ['claude', '--worktree']
+    result = ralphlib.iteration.add_worktree_arg(options, cmd)
+    assert result.count('--worktree') == 1
+
+
+def test_add_worktree_arg_does_not_add_if_short_flag_already_present() -> None:
+    options = make_options(worktree=True)
+    cmd = ['claude', '-w']
+    result = ralphlib.iteration.add_worktree_arg(options, cmd)
+    assert '--worktree' not in result
+
+
+def test_add_worktree_arg_noop_when_worktree_false() -> None:
+    options = make_options(worktree=False)
+    cmd = ['claude', '--verbose']
+    result = ralphlib.iteration.add_worktree_arg(options, cmd)
+    assert result == ['claude', '--verbose']

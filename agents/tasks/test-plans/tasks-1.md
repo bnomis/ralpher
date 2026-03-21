@@ -49,7 +49,7 @@
 
 ## Task 2: Test iteration.py pure functions — slugify, task_file_slug, add_worktree_arg
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gaps 2, 3, 4
@@ -58,24 +58,24 @@
 
 **Subtasks:**
 
-- [ ] Test `slugify` lowercases input
-- [ ] Test `slugify` replaces non-alphanumeric chars with hyphens
-- [ ] Test `slugify` strips leading/trailing hyphens
-- [ ] Test `slugify` collapses consecutive special chars into single hyphen
-- [ ] Test `slugify` returns empty string for empty input
-- [ ] Add hypothesis test for `slugify` — output contains only `[a-z0-9-]` and no leading/trailing hyphens
-- [ ] Test `task_file_slug` with path having 2+ parts uses parent-stem
-- [ ] Test `task_file_slug` with single-part path uses stem only
-- [ ] Test `add_worktree_arg` appends `--worktree` when `options.worktree` is True
-- [ ] Test `add_worktree_arg` appends task file slug when task_file is set
-- [ ] Test `add_worktree_arg` does not add `--worktree` if already present
-- [ ] Test `add_worktree_arg` does not add `-w` if already present
-- [ ] Test `add_worktree_arg` is a no-op when `options.worktree` is False
+- [x] Test `slugify` lowercases input
+- [x] Test `slugify` replaces non-alphanumeric chars with hyphens
+- [x] Test `slugify` strips leading/trailing hyphens
+- [x] Test `slugify` collapses consecutive special chars into single hyphen
+- [x] Test `slugify` returns empty string for empty input
+- [x] Add hypothesis test for `slugify` — output contains only `[a-z0-9-]` and no leading/trailing hyphens
+- [x] Test `task_file_slug` with path having 2+ parts uses parent-stem
+- [x] Test `task_file_slug` with single-part path uses stem only
+- [x] Test `add_worktree_arg` appends `--worktree` when `options.worktree` is True
+- [x] Test `add_worktree_arg` appends task file slug when task_file is set
+- [x] Test `add_worktree_arg` does not add `--worktree` if already present
+- [x] Test `add_worktree_arg` does not add `-w` if already present
+- [x] Test `add_worktree_arg` is a no-op when `options.worktree` is False
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_iteration.py -k "slugify or task_file_slug or add_worktree_arg"`
-- [ ] Hypothesis test for `slugify` uses `@settings(max_examples=20, deadline=10000)`
+- [x] All tests pass with `uv run pytest src/tests/test_iteration.py -k "slugify or task_file_slug or add_worktree_arg"`
+- [x] Hypothesis test for `slugify` uses `@settings(max_examples=20, deadline=10000)`
 
 **Notes:**
 
