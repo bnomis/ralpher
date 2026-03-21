@@ -54,6 +54,34 @@ class TestStateFile:
         assert result == pathlib.Path('state.json')
 
 
+class TestStateLockFile:
+    def test_returns_none_when_state_not_set(self) -> None:
+        options = make_options(state=None)
+        assert ralphlib.logger.state_lock_file(options) is None
+
+    def test_prepends_logdir_and_appends_lock_when_both_set(self, tmp_path: pathlib.Path) -> None:
+        options = make_options(state='state.json', logdir=str(tmp_path))
+        result = ralphlib.logger.state_lock_file(options)
+        assert result == tmp_path / 'state.json.lock'
+
+    def test_returns_plain_path_with_lock_when_logdir_not_set(self) -> None:
+        options = make_options(state='state.json', logdir=None)
+        result = ralphlib.logger.state_lock_file(options)
+        assert result == pathlib.Path('state.json.lock')
+
+
+class TestInit:
+    def test_creates_log_directory_when_logdir_set(self, tmp_path: pathlib.Path) -> None:
+        log_path = tmp_path / 'nested' / 'logs'
+        options = make_options(logdir=str(log_path))
+        ralphlib.logger.init(options)
+        assert log_path.is_dir()
+
+    def test_noop_when_logdir_not_set(self) -> None:
+        options = make_options(logdir=None)
+        ralphlib.logger.init(options)
+
+
 class TestLogDir:
     def test_raises_valueerror_when_logdir_not_set(self) -> None:
         options = make_options(logdir=None)

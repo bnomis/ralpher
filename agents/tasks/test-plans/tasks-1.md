@@ -189,7 +189,7 @@
 
 ## Task 6: Test logger.py — state_lock_file and init
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Gaps 8, 9
@@ -198,16 +198,16 @@
 
 **Subtasks:**
 
-- [ ] Test `state_lock_file` returns `None` when `options.state` is not set
-- [ ] Test `state_lock_file` prepends logdir and appends `.lock` when both are set
-- [ ] Test `state_lock_file` returns plain path with `.lock` when logdir is not set
-- [ ] Test `init` creates log directory when logdir is set (use `tmp_path`)
-- [ ] Test `init` is a no-op when logdir is not set
+- [x] Test `state_lock_file` returns `None` when `options.state` is not set
+- [x] Test `state_lock_file` prepends logdir and appends `.lock` when both are set
+- [x] Test `state_lock_file` returns plain path with `.lock` when logdir is not set
+- [x] Test `init` creates log directory when logdir is set (use `tmp_path`)
+- [x] Test `init` is a no-op when logdir is not set
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_logger.py`
-- [ ] `state_lock_file` has parity with `state_file` test coverage
+- [x] All tests pass with `uv run pytest src/tests/test_logger.py`
+- [x] `state_lock_file` has parity with `state_file` test coverage
 
 **Notes:**
 
