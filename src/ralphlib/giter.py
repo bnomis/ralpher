@@ -1,7 +1,7 @@
 import pathlib
 import sys
 
-import pygit2
+import git
 import rich.console
 import rich.prompt
 import rich.text
@@ -32,18 +32,18 @@ def check_git(options, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
 
-    repo_path = discover_repo_path(path=path)
-    if repo_path is None:
+    repo = discover_repo_path(path=path)
+    if repo is None:
         lines = ['Warning: not in a git repository.']
         decision = YNConfirm.ask(lines_to_text(lines), default=False)
         if not decision:
             sys.exit('Aborting due to not being in a git repository.')
         return
 
-    check_repo_clean(options, repo_path)
+    check_repo_clean(options, repo)
 
 
-def discover_repo_path(path: pathlib.Path | str | None = None) -> str | None:
+def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | None:
     """
     Returns the path to the git repository if the given path (or current directory) is inside a git repository.
     """
@@ -52,15 +52,17 @@ def discover_repo_path(path: pathlib.Path | str | None = None) -> str | None:
     else:
         path = pathlib.Path(path)
 
-    return pygit2.discover_repository(str(path))
+    try:
+        return git.Repo(str(path), search_parent_directories=True)
+    except git.InvalidGitRepositoryError:
+        return None
 
 
 def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options, repo_path: str) -> None:
-    repo = pygit2.Repository(repo_path)
+def check_repo_clean(options, repo: git.Repo) -> None:
     wts = 'Git worktrees will be created from the origin repo.'
     if not is_clean_strict(repo):
         lines = ['Warning: the git working tree is not clean.']
@@ -81,75 +83,59 @@ def check_repo_clean(options, repo_path: str) -> None:
             sys.exit('Aborting due to unpushed commits.')
 
 
-def is_clean_strict(repo: pygit2.Repository) -> bool:
+def is_clean_strict(repo: git.Repo) -> bool:
     """Clean including untracked files (default git status behavior)"""
     return is_working_tree_clean(repo, include_untracked=True)
 
 
-def is_clean_no_untracked(repo: pygit2.Repository) -> bool:
+def is_clean_no_untracked(repo: git.Repo) -> bool:
     """Clean ignoring untracked files (like git diff --quiet)"""
     return is_working_tree_clean(repo, include_untracked=False)
 
 
-def is_working_tree_clean(repo: pygit2.Repository, include_untracked: bool = True) -> bool:
+def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> bool:
     """
     Returns True if the working tree is clean (no changes, no untracked files by default).
 
     - include_untracked=False → ignores new/untracked files (like git status --untracked-files=no)
     """
-    status = repo.status(untracked_files='all' if include_untracked else 'no', ignored=False)
-
-    # Most common & fastest check
-    if not status:
-        return True  # empty dict == clean
-
-    # More explicit (handles weird edge cases better)
-    return all(flags == pygit2.GIT_STATUS_CURRENT for flags in status.values())
+    return not repo.is_dirty(untracked_files=include_untracked)
 
 
-def has_unpushed_commits(repo: pygit2.Repository) -> bool:
+def has_unpushed_commits(repo: git.Repo) -> bool:
     """
     Returns True if the current branch has commits not pushed to its upstream
     (usually origin/<branch>).
     """
-
-    callbacks = pygit2.RemoteCallbacks(credentials=pygit2.KeypairFromAgent('git'))
-
-    # Optional but strongly recommended: fetch latest remote state first
-    # (otherwise ahead/behind can be outdated)
     try:
-        origin = repo.remotes['origin']
-        origin.fetch(callbacks=callbacks)
-    except KeyError:
-        console_stderr.print("No 'origin' remote found")
-        return False
-    except Exception as e:
-        console_stderr.print(f'Fetch failed: {e}')
+        origin = repo.remotes.origin
+    except ValueError:
+        console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
         return False
 
-    head = repo.head
-    short_name = head.shorthand  # e.g. 'main'
+    try:
+        origin.fetch()
+    except Exception as e:
+        console_stderr.print(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
+        return False
 
     upstream = get_upstream_branch(repo)
     if upstream is None:
-        console_stderr.print(f'No upstream branch set for the {short_name} branch')
         return False
 
-    # This is the key call
-    ahead, _ = repo.ahead_behind(head.target, upstream.target)
-
-    # ahead > 0 means local commits not present on the remote tracking branch
+    # Count commits ahead of upstream
+    ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
     return ahead > 0
 
 
-def get_upstream_branch(repo: pygit2.Repository) -> pygit2.Branch | None:
-    if repo.head_is_detached:
+def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
+    if repo.head.is_detached:
         console_stderr.print('Detached HEAD — no current branch')
         return None
 
-    branch_name = repo.head.shorthand
-    current_branch = repo.branches.get(branch_name)
-    if current_branch is None:
-        console_stderr.print(f'Current branch "{branch_name}" not found in repository')
+    branch = repo.active_branch
+    tracking = branch.tracking_branch()
+    if tracking is None:
+        console_stderr.print(f'No upstream branch set for the {branch.name} branch')
         return None
-    return current_branch.upstream
+    return tracking
