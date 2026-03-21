@@ -8,7 +8,7 @@
 
 ## Task 1: Test hooks.py
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Gap 1
@@ -17,26 +17,26 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_hooks.py`
-- [ ] Test `event` returns early when no hooks configured in settings
-- [ ] Test `event` returns early when event type not in hooks dict
-- [ ] Test `event` calls `preprocess_hook` and `run_hook` for matching event type
-- [ ] Test `event` skips template preprocessing when `hook_templates` is False
-- [ ] Test `event` calls `run_hook` for each command in the hook list
-- [ ] Test `preprocess_hook` renders jinja2 template with context
-- [ ] Test `preprocess_hook` passes through plain strings without templates
-- [ ] Test `make_context` includes event_type, iterations, datetime fields, and time_epoch
-- [ ] Test `make_context` includes task_file when set
-- [ ] Test `make_context` merges event_context into result
-- [ ] Test `run_hook` calls subprocess.Popen with correct args (mock Popen)
-- [ ] Test `run_hook` logs exception on subprocess failure
+- [x] Create `src/tests/test_hooks.py`
+- [x] Test `event` returns early when no hooks configured in settings
+- [x] Test `event` returns early when event type not in hooks dict
+- [x] Test `event` calls `preprocess_hook` and `run_hook` for matching event type
+- [x] Test `event` skips template preprocessing when `hook_templates` is False
+- [x] Test `event` calls `run_hook` for each command in the hook list
+- [x] Test `preprocess_hook` renders jinja2 template with context
+- [x] Test `preprocess_hook` passes through plain strings without templates
+- [x] Test `make_context` includes event_type, iterations, datetime fields, and time_epoch
+- [x] Test `make_context` includes task_file when set
+- [x] Test `make_context` merges event_context into result
+- [x] Test `run_hook` calls subprocess.Popen with correct args (mock Popen)
+- [x] Test `run_hook` logs exception on subprocess failure
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_hooks.py`
-- [ ] `event` branching paths (no hooks, wrong event type, templates on/off) each have a test
-- [ ] `preprocess_hook` tested as pure function
-- [ ] `run_hook` tested with mocked subprocess
+- [x] All tests pass with `uv run pytest src/tests/test_hooks.py`
+- [x] `event` branching paths (no hooks, wrong event type, templates on/off) each have a test
+- [x] `preprocess_hook` tested as pure function
+- [x] `run_hook` tested with mocked subprocess
 
 **Notes:**
 
@@ -49,7 +49,7 @@
 
 ## Task 2: Test iteration.py pure functions — slugify, task_file_slug, add_worktree_arg
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gaps 2, 3, 4
@@ -58,24 +58,24 @@
 
 **Subtasks:**
 
-- [ ] Test `slugify` lowercases input
-- [ ] Test `slugify` replaces non-alphanumeric chars with hyphens
-- [ ] Test `slugify` strips leading/trailing hyphens
-- [ ] Test `slugify` collapses consecutive special chars into single hyphen
-- [ ] Test `slugify` returns empty string for empty input
-- [ ] Add hypothesis test for `slugify` — output contains only `[a-z0-9-]` and no leading/trailing hyphens
-- [ ] Test `task_file_slug` with path having 2+ parts uses parent-stem
-- [ ] Test `task_file_slug` with single-part path uses stem only
-- [ ] Test `add_worktree_arg` appends `--worktree` when `options.worktree` is True
-- [ ] Test `add_worktree_arg` appends task file slug when task_file is set
-- [ ] Test `add_worktree_arg` does not add `--worktree` if already present
-- [ ] Test `add_worktree_arg` does not add `-w` if already present
-- [ ] Test `add_worktree_arg` is a no-op when `options.worktree` is False
+- [x] Test `slugify` lowercases input
+- [x] Test `slugify` replaces non-alphanumeric chars with hyphens
+- [x] Test `slugify` strips leading/trailing hyphens
+- [x] Test `slugify` collapses consecutive special chars into single hyphen
+- [x] Test `slugify` returns empty string for empty input
+- [x] Add hypothesis test for `slugify` — output contains only `[a-z0-9-]` and no leading/trailing hyphens
+- [x] Test `task_file_slug` with path having 2+ parts uses parent-stem
+- [x] Test `task_file_slug` with single-part path uses stem only
+- [x] Test `add_worktree_arg` appends `--worktree` when `options.worktree` is True
+- [x] Test `add_worktree_arg` appends task file slug when task_file is set
+- [x] Test `add_worktree_arg` does not add `--worktree` if already present
+- [x] Test `add_worktree_arg` does not add `-w` if already present
+- [x] Test `add_worktree_arg` is a no-op when `options.worktree` is False
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_iteration.py -k "slugify or task_file_slug or add_worktree_arg"`
-- [ ] Hypothesis test for `slugify` uses `@settings(max_examples=20, deadline=10000)`
+- [x] All tests pass with `uv run pytest src/tests/test_iteration.py -k "slugify or task_file_slug or add_worktree_arg"`
+- [x] Hypothesis test for `slugify` uses `@settings(max_examples=20, deadline=10000)`
 
 **Notes:**
 
@@ -86,7 +86,7 @@
 
 ## Task 3: Test iteration.py process_user
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gap 5
@@ -95,17 +95,17 @@
 
 **Subtasks:**
 
-- [ ] Test `process_user` with matching `tool_use_id` in `background_tools` extracts and stores background task ID via regex
-- [ ] Test `process_user` with `tool_use_id` not in `background_tools` is a no-op
-- [ ] Test `process_user` with empty message returns `NONE`
-- [ ] Test `process_user` with non-user role returns `NONE`
-- [ ] Test `process_user` with `tool_result` type but no regex match is a no-op
-- [ ] Test `process_user` always returns `(NONE, line)`
+- [x] Test `process_user` with matching `tool_use_id` in `background_tools` extracts and stores background task ID via regex
+- [x] Test `process_user` with `tool_use_id` not in `background_tools` is a no-op
+- [x] Test `process_user` with empty message returns `NONE`
+- [x] Test `process_user` with non-user role returns `NONE`
+- [x] Test `process_user` with `tool_result` type but no regex match is a no-op
+- [x] Test `process_user` always returns `(NONE, line)`
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_iteration.py -k "process_user"`
-- [ ] Each branching path in `process_user` has at least one test
+- [x] All tests pass with `uv run pytest src/tests/test_iteration.py -k "process_user"`
+- [x] Each branching path in `process_user` has at least one test
 
 **Notes:**
 
@@ -117,7 +117,7 @@
 
 ## Task 4: Test settings.py
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gap 6
@@ -126,18 +126,18 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_settings.py`
-- [ ] Test `load_settings_from_file` with non-existent file is a no-op (settings unchanged)
-- [ ] Test `load_settings_from_file` with valid JSON file merges into options.settings
-- [ ] Test `load_settings_from_file` overwrites existing keys on conflict
-- [ ] Test `load_settings` applies default settings, then home config, then custom file in order
-- [ ] Test `load_settings` with no settings_file only loads home config
-- [ ] Test `load_settings` with settings_file overrides home config values
+- [x] Create `src/tests/test_settings.py`
+- [x] Test `load_settings_from_file` with non-existent file is a no-op (settings unchanged)
+- [x] Test `load_settings_from_file` with valid JSON file merges into options.settings
+- [x] Test `load_settings_from_file` overwrites existing keys on conflict
+- [x] Test `load_settings` applies default settings, then home config, then custom file in order
+- [x] Test `load_settings` with no settings_file only loads home config
+- [x] Test `load_settings` with settings_file overrides home config values
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_settings.py`
-- [ ] File merging precedence (default → home → custom) is verified
+- [x] All tests pass with `uv run pytest src/tests/test_settings.py`
+- [x] File merging precedence (default → home → custom) is verified
 
 **Notes:**
 
@@ -149,7 +149,7 @@
 
 ## Task 5: Test giter.py
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Gap 7
@@ -158,25 +158,25 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_giter.py`
-- [ ] Test `discover_repo_path` returns `git.Repo` for a valid git repo (use `tmp_path` + `git.Repo.init`)
-- [ ] Test `discover_repo_path` returns `None` for a non-git directory
-- [ ] Test `is_git_repo` returns `True` for a valid git repo
-- [ ] Test `is_git_repo` returns `False` for a non-git directory
-- [ ] Test `is_working_tree_clean` returns `True` for clean repo
-- [ ] Test `is_working_tree_clean` returns `False` for repo with modified file
-- [ ] Test `is_working_tree_clean` with `include_untracked=False` ignores untracked files
-- [ ] Test `is_working_tree_clean` with `include_untracked=True` detects untracked files
-- [ ] Test `is_clean_strict` delegates correctly (includes untracked)
-- [ ] Test `is_clean_no_untracked` delegates correctly (excludes untracked)
-- [ ] Test `get_upstream_branch` returns `None` for detached HEAD
-- [ ] Test `get_upstream_branch` returns `None` when no tracking branch set
-- [ ] Test `lines_to_text` returns a `rich.text.Text` with joined lines
+- [x] Create `src/tests/test_giter.py`
+- [x] Test `discover_repo_path` returns `git.Repo` for a valid git repo (use `tmp_path` + `git.Repo.init`)
+- [x] Test `discover_repo_path` returns `None` for a non-git directory
+- [x] Test `is_git_repo` returns `True` for a valid git repo
+- [x] Test `is_git_repo` returns `False` for a non-git directory
+- [x] Test `is_working_tree_clean` returns `True` for clean repo
+- [x] Test `is_working_tree_clean` returns `False` for repo with modified file
+- [x] Test `is_working_tree_clean` with `include_untracked=False` ignores untracked files
+- [x] Test `is_working_tree_clean` with `include_untracked=True` detects untracked files
+- [x] Test `is_clean_strict` delegates correctly (includes untracked)
+- [x] Test `is_clean_no_untracked` delegates correctly (excludes untracked)
+- [x] Test `get_upstream_branch` returns `None` for detached HEAD
+- [x] Test `get_upstream_branch` returns `None` when no tracking branch set
+- [x] Test `lines_to_text` returns a `rich.text.Text` with joined lines
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_giter.py`
-- [ ] Tests use temporary git repos (not the project repo)
+- [x] All tests pass with `uv run pytest src/tests/test_giter.py`
+- [x] Tests use temporary git repos (not the project repo)
 
 **Notes:**
 
@@ -189,7 +189,7 @@
 
 ## Task 6: Test logger.py — state_lock_file and init
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Gaps 8, 9
@@ -198,16 +198,16 @@
 
 **Subtasks:**
 
-- [ ] Test `state_lock_file` returns `None` when `options.state` is not set
-- [ ] Test `state_lock_file` prepends logdir and appends `.lock` when both are set
-- [ ] Test `state_lock_file` returns plain path with `.lock` when logdir is not set
-- [ ] Test `init` creates log directory when logdir is set (use `tmp_path`)
-- [ ] Test `init` is a no-op when logdir is not set
+- [x] Test `state_lock_file` returns `None` when `options.state` is not set
+- [x] Test `state_lock_file` prepends logdir and appends `.lock` when both are set
+- [x] Test `state_lock_file` returns plain path with `.lock` when logdir is not set
+- [x] Test `init` creates log directory when logdir is set (use `tmp_path`)
+- [x] Test `init` is a no-op when logdir is not set
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_logger.py`
-- [ ] `state_lock_file` has parity with `state_file` test coverage
+- [x] All tests pass with `uv run pytest src/tests/test_logger.py`
+- [x] `state_lock_file` has parity with `state_file` test coverage
 
 **Notes:**
 
@@ -218,7 +218,7 @@
 
 ## Task 7: Test printer.py — type_to_style
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Gap 10
@@ -227,14 +227,14 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_printer.py`
-- [ ] Test each defined `MessageType` maps to expected style string (parametrize)
-- [ ] Test fallback to `'grey30'` for an unknown/unmapped message type (e.g. `NONE`, `CONTENT_START`)
+- [x] Create `src/tests/test_printer.py`
+- [x] Test each defined `MessageType` maps to expected style string (parametrize)
+- [x] Test fallback to `'grey30'` for an unknown/unmapped message type (e.g. `NONE`, `CONTENT_START`)
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_printer.py`
-- [ ] Every `MessageType` that has a defined style is verified
+- [x] All tests pass with `uv run pytest src/tests/test_printer.py`
+- [x] Every `MessageType` that has a defined style is verified
 
 **Notes:**
 
