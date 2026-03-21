@@ -117,7 +117,7 @@
 
 ## Task 4: Test settings.py
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gap 6
@@ -126,18 +126,18 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_settings.py`
-- [ ] Test `load_settings_from_file` with non-existent file is a no-op (settings unchanged)
-- [ ] Test `load_settings_from_file` with valid JSON file merges into options.settings
-- [ ] Test `load_settings_from_file` overwrites existing keys on conflict
-- [ ] Test `load_settings` applies default settings, then home config, then custom file in order
-- [ ] Test `load_settings` with no settings_file only loads home config
-- [ ] Test `load_settings` with settings_file overrides home config values
+- [x] Create `src/tests/test_settings.py`
+- [x] Test `load_settings_from_file` with non-existent file is a no-op (settings unchanged)
+- [x] Test `load_settings_from_file` with valid JSON file merges into options.settings
+- [x] Test `load_settings_from_file` overwrites existing keys on conflict
+- [x] Test `load_settings` applies default settings, then home config, then custom file in order
+- [x] Test `load_settings` with no settings_file only loads home config
+- [x] Test `load_settings` with settings_file overrides home config values
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_settings.py`
-- [ ] File merging precedence (default → home → custom) is verified
+- [x] All tests pass with `uv run pytest src/tests/test_settings.py`
+- [x] File merging precedence (default → home → custom) is verified
 
 **Notes:**
 
