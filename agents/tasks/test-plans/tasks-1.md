@@ -149,7 +149,7 @@
 
 ## Task 5: Test giter.py
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Gap 7
@@ -158,25 +158,25 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_giter.py`
-- [ ] Test `discover_repo_path` returns `git.Repo` for a valid git repo (use `tmp_path` + `git.Repo.init`)
-- [ ] Test `discover_repo_path` returns `None` for a non-git directory
-- [ ] Test `is_git_repo` returns `True` for a valid git repo
-- [ ] Test `is_git_repo` returns `False` for a non-git directory
-- [ ] Test `is_working_tree_clean` returns `True` for clean repo
-- [ ] Test `is_working_tree_clean` returns `False` for repo with modified file
-- [ ] Test `is_working_tree_clean` with `include_untracked=False` ignores untracked files
-- [ ] Test `is_working_tree_clean` with `include_untracked=True` detects untracked files
-- [ ] Test `is_clean_strict` delegates correctly (includes untracked)
-- [ ] Test `is_clean_no_untracked` delegates correctly (excludes untracked)
-- [ ] Test `get_upstream_branch` returns `None` for detached HEAD
-- [ ] Test `get_upstream_branch` returns `None` when no tracking branch set
-- [ ] Test `lines_to_text` returns a `rich.text.Text` with joined lines
+- [x] Create `src/tests/test_giter.py`
+- [x] Test `discover_repo_path` returns `git.Repo` for a valid git repo (use `tmp_path` + `git.Repo.init`)
+- [x] Test `discover_repo_path` returns `None` for a non-git directory
+- [x] Test `is_git_repo` returns `True` for a valid git repo
+- [x] Test `is_git_repo` returns `False` for a non-git directory
+- [x] Test `is_working_tree_clean` returns `True` for clean repo
+- [x] Test `is_working_tree_clean` returns `False` for repo with modified file
+- [x] Test `is_working_tree_clean` with `include_untracked=False` ignores untracked files
+- [x] Test `is_working_tree_clean` with `include_untracked=True` detects untracked files
+- [x] Test `is_clean_strict` delegates correctly (includes untracked)
+- [x] Test `is_clean_no_untracked` delegates correctly (excludes untracked)
+- [x] Test `get_upstream_branch` returns `None` for detached HEAD
+- [x] Test `get_upstream_branch` returns `None` when no tracking branch set
+- [x] Test `lines_to_text` returns a `rich.text.Text` with joined lines
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_giter.py`
-- [ ] Tests use temporary git repos (not the project repo)
+- [x] All tests pass with `uv run pytest src/tests/test_giter.py`
+- [x] Tests use temporary git repos (not the project repo)
 
 **Notes:**
 
