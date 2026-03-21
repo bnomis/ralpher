@@ -86,7 +86,7 @@
 
 ## Task 3: Test iteration.py process_user
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Gap 5
@@ -95,17 +95,17 @@
 
 **Subtasks:**
 
-- [ ] Test `process_user` with matching `tool_use_id` in `background_tools` extracts and stores background task ID via regex
-- [ ] Test `process_user` with `tool_use_id` not in `background_tools` is a no-op
-- [ ] Test `process_user` with empty message returns `NONE`
-- [ ] Test `process_user` with non-user role returns `NONE`
-- [ ] Test `process_user` with `tool_result` type but no regex match is a no-op
-- [ ] Test `process_user` always returns `(NONE, line)`
+- [x] Test `process_user` with matching `tool_use_id` in `background_tools` extracts and stores background task ID via regex
+- [x] Test `process_user` with `tool_use_id` not in `background_tools` is a no-op
+- [x] Test `process_user` with empty message returns `NONE`
+- [x] Test `process_user` with non-user role returns `NONE`
+- [x] Test `process_user` with `tool_result` type but no regex match is a no-op
+- [x] Test `process_user` always returns `(NONE, line)`
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_iteration.py -k "process_user"`
-- [ ] Each branching path in `process_user` has at least one test
+- [x] All tests pass with `uv run pytest src/tests/test_iteration.py -k "process_user"`
+- [x] Each branching path in `process_user` has at least one test
 
 **Notes:**
 

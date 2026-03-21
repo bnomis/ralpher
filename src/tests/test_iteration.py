@@ -870,3 +870,142 @@ def test_add_worktree_arg_noop_when_worktree_false() -> None:
     cmd = ['claude', '--verbose']
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert result == ['claude', '--verbose']
+
+
+# --- Task 3: Test process_user ---
+
+
+def test_process_user_matching_tool_use_id_extracts_background_task_id() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    tool_use_id = 'tool_abc'
+    context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
+    payload = {
+        'type': 'user',
+        'message': {
+            'role': 'user',
+            'content': [
+                {
+                    'tool_use_id': tool_use_id,
+                    'type': 'tool_result',
+                    'content': 'Command running in background with ID: bg999.',
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert context.background_id_to_tool['bg999'] == tool_use_id
+
+
+def test_process_user_tool_use_id_not_in_background_tools_is_noop() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'user',
+        'message': {
+            'role': 'user',
+            'content': [
+                {
+                    'tool_use_id': 'tool_unknown',
+                    'type': 'tool_result',
+                    'content': 'Command running in background with ID: bg123.',
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert len(context.background_id_to_tool) == 0
+
+
+def test_process_user_empty_message_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'user', 'message': {}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+def test_process_user_non_user_role_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {
+        'type': 'user',
+        'message': {
+            'role': 'assistant',
+            'content': [
+                {
+                    'tool_use_id': 'tool_abc',
+                    'type': 'tool_result',
+                    'content': 'Command running in background with ID: bg123.',
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+    context.background_tools['tool_abc'] = {'name': 'Bash', 'input': '  sleep 10'}
+
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert len(context.background_id_to_tool) == 0
+
+
+def test_process_user_tool_result_no_regex_match_is_noop() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    tool_use_id = 'tool_abc'
+    context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
+    payload = {
+        'type': 'user',
+        'message': {
+            'role': 'user',
+            'content': [
+                {
+                    'tool_use_id': tool_use_id,
+                    'type': 'tool_result',
+                    'content': 'Some output that does not match the regex pattern.',
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert len(context.background_id_to_tool) == 0
+
+
+def test_process_user_always_returns_none_and_line() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    tool_use_id = 'tool_abc'
+    context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
+    payload = {
+        'type': 'user',
+        'message': {
+            'role': 'user',
+            'content': [
+                {
+                    'tool_use_id': tool_use_id,
+                    'type': 'tool_result',
+                    'content': 'Command running in background with ID: bg999.',
+                },
+            ],
+        },
+    }
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
