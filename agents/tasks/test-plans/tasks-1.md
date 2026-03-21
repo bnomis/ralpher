@@ -8,7 +8,7 @@
 
 ## Task 1: Test hooks.py
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Gap 1
@@ -17,26 +17,26 @@
 
 **Subtasks:**
 
-- [ ] Create `src/tests/test_hooks.py`
-- [ ] Test `event` returns early when no hooks configured in settings
-- [ ] Test `event` returns early when event type not in hooks dict
-- [ ] Test `event` calls `preprocess_hook` and `run_hook` for matching event type
-- [ ] Test `event` skips template preprocessing when `hook_templates` is False
-- [ ] Test `event` calls `run_hook` for each command in the hook list
-- [ ] Test `preprocess_hook` renders jinja2 template with context
-- [ ] Test `preprocess_hook` passes through plain strings without templates
-- [ ] Test `make_context` includes event_type, iterations, datetime fields, and time_epoch
-- [ ] Test `make_context` includes task_file when set
-- [ ] Test `make_context` merges event_context into result
-- [ ] Test `run_hook` calls subprocess.Popen with correct args (mock Popen)
-- [ ] Test `run_hook` logs exception on subprocess failure
+- [x] Create `src/tests/test_hooks.py`
+- [x] Test `event` returns early when no hooks configured in settings
+- [x] Test `event` returns early when event type not in hooks dict
+- [x] Test `event` calls `preprocess_hook` and `run_hook` for matching event type
+- [x] Test `event` skips template preprocessing when `hook_templates` is False
+- [x] Test `event` calls `run_hook` for each command in the hook list
+- [x] Test `preprocess_hook` renders jinja2 template with context
+- [x] Test `preprocess_hook` passes through plain strings without templates
+- [x] Test `make_context` includes event_type, iterations, datetime fields, and time_epoch
+- [x] Test `make_context` includes task_file when set
+- [x] Test `make_context` merges event_context into result
+- [x] Test `run_hook` calls subprocess.Popen with correct args (mock Popen)
+- [x] Test `run_hook` logs exception on subprocess failure
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass with `uv run pytest src/tests/test_hooks.py`
-- [ ] `event` branching paths (no hooks, wrong event type, templates on/off) each have a test
-- [ ] `preprocess_hook` tested as pure function
-- [ ] `run_hook` tested with mocked subprocess
+- [x] All tests pass with `uv run pytest src/tests/test_hooks.py`
+- [x] `event` branching paths (no hooks, wrong event type, templates on/off) each have a test
+- [x] `preprocess_hook` tested as pure function
+- [x] `run_hook` tested with mocked subprocess
 
 **Notes:**
 
