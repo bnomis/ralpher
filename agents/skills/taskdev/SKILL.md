@@ -46,6 +46,16 @@ When the input document is not a spec (e.g., an audit review file):
 - File header: use **Source:** `<input path>` instead of **Spec:**
 - Task template: use **Source Reference:** `<finding number>` instead of **Spec Reference:**
 
+## Gather context
+
+1. Read `AGENTS.md` and `README.md`
+2. Read `agents/tasks/index.md` (if it exists)
+3. Read existing task files in `agents/tasks/<SLUG>/tasks-*.md` (if they exists)
+
+## Follow existing rules and standards
+
+All tasks should following the standards in AGENTS.md established for source code, testing and file system layout.
+
 ## Workflow
 
 1. Read the spec at the resolved path

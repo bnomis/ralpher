@@ -43,6 +43,15 @@ Specs must be detailed enough that the [taskdev](../taskdev/SKILL.md) skill can 
 
 A single spec should cover one module or one cohesive feature. If a spec exceeds ~200 lines or has more than 8 top-level sections, it is likely too broad — split into separate specs and link them.
 
+## Gather context
+
+1. Read `AGENTS.md` and `README.md`
+2. Read `agents/specs/index.md` (if it exists) to discover all specs
+
+## Follow existing rules and standards
+
+All specs should following the standards in AGENTS.md established for source code, testing and file system layout.
+
 ## Workflow
 
 Follow this decision tree:
