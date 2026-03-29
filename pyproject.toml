@@ -15,12 +15,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "hypothesis>=6.151.9",
-    "pytest>=9.0.2",
-    "pytest-randomly>=4.0.1",
-]
+dev = ["hypothesis>=6.151.9", "pytest>=9.0.2", "pytest-randomly>=4.0.1"]
 
+[tool.uv]
+exclude-newer = "14 days"
 
 [tool.ruff]
 line-length = 160
