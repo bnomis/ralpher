@@ -2,11 +2,11 @@ import datetime
 import shlex
 import subprocess
 import time
-import zoneinfo
 from typing import TYPE_CHECKING, Any
 
 import jinja2
 import loguru
+import tzlocal
 
 import ralphlib.types
 
@@ -44,8 +44,8 @@ def make_context(
     event_context: dict[str, Any],
 ) -> dict[str, Any]:
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    local_tz = datetime.datetime.now().astimezone().tzinfo
-    now_local = datetime.datetime.now(zoneinfo.ZoneInfo(str(local_tz)))
+    local_tz = tzlocal.get_localzone()
+    now_local = datetime.datetime.now(local_tz)
     context: dict[str, str] = {
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
         'iterations': str(options.iterations),
