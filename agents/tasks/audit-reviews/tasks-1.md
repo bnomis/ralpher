@@ -38,7 +38,7 @@
 
 ## Task 2: Fix `giter.py:check_repo_clean` missing `options` in `lines_to_text` calls
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -47,16 +47,16 @@
 
 **Subtasks:**
 
-- [ ] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 77
-- [ ] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 86
-- [ ] Run `uv run ruff check src/ralphlib/giter.py` to confirm no lint issues
-- [ ] Run `uv run pytest src/tests/test_giter.py` and confirm all tests pass
+- [x] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 77
+- [x] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 86
+- [x] Run `uv run ruff check src/ralphlib/giter.py` to confirm no lint issues
+- [x] Run `uv run pytest src/tests/test_giter.py` and confirm all tests pass
 
 **Acceptance Criteria:**
 
-- [ ] Both `lines_to_text` calls pass `options` as the first argument
-- [ ] All giter tests pass
-- [ ] `uv run ruff check src/ralphlib/giter.py` passes
+- [x] Both `lines_to_text` calls pass `options` as the first argument
+- [x] All giter tests pass
+- [x] `uv run ruff check src/ralphlib/giter.py` passes
 
 **Notes:**
 

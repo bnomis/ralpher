@@ -74,7 +74,7 @@ def check_repo_clean(options, repo: git.Repo) -> None:
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to commit and push before continuing. Continue?')
-        decision = YNConfirm.ask(lines_to_text(lines), default=False)
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
@@ -83,7 +83,7 @@ def check_repo_clean(options, repo: git.Repo) -> None:
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to push before continuing. Continue?')
-        decision = YNConfirm.ask(lines_to_text(lines), default=False)
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unpushed commits.')
 
