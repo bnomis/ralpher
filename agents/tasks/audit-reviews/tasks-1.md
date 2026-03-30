@@ -67,7 +67,7 @@
 
 ## Task 3: Add type annotation to `giter.py:check_repo_clean`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 3
@@ -76,14 +76,14 @@
 
 **Subtasks:**
 
-- [ ] Change `def check_repo_clean(options, repo: git.Repo) -> None:` to `def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:`
-- [ ] Ensure `RalpherOptions` is available via the existing `TYPE_CHECKING` import block
-- [ ] Run `uv run ruff check src/ralphlib/giter.py`
+- [x] Change `def check_repo_clean(options, repo: git.Repo) -> None:` to `def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:`
+- [x] Ensure `RalpherOptions` is available via the existing `TYPE_CHECKING` import block
+- [x] Run `uv run ruff check src/ralphlib/giter.py`
 
 **Acceptance Criteria:**
 
-- [ ] `check_repo_clean` has full type annotations on all parameters and return type
-- [ ] Ruff passes
+- [x] `check_repo_clean` has full type annotations on all parameters and return type
+- [x] Ruff passes
 
 **Notes:**
 

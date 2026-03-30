@@ -67,7 +67,7 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options, repo: git.Repo) -> None:
+def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
     wts = 'Git worktrees will be created from the origin repo.'
     if not is_clean_strict(repo):
         lines = ['Warning: the git working tree is not clean.']
