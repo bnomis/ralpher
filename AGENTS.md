@@ -18,21 +18,38 @@ Record logs
 src/
 ├── ralphlib/              # Main library package
 │   ├── __init__.py
+│   ├── exceptions.py
+│   ├── giter.py
+│   ├── hooks.py
 │   ├── iteration.py
 │   ├── logger.py
 │   ├── looper.py
 │   ├── options.py
 │   ├── printer.py
+│   ├── settings.py
+│   ├── signals.py
 │   ├── state.py
 │   ├── templater.py
 │   └── types.py
 └── tests/                 # Tests mirror source structure
     ├── __init__.py
+    ├── test_giter.py
+    ├── test_hooks.py
+    ├── test_iteration.py
+    ├── test_logger.py
+    ├── test_looper.py
+    ├── test_printer.py
+    ├── test_process_termination.py
+    ├── test_settings.py
+    ├── test_signals.py
+    ├── test_state.py
     └── test_templater.py
 bin/                       # Entry point scripts
 ├── activate.sh
 ├── ralpher.py
-└── ralpher.sh
+├── ralpher.sh
+├── ralpherun.sh
+└── rrq.sh
 logs/                      # Application log output
 ```
 

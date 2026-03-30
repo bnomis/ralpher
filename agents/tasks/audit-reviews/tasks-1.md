@@ -121,7 +121,7 @@
 
 ## Task 5: Update `AGENTS.md` project structure
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 5, Finding 6
@@ -130,16 +130,16 @@
 
 **Subtasks:**
 
-- [ ] Run `ls` on `src/ralphlib/`, `src/tests/`, and `bin/` to get current file lists
-- [ ] Update the project structure tree in `AGENTS.md:17-37` with all current files in alphabetical order
-- [ ] Verify the updated tree matches the actual filesystem
+- [x] Run `ls` on `src/ralphlib/`, `src/tests/`, and `bin/` to get current file lists
+- [x] Update the project structure tree in `AGENTS.md:17-37` with all current files in alphabetical order
+- [x] Verify the updated tree matches the actual filesystem
 
 **Acceptance Criteria:**
 
-- [ ] Every `.py` file in `src/ralphlib/` is listed in the project structure
-- [ ] Every `test_*.py` file in `src/tests/` is listed
-- [ ] Every script in `bin/` is listed
-- [ ] Files are in alphabetical order within each directory
+- [x] Every `.py` file in `src/ralphlib/` is listed in the project structure
+- [x] Every `test_*.py` file in `src/tests/` is listed
+- [x] Every script in `bin/` is listed
+- [x] Files are in alphabetical order within each directory
 
 **Notes:**
 
