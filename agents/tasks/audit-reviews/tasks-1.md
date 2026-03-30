@@ -8,7 +8,7 @@
 
 ## Task 1: Fix `signals.py` `console_print` calls (missing `options`)
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Finding 1
@@ -17,17 +17,17 @@
 
 **Subtasks:**
 
-- [ ] Decide approach: either (a) pass `options` to `GracefulTerminator.__init__` and store as `self.options`, then pass to `console_print`, or (b) replace `console_print` calls with direct `console.print(message, style=...)` calls since signal handlers should avoid complex state
-- [ ] Update all 4 `console_print` calls in `signals.py:39-42, 47-50, 58-61, 65-68`
-- [ ] If approach (a): update `looper.py:24` to pass `options` to `GracefulTerminator(options)`
-- [ ] Update `test_signals.py` to account for the new constructor signature or changed print calls
-- [ ] Run `uv run pytest src/tests/test_signals.py` and confirm all tests pass
+- [x] Decide approach: either (a) pass `options` to `GracefulTerminator.__init__` and store as `self.options`, then pass to `console_print`, or (b) replace `console_print` calls with direct `console.print(message, style=...)` calls since signal handlers should avoid complex state
+- [x] Update all 4 `console_print` calls in `signals.py:39-42, 47-50, 58-61, 65-68`
+- [x] If approach (a): update `looper.py:24` to pass `options` to `GracefulTerminator(options)`
+- [x] Update `test_signals.py` to account for the new constructor signature or changed print calls
+- [x] Run `uv run pytest src/tests/test_signals.py` and confirm all tests pass
 
 **Acceptance Criteria:**
 
-- [ ] `GracefulTerminator.handler` does not raise `TypeError` when invoked
-- [ ] All existing signal tests pass
-- [ ] `uv run ruff check src/ralphlib/signals.py` passes
+- [x] `GracefulTerminator.handler` does not raise `TypeError` when invoked
+- [x] All existing signal tests pass
+- [x] `uv run ruff check src/ralphlib/signals.py` passes
 
 **Notes:**
 
@@ -38,7 +38,7 @@
 
 ## Task 2: Fix `giter.py:check_repo_clean` missing `options` in `lines_to_text` calls
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -47,16 +47,16 @@
 
 **Subtasks:**
 
-- [ ] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 77
-- [ ] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 86
-- [ ] Run `uv run ruff check src/ralphlib/giter.py` to confirm no lint issues
-- [ ] Run `uv run pytest src/tests/test_giter.py` and confirm all tests pass
+- [x] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 77
+- [x] Change `lines_to_text(lines)` to `lines_to_text(options, lines)` at line 86
+- [x] Run `uv run ruff check src/ralphlib/giter.py` to confirm no lint issues
+- [x] Run `uv run pytest src/tests/test_giter.py` and confirm all tests pass
 
 **Acceptance Criteria:**
 
-- [ ] Both `lines_to_text` calls pass `options` as the first argument
-- [ ] All giter tests pass
-- [ ] `uv run ruff check src/ralphlib/giter.py` passes
+- [x] Both `lines_to_text` calls pass `options` as the first argument
+- [x] All giter tests pass
+- [x] `uv run ruff check src/ralphlib/giter.py` passes
 
 **Notes:**
 
@@ -67,7 +67,7 @@
 
 ## Task 3: Add type annotation to `giter.py:check_repo_clean`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 3
@@ -76,14 +76,14 @@
 
 **Subtasks:**
 
-- [ ] Change `def check_repo_clean(options, repo: git.Repo) -> None:` to `def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:`
-- [ ] Ensure `RalpherOptions` is available via the existing `TYPE_CHECKING` import block
-- [ ] Run `uv run ruff check src/ralphlib/giter.py`
+- [x] Change `def check_repo_clean(options, repo: git.Repo) -> None:` to `def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:`
+- [x] Ensure `RalpherOptions` is available via the existing `TYPE_CHECKING` import block
+- [x] Run `uv run ruff check src/ralphlib/giter.py`
 
 **Acceptance Criteria:**
 
-- [ ] `check_repo_clean` has full type annotations on all parameters and return type
-- [ ] Ruff passes
+- [x] `check_repo_clean` has full type annotations on all parameters and return type
+- [x] Ruff passes
 
 **Notes:**
 
@@ -94,7 +94,7 @@
 
 ## Task 4: Add type annotations to `giter.py:YNConfirm.make_prompt`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 4
@@ -103,14 +103,14 @@
 
 **Subtasks:**
 
-- [ ] Check the parent class `rich.prompt.Confirm.make_prompt` for the correct types
-- [ ] Add annotations to `def make_prompt(self, default: ...) -> ...:` matching the parent signature
-- [ ] Run `uv run ruff check src/ralphlib/giter.py`
+- [x] Check the parent class `rich.prompt.Confirm.make_prompt` for the correct types
+- [x] Add annotations to `def make_prompt(self, default: ...) -> ...:` matching the parent signature
+- [x] Run `uv run ruff check src/ralphlib/giter.py`
 
 **Acceptance Criteria:**
 
-- [ ] `make_prompt` has full type annotations
-- [ ] Ruff passes
+- [x] `make_prompt` has full type annotations
+- [x] Ruff passes
 
 **Notes:**
 
@@ -121,7 +121,7 @@
 
 ## Task 5: Update `AGENTS.md` project structure
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 5, Finding 6
@@ -130,16 +130,16 @@
 
 **Subtasks:**
 
-- [ ] Run `ls` on `src/ralphlib/`, `src/tests/`, and `bin/` to get current file lists
-- [ ] Update the project structure tree in `AGENTS.md:17-37` with all current files in alphabetical order
-- [ ] Verify the updated tree matches the actual filesystem
+- [x] Run `ls` on `src/ralphlib/`, `src/tests/`, and `bin/` to get current file lists
+- [x] Update the project structure tree in `AGENTS.md:17-37` with all current files in alphabetical order
+- [x] Verify the updated tree matches the actual filesystem
 
 **Acceptance Criteria:**
 
-- [ ] Every `.py` file in `src/ralphlib/` is listed in the project structure
-- [ ] Every `test_*.py` file in `src/tests/` is listed
-- [ ] Every script in `bin/` is listed
-- [ ] Files are in alphabetical order within each directory
+- [x] Every `.py` file in `src/ralphlib/` is listed in the project structure
+- [x] Every `test_*.py` file in `src/tests/` is listed
+- [x] Every script in `bin/` is listed
+- [x] Files are in alphabetical order within each directory
 
 **Notes:**
 
@@ -149,7 +149,7 @@
 
 ## Task 6: Use sandboxed Jinja2 for hook template rendering
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 7
@@ -158,16 +158,16 @@
 
 **Subtasks:**
 
-- [ ] Change `preprocess_hook` to use `jinja2.SandboxedEnvironment().from_string(cmd)` instead of `jinja2.Template(cmd)`
-- [ ] Run `uv run pytest src/tests/test_hooks.py` and confirm all tests pass
-- [ ] Run `uv run ruff check src/ralphlib/hooks.py`
+- [x] Change `preprocess_hook` to use `jinja2.SandboxedEnvironment().from_string(cmd)` instead of `jinja2.Template(cmd)`
+- [x] Run `uv run pytest src/tests/test_hooks.py` and confirm all tests pass
+- [x] Run `uv run ruff check src/ralphlib/hooks.py`
 
 **Acceptance Criteria:**
 
-- [ ] `preprocess_hook` uses `SandboxedEnvironment` for template rendering
-- [ ] Existing hook tests pass unchanged
-- [ ] Normal template variables still render correctly
-- [ ] Ruff passes
+- [x] `preprocess_hook` uses `SandboxedEnvironment` for template rendering
+- [x] Existing hook tests pass unchanged
+- [x] Normal template variables still render correctly
+- [x] Ruff passes
 
 **Notes:**
 

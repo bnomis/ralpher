@@ -18,7 +18,7 @@ console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 class YNConfirm(rich.prompt.Confirm):
-    def make_prompt(self, default):
+    def make_prompt(self, default: bool) -> rich.text.Text:
         yes, no = ('Y', 'n') if default else ('y', 'N')
         prompt = self.prompt.copy()
         prompt.end = ''
@@ -67,14 +67,14 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options, repo: git.Repo) -> None:
+def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
     wts = 'Git worktrees will be created from the origin repo.'
     if not is_clean_strict(repo):
         lines = ['Warning: the git working tree is not clean.']
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to commit and push before continuing. Continue?')
-        decision = YNConfirm.ask(lines_to_text(lines), default=False)
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
@@ -83,7 +83,7 @@ def check_repo_clean(options, repo: git.Repo) -> None:
         if options.worktree:
             lines.append(wts)
         lines.append('You probably want to push before continuing. Continue?')
-        decision = YNConfirm.ask(lines_to_text(lines), default=False)
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unpushed commits.')
 

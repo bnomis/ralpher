@@ -4,9 +4,9 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, Any
 
-import jinja2
 import loguru
 import tzlocal
+from jinja2.sandbox import SandboxedEnvironment
 
 import ralphlib.types
 
@@ -60,7 +60,8 @@ def make_context(
 
 
 def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
-    template = jinja2.Template(cmd)
+    env = SandboxedEnvironment()
+    template = env.from_string(cmd)
     return template.render(**context)
 
 

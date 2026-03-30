@@ -19,6 +19,7 @@ import pytest
 
 import ralphlib.iteration
 import ralphlib.options
+import ralphlib.settings
 import ralphlib.signals
 from ralphlib.signals import GracefulTerminator
 
@@ -40,7 +41,8 @@ def _fast_poll():
 
 
 def make_options(**kwargs):
-    return ralphlib.options.RalpherOptions(**kwargs)
+    options = ralphlib.options.RalpherOptions(**kwargs)
+    return ralphlib.settings.load_settings(options)
 
 
 def make_context(cmd):
@@ -132,7 +134,7 @@ class TestGracefulTerminatorTerminatesSubprocess:
         context = make_context(cmd)
 
         with patch('ralphlib.signals.signal.signal'):
-            terminator = GracefulTerminator()
+            terminator = GracefulTerminator(options)
 
         def send_double_sigint():
             time.sleep(0.2)
