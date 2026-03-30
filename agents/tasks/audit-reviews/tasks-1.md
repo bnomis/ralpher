@@ -149,7 +149,7 @@
 
 ## Task 6: Use sandboxed Jinja2 for hook template rendering
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 7
@@ -158,16 +158,16 @@
 
 **Subtasks:**
 
-- [ ] Change `preprocess_hook` to use `jinja2.SandboxedEnvironment().from_string(cmd)` instead of `jinja2.Template(cmd)`
-- [ ] Run `uv run pytest src/tests/test_hooks.py` and confirm all tests pass
-- [ ] Run `uv run ruff check src/ralphlib/hooks.py`
+- [x] Change `preprocess_hook` to use `jinja2.SandboxedEnvironment().from_string(cmd)` instead of `jinja2.Template(cmd)`
+- [x] Run `uv run pytest src/tests/test_hooks.py` and confirm all tests pass
+- [x] Run `uv run ruff check src/ralphlib/hooks.py`
 
 **Acceptance Criteria:**
 
-- [ ] `preprocess_hook` uses `SandboxedEnvironment` for template rendering
-- [ ] Existing hook tests pass unchanged
-- [ ] Normal template variables still render correctly
-- [ ] Ruff passes
+- [x] `preprocess_hook` uses `SandboxedEnvironment` for template rendering
+- [x] Existing hook tests pass unchanged
+- [x] Normal template variables still render correctly
+- [x] Ruff passes
 
 **Notes:**
 
