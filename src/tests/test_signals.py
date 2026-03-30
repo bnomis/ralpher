@@ -4,8 +4,15 @@ from unittest.mock import patch
 
 import pytest
 
+import ralphlib.options
+import ralphlib.settings
 from ralphlib import signals
 from ralphlib.signals import GracefulTerminator
+
+
+def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
+    options = ralphlib.options.RalpherOptions(**kwargs)
+    return ralphlib.settings.load_settings(options)
 
 
 @pytest.fixture(autouse=True)
@@ -16,7 +23,7 @@ def reset_should_exit() -> None:
 @pytest.fixture
 def terminator() -> GracefulTerminator:
     with patch('ralphlib.signals.signal.signal'):
-        return GracefulTerminator()
+        return GracefulTerminator(make_options())
 
 
 class TestGracefulTerminatorFirstSigint:

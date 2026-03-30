@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def loop(options: RalpherOptions) -> None:
-    _terminator = ralphlib.signals.GracefulTerminator()
+    _terminator = ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
         os.chdir(options.cwd)

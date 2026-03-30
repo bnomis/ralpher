@@ -8,7 +8,7 @@
 
 ## Task 1: Fix `signals.py` `console_print` calls (missing `options`)
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Finding 1
@@ -17,17 +17,17 @@
 
 **Subtasks:**
 
-- [ ] Decide approach: either (a) pass `options` to `GracefulTerminator.__init__` and store as `self.options`, then pass to `console_print`, or (b) replace `console_print` calls with direct `console.print(message, style=...)` calls since signal handlers should avoid complex state
-- [ ] Update all 4 `console_print` calls in `signals.py:39-42, 47-50, 58-61, 65-68`
-- [ ] If approach (a): update `looper.py:24` to pass `options` to `GracefulTerminator(options)`
-- [ ] Update `test_signals.py` to account for the new constructor signature or changed print calls
-- [ ] Run `uv run pytest src/tests/test_signals.py` and confirm all tests pass
+- [x] Decide approach: either (a) pass `options` to `GracefulTerminator.__init__` and store as `self.options`, then pass to `console_print`, or (b) replace `console_print` calls with direct `console.print(message, style=...)` calls since signal handlers should avoid complex state
+- [x] Update all 4 `console_print` calls in `signals.py:39-42, 47-50, 58-61, 65-68`
+- [x] If approach (a): update `looper.py:24` to pass `options` to `GracefulTerminator(options)`
+- [x] Update `test_signals.py` to account for the new constructor signature or changed print calls
+- [x] Run `uv run pytest src/tests/test_signals.py` and confirm all tests pass
 
 **Acceptance Criteria:**
 
-- [ ] `GracefulTerminator.handler` does not raise `TypeError` when invoked
-- [ ] All existing signal tests pass
-- [ ] `uv run ruff check src/ralphlib/signals.py` passes
+- [x] `GracefulTerminator.handler` does not raise `TypeError` when invoked
+- [x] All existing signal tests pass
+- [x] `uv run ruff check src/ralphlib/signals.py` passes
 
 **Notes:**
 

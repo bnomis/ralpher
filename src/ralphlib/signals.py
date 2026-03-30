@@ -3,9 +3,13 @@ import signal
 import sys
 import threading
 import types
+from typing import TYPE_CHECKING
 
 import ralphlib.printer
 import ralphlib.types
+
+if TYPE_CHECKING:
+    from ralphlib.options import RalpherOptions
 
 should_exit = False
 should_exit_lock = threading.Lock()
@@ -28,7 +32,8 @@ class GracefulTerminator:
     SECOND_MESSAGE = '→ Exiting now!'
     EXIT_CODE = 130
 
-    def __init__(self) -> None:
+    def __init__(self, options: RalpherOptions) -> None:
+        self.options = options
         self.first_press = None
         self.is_shutting_down = False
         signal.signal(signal.SIGINT, self.handler)
@@ -37,6 +42,7 @@ class GracefulTerminator:
     def handler(self, signum: int, frame: types.FrameType | None) -> None:
         if self.is_shutting_down:
             ralphlib.printer.console_print(
+                self.options,
                 '\nAlready shutting down — forceful exit!\n',
                 ralphlib.types.MessageType.ALERT,
             )
@@ -45,6 +51,7 @@ class GracefulTerminator:
         sig_name = signal.Signals(signum).name
         if signum == signal.SIGTERM:
             ralphlib.printer.console_print(
+                self.options,
                 f'\nReceived {sig_name} → shutting down gracefully...\n',
                 ralphlib.types.MessageType.ALERT,
             )
@@ -56,6 +63,7 @@ class GracefulTerminator:
             time_since_first_press = (now - self.first_press).total_seconds()
             if time_since_first_press < self.CTRL_C_PRESS_INTERVAL:
                 ralphlib.printer.console_print(
+                    self.options,
                     f'\n{self.SECOND_MESSAGE}\n',
                     ralphlib.types.MessageType.ALERT,
                 )
@@ -63,6 +71,7 @@ class GracefulTerminator:
                 return
 
         ralphlib.printer.console_print(
+            self.options,
             f'\n{self.FIRST_MESSAGE}\n',
             ralphlib.types.MessageType.ALERT,
         )
