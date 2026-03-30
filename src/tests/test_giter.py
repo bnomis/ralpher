@@ -4,8 +4,15 @@ import git
 import rich.text
 
 import ralphlib.giter
+import ralphlib.options
 import ralphlib.printer
+import ralphlib.settings
 import ralphlib.types
+
+
+def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
+    options = ralphlib.options.RalpherOptions(**kwargs)
+    return ralphlib.settings.load_settings(options)
 
 
 class TestDiscoverRepoPath:
@@ -117,9 +124,10 @@ class TestGetUpstreamBranch:
 
 class TestLinesToText:
     def test_returns_rich_text_with_joined_lines(self) -> None:
+        options = make_options()
         lines = ['line one', 'line two', 'line three']
-        result = ralphlib.giter.lines_to_text(lines)
+        result = ralphlib.giter.lines_to_text(options, lines)
         assert isinstance(result, rich.text.Text)
         assert result.plain == 'line one\nline two\nline three'
-        expected_style = ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT)
+        expected_style = ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ALERT)
         assert str(result.style) == expected_style

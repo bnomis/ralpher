@@ -1,7 +1,14 @@
 import pytest
 
+import ralphlib.options
 import ralphlib.printer
+import ralphlib.settings
 import ralphlib.types
+
+
+def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
+    options = ralphlib.options.RalpherOptions(**kwargs)
+    return ralphlib.settings.load_settings(options)
 
 
 class TestTypeToStyle:
@@ -21,7 +28,8 @@ class TestTypeToStyle:
         message_type: ralphlib.types.MessageType,
         expected_style: str,
     ) -> None:
-        assert ralphlib.printer.type_to_style(message_type) == expected_style
+        options = make_options()
+        assert ralphlib.printer.type_to_style(options, message_type) == expected_style
 
     @pytest.mark.parametrize(
         'message_type',
@@ -36,4 +44,5 @@ class TestTypeToStyle:
         self,
         message_type: ralphlib.types.MessageType,
     ) -> None:
-        assert ralphlib.printer.type_to_style(message_type) == 'grey30'
+        options = make_options()
+        assert ralphlib.printer.type_to_style(options, message_type) == 'grey30'
