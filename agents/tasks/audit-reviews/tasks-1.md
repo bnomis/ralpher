@@ -94,7 +94,7 @@
 
 ## Task 4: Add type annotations to `giter.py:YNConfirm.make_prompt`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 4
@@ -103,14 +103,14 @@
 
 **Subtasks:**
 
-- [ ] Check the parent class `rich.prompt.Confirm.make_prompt` for the correct types
-- [ ] Add annotations to `def make_prompt(self, default: ...) -> ...:` matching the parent signature
-- [ ] Run `uv run ruff check src/ralphlib/giter.py`
+- [x] Check the parent class `rich.prompt.Confirm.make_prompt` for the correct types
+- [x] Add annotations to `def make_prompt(self, default: ...) -> ...:` matching the parent signature
+- [x] Run `uv run ruff check src/ralphlib/giter.py`
 
 **Acceptance Criteria:**
 
-- [ ] `make_prompt` has full type annotations
-- [ ] Ruff passes
+- [x] `make_prompt` has full type annotations
+- [x] Ruff passes
 
 **Notes:**
 

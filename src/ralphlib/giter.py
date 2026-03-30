@@ -18,7 +18,7 @@ console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 class YNConfirm(rich.prompt.Confirm):
-    def make_prompt(self, default):
+    def make_prompt(self, default: bool) -> rich.text.Text:
         yes, no = ('Y', 'n') if default else ('y', 'N')
         prompt = self.prompt.copy()
         prompt.end = ''
