@@ -5,7 +5,17 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
-default_settings = {}
+default_settings = {
+    'theme': {
+        'alert': 'bold red',
+        'content_delta': 'cyan',
+        'default': 'grey30',
+        'error': 'red',
+        'regular': 'grey30',
+        'system': 'yellow',
+        'tool_use': 'magenta',
+    },
+}
 
 
 def load_settings(options: RalpherOptions) -> RalpherOptions:

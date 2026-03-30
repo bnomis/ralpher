@@ -288,7 +288,7 @@ def print_progress(
         return
 
     with context.gil:
-        console.print(message, style=ralphlib.printer.type_to_style(message_type), end='', soft_wrap=True)
+        console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
 
 
 def print_progress_eol(options: RalpherOptions, context: IterationContext) -> None:

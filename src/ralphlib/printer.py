@@ -26,22 +26,22 @@ def prt(
     if options.quiet or dont_print:
         return
 
-    console_print(message, message_type)
+    console_print(options, message, message_type)
 
 
 def console_print(
+    options: RalpherOptions,
     message: str,
     message_type: ralphlib.types.MessageType = ralphlib.types.MessageType.REGULAR,
 ) -> None:
-    console.print(message, style=type_to_style(message_type), end='', soft_wrap=True)
+    console.print(message, style=type_to_style(options, message_type), end='', soft_wrap=True)
 
 
-def type_to_style(message_type: ralphlib.types.MessageType) -> str:
-    return {
-        ralphlib.types.MessageType.REGULAR: 'grey30',
-        ralphlib.types.MessageType.CONTENT_DELTA: 'cyan',
-        ralphlib.types.MessageType.ERROR: 'red',
-        ralphlib.types.MessageType.SYSTEM: 'yellow',
-        ralphlib.types.MessageType.TOOL_USE: 'magenta',
-        ralphlib.types.MessageType.ALERT: 'bold red',
-    }.get(message_type, 'grey30')
+def type_to_style(
+    options: RalpherOptions,
+    message_type: ralphlib.types.MessageType,
+) -> str:
+    s = ralphlib.types.message_type_to_str.get(message_type, 'regular')
+    if s in options.settings['theme']:
+        return options.settings['theme'][s]
+    return options.settings['theme'].get('default', 'grey30')

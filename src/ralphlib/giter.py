@@ -1,5 +1,6 @@
 import pathlib
 import sys
+from typing import TYPE_CHECKING
 
 import git
 import rich.console
@@ -8,6 +9,10 @@ import rich.text
 
 import ralphlib.printer
 import ralphlib.types
+
+if TYPE_CHECKING:
+    from ralphlib.options import RalpherOptions
+
 
 console_stderr = rich.console.Console(stderr=True, highlight=False)
 
@@ -21,21 +26,21 @@ class YNConfirm(rich.prompt.Confirm):
         return prompt
 
 
-def lines_to_text(lines: list[str]) -> rich.text.Text:
+def lines_to_text(options: RalpherOptions, lines: list[str]) -> rich.text.Text:
     return rich.text.Text(
         '\n'.join(lines),
-        style=ralphlib.printer.type_to_style(ralphlib.types.MessageType.ALERT),
+        style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ALERT),
     )
 
 
-def check_git(options, path: pathlib.Path | str | None = None) -> None:
+def check_git(options: RalpherOptions, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
 
     repo = discover_repo_path(path=path)
     if repo is None:
         lines = ['Warning: not in a git repository.']
-        decision = YNConfirm.ask(lines_to_text(lines), default=False)
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to not being in a git repository.')
         return

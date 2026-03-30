@@ -14,6 +14,20 @@ class MessageType(enum.IntEnum):
     ALERT = 9
 
 
+message_type_to_str = {
+    MessageType.NONE: 'none',
+    MessageType.ERROR: 'error',
+    MessageType.SYSTEM: 'system',
+    MessageType.CONTENT_START: 'content_start',
+    MessageType.CONTENT_STOP: 'content_stop',
+    MessageType.CONTENT_DELTA: 'content_delta',
+    MessageType.TOOL_USE: 'tool_use',
+    MessageType.COMPLETE: 'complete',
+    MessageType.REGULAR: 'regular',
+    MessageType.ALERT: 'alert',
+}
+
+
 class RalpherEventType(enum.IntEnum):
     NONE = 0
     START = 1
