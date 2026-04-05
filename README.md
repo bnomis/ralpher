@@ -109,9 +109,9 @@ The printed messages will be one of:
     "alert": e.g. you hit ctrl-c, shutdown
     "content_delta": streamed messages
     "default": default, fallback
-    "error": errors
-    "regular": regular
-    "system": system
-    "tool_use": tool use
+    "error": e.g. run out of usage
+    "regular": regular messages
+    "system": e.g. "Started agent process"
+    "tool_use": e.g. "Read, Edit, Write, Bash"
 }
 ```
