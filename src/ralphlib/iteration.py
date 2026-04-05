@@ -53,6 +53,7 @@ console = rich.console.Console(highlight=False)
 console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 SUBPROCESS_POLL_INTERVAL = 3
+MAX_KILL_ATTEMPTS = 3
 
 # regex to extract tool IDs from tool results that indicate a background tool has started, e.g. "Command running in background with ID: abc123."
 tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
@@ -428,10 +429,12 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     while True:
         if ralphlib.signals.get_should_exit():
             log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
-            try:
-                os.killpg(proc.pid, signal.SIGTERM)
-            except OSError:
-                proc.terminate()
+            kill_agent(proc)
+            break
+
+        if get_error(context):
+            log_msg(options, context, f'Error detected in output. Terminating subprocess {proc.pid}...')
+            kill_agent(proc)
             break
 
         if proc.poll() is not None:
@@ -444,6 +447,27 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     stderr_thread.join()
 
     log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
+
+
+def kill_agent(proc: subprocess.Popen) -> None:
+    loguru.logger.info(f'Killing agent process {proc.pid}...')
+    for _ in range(MAX_KILL_ATTEMPTS):
+        if proc.poll() is not None:
+            break
+        signal_agent(proc)
+        time.sleep(SUBPROCESS_POLL_INTERVAL)
+        if proc.poll() is not None:
+            break
+    if proc.poll() is None:
+        loguru.logger.warning(f'Process {proc.pid} did not terminate after {MAX_KILL_ATTEMPTS} attempts.')
+
+
+def signal_agent(proc: subprocess.Popen) -> None:
+    loguru.logger.info(f'Signaling agent process {proc.pid}...')
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except OSError:
+        proc.terminate()
 
 
 def process_stdout(
