@@ -520,8 +520,7 @@ def process_line(
         payload = orjson.loads(line)
         ptype = payload.get('type', 'MISSING_PTYPE')
         if ptype == 'system':
-            content = payload.get('subtype', '')
-            return ralphlib.types.MessageType.SYSTEM, content
+            return process_system(options, context, payload, line)
 
         if ptype == 'assistant':
             return process_assistant(options, context, payload, line)
@@ -545,6 +544,18 @@ def process_line(
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
+
+
+def process_system(
+    options: RalpherOptions,
+    context: IterationContext,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    content = payload.get('subtype', '')
+    if content in ['task_started', 'task_progress', 'task_notification']:
+        return ralphlib.types.MessageType.NONE, line
+    return ralphlib.types.MessageType.SYSTEM, content
 
 
 def process_user(
