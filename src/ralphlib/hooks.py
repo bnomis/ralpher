@@ -54,9 +54,11 @@ def make_context(
     now_local = datetime.datetime.now(local_tz)
     cwd = task_file = ''
     if options.cwd:
-        cwd = options.cwd
+        cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
+        cwd = str(cwd_path)
     if options.task_file:
         task_file = options.task_file
+
     context: dict[str, str] = {
         'cwd': cwd,
         'datetime_local': now_local.isoformat(),
