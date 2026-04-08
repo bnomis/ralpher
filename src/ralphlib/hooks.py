@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 import shlex
 import subprocess
 import time
@@ -46,21 +47,33 @@ def make_context(
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     local_tz = tzlocal.get_localzone()
     now_local = datetime.datetime.now(local_tz)
+    cwd = task_file = ''
+    if options.cwd:
+        cwd = options.cwd
+    if options.task_file:
+        task_file = options.task_file
     context: dict[str, str] = {
+        'cwd': cwd,
+        'datetime_local': now_local.isoformat(),
+        'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
         'iterations': str(options.iterations),
-        'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
-        'datetime_local': now_local.isoformat(),
+        'task_file': task_file,
         'time_epoch': str(int(time.time())),
     }
-    if options.task_file:
-        context['task_file'] = options.task_file
+
     context.update(event_context)
     return context
 
 
 def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
     env = SandboxedEnvironment()
+
+    env.filters['basename'] = lambda p: pathlib.PurePosixPath(p).name
+    env.filters['dirname'] = lambda p: str(pathlib.PurePosixPath(p).parent)
+    env.filters['stem'] = lambda p: pathlib.PurePosixPath(p).stem
+    env.filters['suffix'] = lambda p: pathlib.PurePosixPath(p).suffix
+
     template = env.from_string(cmd)
     return template.render(**context)
 
