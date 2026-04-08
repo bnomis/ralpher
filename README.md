@@ -20,19 +20,19 @@ For an explanation of the contents see:
   "hook_templates": true,
   "hooks": {
     "end": [
-      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} done' --message '{{exit_reason}} {{iteration}}/{{iterations}} {{total_time_readable}}' --sound Funky"
+      "/opt/homebrew/bin/alerter --app-icon {{ralpher_root}}/img/ralpher.jpg --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} done' --message '{{exit_reason}} {{iteration}}/{{iterations}} {{total_time_readable}}' --sound Funky"
     ],
     "error": [
-      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} error' --message '{{exit_reason}} {{iteration}}/{{iterations}}' --sound Funky"
+      "/opt/homebrew/bin/alerter --app-icon {{ralpher_root}}/img/ralpher.jpg --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} error' --message '{{exit_reason}} {{iteration}}/{{iterations}}' --sound Funky"
     ],
     "iteration_end": [
-      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop end' --message '{{iteration}}/{{iterations}} {{iteration_time_readable}}'"
+      "/opt/homebrew/bin/alerter --app-icon {{ralpher_root}}/img/ralpher.jpg --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop end' --message '{{iteration}}/{{iterations}} {{iteration_time_readable}}'"
     ],
     "iteration_start": [
-      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop start' --message '{{iteration}}/{{iterations}}'"
+      "/opt/homebrew/bin/alerter --app-icon {{ralpher_root}}/img/ralpher.jpg --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop start' --message '{{iteration}}/{{iterations}}'"
     ],
     "start": [
-      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} start' --message 'Start! max iterations {{iterations}}'"
+      "/opt/homebrew/bin/alerter --app-icon {{ralpher_root}}/img/ralpher.jpg --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} start' --message 'Start! max iterations {{iterations}}'"
     ]
   },
     "theme": {

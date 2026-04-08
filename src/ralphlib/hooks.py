@@ -1,5 +1,6 @@
 import datetime
 import pathlib
+import re
 import shlex
 import subprocess
 import time
@@ -39,6 +40,10 @@ def event(
         run_hook(cmd)
 
 
+def ralpher_root() -> pathlib.Path:
+    return pathlib.Path(__file__).resolve().parent.parent.parent
+
+
 def make_context(
     options: RalpherOptions,
     event_type: RalpherEventType,
@@ -58,6 +63,7 @@ def make_context(
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
         'iterations': str(options.iterations),
+        'ralpher_root': str(ralpher_root()),
         'task_file': task_file,
         'time_epoch': str(int(time.time())),
     }
@@ -79,6 +85,9 @@ def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
 
 
 def run_hook(cmd: str) -> None:
+    # double spaces
+    cmd = re.sub(r'\s+', ' ', cmd)
+    loguru.logger.debug(f'Running hook: "{cmd}"')
     args = shlex.split(cmd)
     try:
         subprocess.Popen(  # noqa: S603
