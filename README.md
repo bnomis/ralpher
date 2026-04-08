@@ -17,24 +17,24 @@ For an explanation of the contents see:
 
 ```json
 {
-    "hook_templates": true,
-    "hooks": {
-        "end": [
-            "/opt/homebrew/bin/alerter --title 'ralpher done' --message 'End! {{iteration}}/{{iterations}} {{total_time_seconds}}s {{total_time_readable}}' --sound Funky"
-        ],
-        "error": [
-            "/opt/homebrew/bin/alerter --title 'ralpher error' --message 'Error! {{iteration}}/{{iterations}}' --sound Funky"
-        ],
-        "iteration_end": [
-            "/opt/homebrew/bin/alerter --title 'ralpher' --message 'Loop End! {{iteration}}/{{iterations}} {{iteration_time_seconds}}s {{iteration_time_readable}}'"
-        ],
-        "iteration_start": [
-            "/opt/homebrew/bin/alerter --title 'ralpher loop {{iteration}}/{{iterations}}' --message 'Loop Start! {{iteration}}/{{iterations}}'"
-        ],
-        "start": [
-            "/opt/homebrew/bin/alerter --title 'ralpher start' --message 'Start! {{iteration}}/{{iterations}}'"
-        ]
-    },
+  "hook_templates": true,
+  "hooks": {
+    "end": [
+      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} done' --message '{{exit_reason}} {{iteration}}/{{iterations}} {{total_time_readable}}' --sound Funky"
+    ],
+    "error": [
+      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} error' --message '{{exit_reason}} {{iteration}}/{{iterations}}' --sound Funky"
+    ],
+    "iteration_end": [
+      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop end' --message '{{iteration}}/{{iterations}} {{iteration_time_readable}}'"
+    ],
+    "iteration_start": [
+      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} loop start' --message '{{iteration}}/{{iterations}}'"
+    ],
+    "start": [
+      "/opt/homebrew/bin/alerter --title 'ralpher {{cwd|basename}} {{task_file|dirname|basename}} start' --message 'Start! max iterations {{iterations}}'"
+    ]
+  },
     "theme": {
         "alert": "bold red",
         "content_delta": "cyan",
