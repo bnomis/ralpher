@@ -89,7 +89,6 @@ def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
 def run_hook(cmd: str) -> None:
     # double spaces
     cmd = re.sub(r'\s+', ' ', cmd)
-    loguru.logger.debug(f'Running hook: "{cmd}"')
     args = shlex.split(cmd)
     try:
         subprocess.Popen(  # noqa: S603
