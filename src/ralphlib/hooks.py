@@ -11,6 +11,7 @@ import loguru
 import tzlocal
 from jinja2.sandbox import SandboxedEnvironment
 
+import ralphlib.giter
 import ralphlib.types
 
 if TYPE_CHECKING:
@@ -84,6 +85,7 @@ def make_context(
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
         'iteration_count': str(options.iteration_count),
         'iterations': str(options.iterations),
+        'last_commit_summary': ralphlib.giter.last_commit_summary(),
         'ralpher_root': str(ralpher_root()),
         'task_file_basename': pathlib.PurePosixPath(task_file).name if task_file else '',
         'task_file_dir_basename': pathlib.PurePosixPath(task_file).parent.name if task_file else '',

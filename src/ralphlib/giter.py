@@ -1,3 +1,4 @@
+import contextlib
 import pathlib
 import sys
 from typing import TYPE_CHECKING
@@ -18,7 +19,7 @@ console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 class YNConfirm(rich.prompt.Confirm):
-    def make_prompt(self, default: bool) -> rich.text.Text:
+    def make_prompt(self, default: bool) -> rich.text.Text:  # type: ignore
         yes, no = ('Y', 'n') if default else ('y', 'N')
         prompt = self.prompt.copy()
         prompt.end = ''
@@ -31,6 +32,17 @@ def lines_to_text(options: RalpherOptions, lines: list[str]) -> rich.text.Text:
         '\n'.join(lines),
         style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ALERT),
     )
+
+
+def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
+    repo = discover_repo_path(path=path)
+    if repo is None:
+        return ''
+
+    last_commit_summary = ''
+    with contextlib.suppress(BaseException):
+        last_commit_summary = str(repo.head.commit.summary)
+    return last_commit_summary
 
 
 def check_git(options: RalpherOptions, path: pathlib.Path | str | None = None) -> None:
