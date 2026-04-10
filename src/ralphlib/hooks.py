@@ -70,6 +70,16 @@ def make_context(
         'time_epoch': str(int(time.time())),
     }
 
+    hook_icon = options.settings.get('hook_icon', '')
+    if hook_icon:
+        hook_icon = preprocess_hook(hook_icon, context).strip()
+        if hook_icon:
+            hook_icon_path = pathlib.Path(hook_icon).resolve().expanduser()
+            if hook_icon_path.is_file():
+                context['hook_icon'] = str(hook_icon_path)
+            else:
+                loguru.logger.warning(f'Hook icon file "{hook_icon}" does not exist. Ignoring.')
+
     context.update(event_context)
     return context
 
