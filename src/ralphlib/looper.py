@@ -1,6 +1,7 @@
 import datetime
 import functools
 import os
+import pathlib
 import sys
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,8 @@ def loop(options: RalpherOptions) -> None:
     _terminator = ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
+        cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
+        options.cwd = str(cwd_path)
         os.chdir(options.cwd)
 
     # check git status
