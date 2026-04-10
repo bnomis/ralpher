@@ -54,13 +54,14 @@ def loop(options: RalpherOptions) -> None:
 
     # check task file exists and has content
     if options.task_file:
-        if not os.path.isfile(options.task_file):
+        task_path = pathlib.Path(options.task_file).resolve().expanduser()
+        if not task_path.is_file():
             sys.exit(f'Error: Task file "{options.task_file}" does not exist.')
-
-        with open(options.task_file, 'r', encoding='utf-8') as f:
+        with open(task_path, 'r', encoding='utf-8') as f:
             task_content = f.read().strip()
         if not task_content:
             sys.exit(f'Error: Task file "{options.task_file}" is empty.')
+        options.task_file = str(task_path)
 
     ralphlib.logger.init(options)
 
