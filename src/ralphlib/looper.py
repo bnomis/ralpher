@@ -97,6 +97,7 @@ def loop(options: RalpherOptions) -> None:
     error = False
 
     for i in range(1, options.iterations + 1):
+        options.current_iteration = i
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()
 
@@ -133,6 +134,7 @@ def loop(options: RalpherOptions) -> None:
         now = loop_end.isoformat()
         loop_td = loop_end - loop_start
         loop_tds.append(loop_td)
+        options.iteration_count = i
 
         s = f'\nEnding iteration {i}/{options.iterations} at {now}\n'
         print_both(options, s, i)

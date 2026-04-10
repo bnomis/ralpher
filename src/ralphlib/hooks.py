@@ -60,12 +60,21 @@ def make_context(
         task_file = options.task_file
 
     context: dict[str, str] = {
+        'current_iteration': str(options.current_iteration),
+        'cwd_basename': pathlib.PurePosixPath(cwd).name if cwd else '',
+        'cwd_dirname': str(pathlib.PurePosixPath(cwd).parent) if cwd else '',
         'cwd': cwd,
         'datetime_local': now_local.isoformat(),
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
+        'iteration_count': str(options.iteration_count),
         'iterations': str(options.iterations),
         'ralpher_root': str(ralpher_root()),
+        'task_file_basename': pathlib.PurePosixPath(task_file).name if task_file else '',
+        'task_file_dir_basename': pathlib.PurePosixPath(task_file).parent.name if task_file else '',
+        'task_file_dirname': str(pathlib.PurePosixPath(task_file).parent) if task_file else '',
+        'task_file_stem': pathlib.PurePosixPath(task_file).stem if task_file else '',
+        'task_file_suffix': pathlib.PurePosixPath(task_file).suffix if task_file else '',
         'task_file': task_file,
         'time_epoch': str(int(time.time())),
     }
@@ -79,6 +88,17 @@ def make_context(
                 context['hook_icon'] = str(hook_icon_path)
             else:
                 loguru.logger.warning(f'Hook icon file "{hook_icon}" does not exist. Ignoring.')
+
+    hook_sound = options.settings.get('hook_sound', '')
+    if hook_sound:
+        hook_sound = preprocess_hook(hook_sound, context).strip()
+        if hook_sound:
+            index = hook_sound.find('/')
+            if index != -1:
+                hook_sound_path = pathlib.Path(hook_sound).resolve().expanduser()
+                if not hook_sound_path.is_file():
+                    loguru.logger.warning(f'Hook sound looks like a file but "{hook_sound}" does not exist.')
+            context['hook_sound'] = hook_sound
 
     context.update(event_context)
     return context
