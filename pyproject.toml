@@ -5,7 +5,7 @@ description = "A ralph loop"
 requires-python = ">=3.14"
 dependencies = [
     "cappa>=0.31.0",
-    "filelock>=3.24.3",
+    "filelock>=3.25.2",
     "gitpython>=3.1.46",
     "jinja2>=3.1.6",
     "loguru>=0.7.3",
