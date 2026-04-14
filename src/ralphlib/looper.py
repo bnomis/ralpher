@@ -230,7 +230,13 @@ def loop(options: RalpherOptions) -> None:
         ralphlib.hooks.event(
             options,
             event_type=ralphlib.types.RalpherEventType.ERROR,
-            event_context={'iteration': 0},
+            event_context={
+                'iteration': 0,
+                'exit_reason': exit_reason,
+                'iterations_completed': num_loops,
+                'total_time_readable': readable,
+                'total_time_seconds': td.total_seconds(),
+            },
         )
 
     ralphlib.hooks.event(
