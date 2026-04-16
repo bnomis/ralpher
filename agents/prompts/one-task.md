@@ -27,7 +27,8 @@ In the above the variables have the following definitions:
 If the task references a spec section, read the relevant spec before starting implementation.
 
 {% if worktree %}
-CRITICAL: ensure you change working directory to {{ worktree_name }} worktree before starting implementation.
+IMPORTANT: ensure you change working directory to {{ worktree_name }} worktree before starting implementation.
+IMPORTANT: ONLY edit and commit files in the worktree. DO NOT work in the main branch.
 If you cannot find the worktree, exit with an error message.
 {% endif %}
 
