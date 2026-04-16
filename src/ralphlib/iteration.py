@@ -558,7 +558,7 @@ def process_system(
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     content = payload.get('subtype', '')
-    if content in ['task_started', 'task_progress', 'task_notification']:
+    if content in ['task_started', 'task_progress', 'task_notification', 'init', 'status']:
         return ralphlib.types.MessageType.NONE, line
     return ralphlib.types.MessageType.SYSTEM, content
 
