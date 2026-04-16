@@ -557,8 +557,16 @@ def process_system(
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
+    skip = [
+        'init',
+        'status',
+        'task_notification',
+        'task_progress',
+        'task_started',
+        'task_updated',
+    ]
     content = payload.get('subtype', '')
-    if content in ['task_started', 'task_progress', 'task_notification', 'init', 'status']:
+    if content and content in skip:
         return ralphlib.types.MessageType.NONE, line
     return ralphlib.types.MessageType.SYSTEM, content
 
