@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 
-def loop(options: RalpherOptions) -> None:
+def loop(options: RalpherOptions) -> bool:
     _terminator = ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
@@ -250,6 +250,8 @@ def loop(options: RalpherOptions) -> None:
             'total_time_seconds': td.total_seconds(),
         },
     )
+
+    return bool(error)
 
 
 def print_both(
