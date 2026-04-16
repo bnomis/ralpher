@@ -25,6 +25,9 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 
+task_progress_re = re.compile(r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<count>(?P<count>\d+)</count>\s*</task>')
+
+
 @dataclasses.dataclass
 class IterationContext:
     cmd: list[str]
@@ -68,6 +71,8 @@ newline_types = frozenset(
         ralphlib.types.MessageType.ERROR,
         ralphlib.types.MessageType.SYSTEM,
         ralphlib.types.MessageType.TOOL_USE,
+        ralphlib.types.MessageType.ALERT,
+        ralphlib.types.MessageType.PROGRESS,
     ]
 )
 
@@ -600,10 +605,13 @@ def process_assistant(
                 ctype = c.get('type', '')
                 if ctype == 'text':
                     text = c.get('text', '')
-                    for stop in options.stops:
-                        if stop in text:
-                            set_complete(context, True)
-                            return ralphlib.types.MessageType.COMPLETE, ''
+                    if text:
+                        for stop in options.stops:
+                            if stop in text:
+                                set_complete(context, True)
+                                return ralphlib.types.MessageType.COMPLETE, ''
+                        if '<task>' in text and '</task>' in text:
+                            return process_task_progress(options, context, payload, text)
 
                 if ctype == 'tool_use':
                     run_in_background = get_run_in_background(c)
@@ -638,6 +646,25 @@ def process_assistant(
 
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_task_progress(
+    options: RalpherOptions,
+    context: IterationContext,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    try:
+        task = task_progress_re.search(line)
+        if task:
+            tid = task.group('id')
+            count = task.group('count')
+            title = task.group('title')
+            return ralphlib.types.MessageType.PROGRESS, f'\ntask {tid} of {count}: {title}'
+    except Exception as e:
+        loguru.logger.exception(f'Exception in process_task_progress: {e}')
+        log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
     return ralphlib.types.MessageType.NONE, line
 
 

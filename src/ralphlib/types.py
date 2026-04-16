@@ -12,6 +12,7 @@ class MessageType(enum.IntEnum):
     COMPLETE = 7
     REGULAR = 8
     ALERT = 9
+    PROGRESS = 10
 
 
 message_type_to_str = {
@@ -25,6 +26,7 @@ message_type_to_str = {
     MessageType.COMPLETE: 'complete',
     MessageType.REGULAR: 'regular',
     MessageType.ALERT: 'alert',
+    MessageType.PROGRESS: 'progress',
 }
 
 

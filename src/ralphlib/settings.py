@@ -11,6 +11,7 @@ default_settings = {
         'content_delta': 'cyan',
         'default': 'grey30',
         'error': 'red',
+        'progress': 'yellow',
         'regular': 'grey30',
         'system': 'yellow',
         'tool_use': 'magenta',

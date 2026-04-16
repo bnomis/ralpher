@@ -95,7 +95,7 @@ def loop(options: RalpherOptions) -> bool:
     loop_times = []
     loop_tds = []
     exit_reason = 'completed all iterations'
-    error = False
+    error = termination = False
 
     for i in range(1, options.iterations + 1):
         options.current_iteration = i
@@ -175,6 +175,7 @@ def loop(options: RalpherOptions) -> bool:
                 message_type = ralphlib.types.MessageType.ERROR
             if ralphlib.signals.get_should_exit():
                 words.append('termination')
+                termination = True
             exit_reason = ', '.join(words)
 
             s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
@@ -251,7 +252,7 @@ def loop(options: RalpherOptions) -> bool:
         },
     )
 
-    return bool(error)
+    return bool(error) or termination
 
 
 def print_both(
