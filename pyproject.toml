@@ -17,7 +17,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "hypothesis>=6.151.9",
+    "hypothesis>=6.151.12",
     "pytest>=9.0.2",
     "pytest-icdiff>=0.9",
     "pytest-instafail>=0.5.0",
