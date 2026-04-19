@@ -10,7 +10,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "loguru>=0.7.3",
     "orjson>=3.11.6",
-    "rich>=14.3.1",
+    "rich>=14.3.4",
     "tenacity>=9.1.4",
     "tzlocal>=5.3.1",
 ]
