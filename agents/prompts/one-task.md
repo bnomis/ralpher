@@ -46,7 +46,7 @@ If there are any unimplemented Subtasks or "Acceptance Criteria" change the task
 Select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`.
 If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
 
-If ALL tasks are `done`, write this completion message this to stdout:
+If ALL tasks are `done`, write this message to stdout:
 
 ```xml
 <promise>COMPLETE</promise>
@@ -110,10 +110,14 @@ The variables have the same definitions as in [before implementing a task](#befo
 
 Check {{ task_file }} for tasks with status `todo` or `in-progress`.
 
-If there are tasks with status `todo` or `in-progress`, exit.
+If there are tasks with status `todo` or `in-progress`, EXIT immediately without output.
 
-If ALL tasks are now `done`, write this completion message this to stdout:
+## Check for all tasks done
+
+If ALL tasks are `done`, write this message to stdout:
 
 ```xml
 <promise>COMPLETE</promise>
 ```
+
+and exit.
