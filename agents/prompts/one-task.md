@@ -14,7 +14,7 @@ Before doing anything remember and follow these **important** rules about worktr
 
 ## Read the tasks file
 
-Read the file {{ task_file }} and identify tasks.
+Read the tasks file {{ task_file }} and identify tasks.
 Count the total number of tasks in the file.
 
 Tasks have a status: `todo`, `in-progress`, or `done`.
@@ -25,13 +25,26 @@ Task titles have the general form:
 ## Task <task-number>: <task-name>
 ```
 
+## Confirm task file integrity
+
+Use `git log` to check which tasks have been `done`.
+If the `git log` `done` tasks do not have `done` status in the tasks file,
+check the implementation to verify the status of the task and its Subtasks and "Acceptance Criteria".
+Mark all complete but unchecked Subtasks and "Acceptance Criteria" as done [x].
+If everything in the task is complete, set the task status to `done`.
+If everything in the task is not complete, set the task status to `in-progress`.
+
 ## Look for `done` tasks with unchecked Subtasks and "Acceptance Criteria"
 
-If any of the `done` tasks have unchecked [ ] Subtasks or "Acceptance Criteria". Check the status of the Subtask or "Acceptance Criteria" by examining the implementation. If the Subtask or "Acceptance Criteria" is implemented mark it as done [x]. If there are any unimplemented Subtasks or "Acceptance Criteria" change the task status to `in-progress`.
+If any of the `done` tasks have unchecked [ ] Subtasks or "Acceptance Criteria",
+check the status of the unchecked Subtasks or "Acceptance Criteria" by examining the implementation.
+If any unchecked Subtasks or "Acceptance Criteria" are implemented, mark them as done [x].
+If there are any unimplemented Subtasks or "Acceptance Criteria" change the task status to `in-progress`.
 
 ## Select a task
 
-Select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`. If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
+Select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`.
+If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
 
 If ALL tasks are `done`, write this completion message this to stdout:
 
@@ -60,19 +73,19 @@ In the above the variables have the following definitions:
 - `task-name`: the name of the current task
 - `tasks-count`: the total number of tasks in {{ task_file }}
 
-## Implement the chosen task
+## Implement the selected task
 
 If the task references a spec section, read the relevant spec before starting implementation.
 
-Implement that single task:
+Implement the single task:
 
 1. Change the task status to `in-progress`
-2. Read the existing code the task will modify or interact with
+2. Read any existing code the task will modify or interact with
 3. Implement the task, following any acceptance criteria listed with it, and following the project wide coding standards defined in AGENTS.md
 4. Run `ruff check` and `ruff format` on any new or changed files and fix errors
 5. Run tests to verify the implementation
-   - If tests fail: fix the issues. If a fix is beyond the scope of this task, add new tasks to {{ task_file }} to address the failures, leave this task as `in-progress`, and stop
-   - If tests pass: mark any completed "acceptance criteria" and "subtasks" as done [x]
+   - If tests fail: fix the issues. If a fix is beyond the scope of this task, add new tasks to {{ task_file }} to address the failures, leave this task as `in-progress`, and exit
+   - If tests pass: mark completed "acceptance criteria" and "subtasks" as done [x]
 6. Change the task status to `done`
 7. Commit the changes with git using a message that starts with the task number, e.g. "Task 3: add SearchBatch dataclass"
 
@@ -91,14 +104,17 @@ To let the user know what you've finished the task, write the following to stdou
 </task>
 ```
 
-The variables have the same definitions as for before implementing a task.
+The variables have the same definitions as in [before implementing a task](#before-implementing-the-task) above.
 
-Then check {{ task_file }} for any remaining `todo` or `in-progress` tasks.
+## Check for remaining tasks
+
+Check {{ task_file }} for tasks with status `todo` or `in-progress`.
+
+If there are tasks with status `todo` or `in-progress`, exit.
+Important: DO NOT output `<promise>COMPLETE</promise>` in any message if there are still `todo` or `in-progress` tasks.
 
 If ALL tasks are now `done`, write this completion message this to stdout:
 
 ```xml
 <promise>COMPLETE</promise>
 ```
-
-Otherwise, exit without the completion message (another invocation will handle the next task).
