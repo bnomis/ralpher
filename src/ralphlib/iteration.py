@@ -13,6 +13,7 @@ import loguru
 import orjson
 import rich.console
 
+import ralphlib.hooks
 import ralphlib.logger
 import ralphlib.printer
 import ralphlib.signals
@@ -25,7 +26,9 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 
-task_progress_re = re.compile(r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<count>(?P<count>\d+)</count>\s*</task>')
+task_progress_re = re.compile(
+    r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done))</status>\s*</task>'
+)
 
 
 @dataclasses.dataclass
@@ -408,6 +411,13 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
         **kwargs,
     )
     log_msg(options, context, f'Started agent process {proc.pid}')
+    ralphlib.hooks.event(
+        options,
+        ralphlib.types.RalpherEventType.AGENT_PROCESS_START,
+        {
+            'agent_process_id': proc.pid,
+        },
+    )
 
     # Threads to read and print from each pipe concurrently
     stdout_thread = threading.Thread(
@@ -669,6 +679,17 @@ def process_task_progress(
             tid = task.group('id')
             count = task.group('count')
             title = task.group('title')
+            status = task.group('status')
+            ralphlib.hooks.event(
+                options,
+                ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS,
+                {
+                    'task_id': tid,
+                    'task_title': title,
+                    'task_count': count,
+                    'task_status': status,
+                },
+            )
             return ralphlib.types.MessageType.PROGRESS, f'\ntask {tid} of {count}: {title}'
     except Exception as e:
         loguru.logger.exception(f'Exception in process_task_progress: {e}')
