@@ -37,6 +37,9 @@ class RalpherEventType(enum.IntEnum):
     ITERATION_END = 3
     END = 4
     ERROR = 5
+    LLM_TASK_PROGRESS = 6
+    AGENT_PROCESS_START = 7
+    AGENT_PROCESS_END = 8
 
 
 ralpher_event_type_to_str = {
@@ -46,4 +49,7 @@ ralpher_event_type_to_str = {
     RalpherEventType.ITERATION_END: 'iteration_end',
     RalpherEventType.END: 'end',
     RalpherEventType.ERROR: 'error',
+    RalpherEventType.LLM_TASK_PROGRESS: 'llm_task_progress',
+    RalpherEventType.AGENT_PROCESS_START: 'agent_process_start',
+    RalpherEventType.AGENT_PROCESS_END: 'agent_process_end',
 }
