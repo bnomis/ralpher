@@ -1,13 +1,18 @@
 # Run one task
 
 {% if worktree %}
-Before doing anything take note of and follow these **important** rules about worktrees:
+
+## Worktree rules
+
+Before doing anything remember and follow these **important** rules about worktrees:
 
 - ensure you change working directory to the worktree directory {{ worktree_name }} before starting
 - ONLY edit and commit files in the worktree
 - DO NOT work in the main branch
 - If you cannot find the worktree, exit with an error message
 {% endif %}
+
+## Read the tasks file
 
 Read the file {{ task_file }} and identify tasks.
 Count the total number of tasks in the file.
@@ -19,6 +24,10 @@ Task titles have the general form:
 ```text
 ## Task <task-number>: <task-name>
 ```
+
+## Look for `done` tasks with unchecked Subtasks and "Acceptance Criteria"
+
+If any of the `done` tasks have unchecked [ ] Subtasks or "Acceptance Criteria". Check the status of the Subtask or "Acceptance Criteria" by examining the implementation. If the Subtask or "Acceptance Criteria" is implemented mark it as done [x]. If there are any unimplemented Subtasks or "Acceptance Criteria" change the task status to `in-progress`.
 
 ## Select a task
 
