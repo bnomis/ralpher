@@ -50,6 +50,7 @@ To let the user know what you are working on, write the following to stdout:
 <id>task-number</id>
 <title>task-name</title>
 <count>tasks-count</count>
+<status>start</status>
 </task>
 ```
 
@@ -79,7 +80,20 @@ Throughout implementation, print your current status to stdout including: which 
 
 ## After implementing the task
 
-After implementing the task, check {{ task_file }} for any remaining `todo` or `in-progress` tasks.
+To let the user know what you've finished the task, write the following to stdout:
+
+```xml
+<task>
+<id>task-number</id>
+<title>task-name</title>
+<count>tasks-count</count>
+<status>done</status>
+</task>
+```
+
+The variables have the same definitions as for before implementing a task.
+
+Then check {{ task_file }} for any remaining `todo` or `in-progress` tasks.
 
 If ALL tasks are now `done`, write this completion message this to stdout:
 
