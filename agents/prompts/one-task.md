@@ -111,7 +111,6 @@ The variables have the same definitions as in [before implementing a task](#befo
 Check {{ task_file }} for tasks with status `todo` or `in-progress`.
 
 If there are tasks with status `todo` or `in-progress`, exit.
-Important: DO NOT output `<promise>COMPLETE</promise>` in any message if there are still `todo` or `in-progress` tasks.
 
 If ALL tasks are now `done`, write this completion message this to stdout:
 
