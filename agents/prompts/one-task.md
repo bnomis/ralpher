@@ -14,7 +14,7 @@ Before doing anything remember and follow these rules:
 
 ## Read the tasks file
 
-Read the tasks file {{ task_file }} and identify tasks.
+Read the tasks file {{ task_file }}{% if worktree %} in the worktree{% endif %} and identify tasks.
 Count the total number of tasks in the file.
 
 Tasks have a status: `todo`, `in-progress`, or `done`.
