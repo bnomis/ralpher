@@ -214,7 +214,7 @@ def loop(options: RalpherOptions) -> bool:
         lines.append(f'loop time: {readable_loop_time}')
         lines.append(f'overhead: {readable_overhead_time}')
 
-    ralphlib.printer.prt(options, f'{", ".join(lines)}\n', 0)
+    ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
     # state json
     new_state = {
