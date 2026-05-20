@@ -105,7 +105,7 @@ def loop(options: RalpherOptions) -> bool:
 
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
         p = ralphlib.templater.render(options, content, i)
-        s = f'\nStarting iteration {i}/{options.iterations} at {now}\n\nPrompt:\n{p}\n\n'
+        s = f'\nStarting iteration {i}/{options.iterations} at {now}\n\nPrompt:\n\n{p}\n\n'
         print_both(options, s, i)
 
         # state json
