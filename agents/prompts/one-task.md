@@ -16,7 +16,7 @@ Before doing anything, remember and follow these rules:
 
 ## Read the tasks file
 
-Read the tasks file {{ task_file }}{% if worktree %} in the worktree{% endif %} and identify tasks.
+Read the tasks file {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %} and identify tasks.
 Count the total number of tasks in the file.
 
 Tasks have a status: `todo`, `in-progress`, or `done`.
@@ -82,14 +82,14 @@ In the above the variables have the following definitions:
 
 - `task-number`: the number of the current task
 - `task-name`: the name of the current task
-- `tasks-count`: the total number of tasks in {{ task_file }}
+- `tasks-count`: the total number of tasks in {{ task_file_relative_path }}
 - `status`: one of `start`, `done`, or `blocked`
 
 ## Implement the selected task
 
 1. To let the user know what you are working on, write a `<task>` block to stdout with `<status>start</status>`.
 2. If the selected task references a spec, read the relevant spec before starting implementation.
-3. Change the task status to `in-progress` in {{ task_file }}{% if worktree %} in the worktree{% endif %}.
+3. Change the task status to `in-progress` in {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %}.
 4. Read any existing code the task will modify or interact with.
 5. Implement the task, following any acceptance criteria listed with it, and following the project wide coding standards defined in AGENTS.md.
 6. Run `ruff check` and `ruff format` on any new or changed files and fix errors.
@@ -97,11 +97,11 @@ In the above the variables have the following definitions:
    - If tests fail and the fix is in scope: fix the issues, re-run, repeat
      until tests pass.
    - If tests fail and the fix is beyond the scope of this task: add new
-     tasks to {{ task_file }}, leave this task as `in-progress`, write a
+     tasks to {{ task_file_relative_path }}, leave this task as `in-progress`, write a
      `<task>` block with `<status>blocked</status>`, and exit.
    - Once tests pass: mark completed "acceptance criteria" and "subtasks"
      as done [x], then continue to step 8.
-8. Change the task status to `done` in {{ task_file }}{% if worktree %} in the worktree{% endif %}.
+8. Change the task status to `done` in {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %}.
 9. Commit the changes with git{% if worktree %} in the worktree{% endif %} using a message that starts with the task number, e.g. "Task 3: add SearchBatch dataclass".
 
 Throughout implementation, print your current status to stdout including: which task you're working on, what actions you're taking, and your reasoning.
@@ -112,7 +112,7 @@ To let the user know what you've finished the task, write a `<task>` block to st
 
 ### Check for more `todo` or `in-progress` tasks
 
-Check {{ task_file }}{% if worktree %} in the worktree{% endif %} for tasks with status `todo` or `in-progress`.
+Check {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %} for tasks with status `todo` or `in-progress`.
 
 If there are tasks with status `todo` or `in-progress`,
 DO NOT start a new task, EXIT now.

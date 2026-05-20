@@ -1,5 +1,4 @@
 import datetime
-import os.path
 import pathlib
 import re
 import shlex
@@ -54,13 +53,18 @@ def make_context(
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     local_tz = tzlocal.get_localzone()
     now_local = datetime.datetime.now(local_tz)
-    cwd = task_file = task_file_number_str = ''
+    cwd = task_file_number_str = ''
+    cwd_path = task_file_path = task_file_relative_path = None
     if options.cwd:
         cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
         cwd = str(cwd_path)
+
     if options.task_file:
-        task_file = options.task_file
-        _, tail = os.path.split(task_file)
+        task_file_relative_path = task_file_path = pathlib.Path(options.task_file).resolve().expanduser()
+        if cwd_path and task_file_path.is_relative_to(cwd_path):
+            task_file_relative_path = task_file_path.relative_to(cwd_path)
+
+        tail = task_file_path.name
         # try to extract a number from the end of the task file name
         # e.g. "task-1.md" -> "1"
         if tail:
@@ -77,8 +81,8 @@ def make_context(
 
     context: dict[str, str] = {
         'current_iteration': str(options.current_iteration),
-        'cwd_basename': pathlib.PurePosixPath(cwd).name if cwd else '',
-        'cwd_dirname': str(pathlib.PurePosixPath(cwd).parent) if cwd else '',
+        'cwd_basename': cwd_path.name if cwd_path else '',
+        'cwd_dirname': str(cwd_path.parent) if cwd_path else '',
         'cwd': cwd,
         'datetime_local': now_local.isoformat(),
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
@@ -87,13 +91,14 @@ def make_context(
         'iterations': str(options.iterations),
         'last_commit_summary': ralphlib.giter.last_commit_summary(),
         'ralpher_root': str(ralpher_root()),
-        'task_file_basename': pathlib.PurePosixPath(task_file).name if task_file else '',
-        'task_file_dir_basename': pathlib.PurePosixPath(task_file).parent.name if task_file else '',
-        'task_file_dirname': str(pathlib.PurePosixPath(task_file).parent) if task_file else '',
+        'task_file_basename': task_file_path.name if task_file_path else '',
+        'task_file_dir_basename': task_file_path.parent.name if task_file_path else '',
+        'task_file_dirname': str(task_file_path.parent) if task_file_path else '',
         'task_file_number': task_file_number_str,
-        'task_file_stem': pathlib.PurePosixPath(task_file).stem if task_file else '',
-        'task_file_suffix': pathlib.PurePosixPath(task_file).suffix if task_file else '',
-        'task_file': task_file,
+        'task_file_stem': task_file_path.stem if task_file_path else '',
+        'task_file_suffix': task_file_path.suffix if task_file_path else '',
+        'task_file': str(task_file_path) if task_file_path else '',
+        'task_file_relative_path': str(task_file_relative_path) if task_file_relative_path else '',
         'time_epoch': str(int(time.time())),
     }
 

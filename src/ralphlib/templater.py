@@ -33,9 +33,21 @@ def render(options: RalpherOptions, prompt: str, iteration: int) -> str:
         'iterations': str(options.iterations),
         'worktree': False,
         'worktree_name': '',
+        'task_file': '',
+        'task_file_relative_path': '',
     }
+    cwd_path = task_file_path = task_file_relative_path = None
+    if options.cwd:
+        cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
+
     if options.task_file:
-        context['task_file'] = options.task_file
+        task_file_path = pathlib.Path(options.task_file).resolve().expanduser()
+        context['task_file'] = str(task_file_path)
+        context['task_file_relative_path'] = str(task_file_path)
+        if cwd_path and task_file_path.is_relative_to(cwd_path):
+            task_file_relative_path = task_file_path.relative_to(cwd_path)
+            context['task_file_relative_path'] = str(task_file_relative_path)
+
     if options.worktree:
         context['worktree'] = True
         if options.task_file:
