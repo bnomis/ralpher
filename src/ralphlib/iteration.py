@@ -568,6 +568,7 @@ def process_system(
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     skip = [
+        'compat_boundary',
         'hook_started',
         'hook_progress',
         'hook_response',
