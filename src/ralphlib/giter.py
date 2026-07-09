@@ -58,6 +58,8 @@ def check_git(options: RalpherOptions, path: pathlib.Path | str | None = None) -
         return
 
     check_repo_clean(options, repo)
+    if options.worktree:
+        check_divergence(options, repo)
 
 
 def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | None:
@@ -156,3 +158,40 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
         console_stderr.print(f'No upstream branch set for the {branch.name} branch')
         return None
     return tracking
+
+
+def check_divergence(options: RalpherOptions, repo: git.Repo) -> None:
+    base, base_short = get_origin(repo)
+    if not base:
+        console_stderr.print('Warning: origin/HEAD is not set locally. Cannot check for divergence.')
+        return
+
+    current = get_current_branch(repo)
+    if not current:
+        console_stderr.print('Warning: HEAD is detached. Cannot check for divergence.')
+        return
+
+    if base_short != current:
+        lines = ['Warning: the git worktree will diverge from the current branch.']
+        lines.append(f'You probably want to: "git remote set-head origin {current}" before continuing. Exit now?')
+        decision = YNConfirm.ask(lines_to_text(options, lines), default=True)
+        if decision:
+            sys.exit('Aborting due to divergence.')
+
+
+def get_origin(repo: git.Repo) -> tuple[str | None, str | None]:
+    # Where origin/HEAD points — the base Claude Code will branch new worktrees from
+    try:
+        origin_head = repo.remotes.origin.refs.HEAD.reference  # e.g. origin/master
+        base = origin_head.name  # "origin/master"
+        base_short = base.split('/', 1)[1]  # "master"
+    except AttributeError, TypeError:
+        # origin/HEAD not set locally
+        base = base_short = None
+    return base, base_short
+
+
+def get_current_branch(repo: git.Repo) -> str | None:
+    if repo.head.is_detached:
+        return None
+    return repo.active_branch.name
