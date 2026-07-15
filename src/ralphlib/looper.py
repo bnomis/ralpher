@@ -96,7 +96,7 @@ def loop(options: RalpherOptions) -> bool:
     loop_times = []
     loop_tds = []
     exit_reason = 'completed all iterations'
-    error = termination = False
+    complete = error = termination = False
 
     for i in range(1, options.iterations + 1):
         options.current_iteration = i
@@ -255,6 +255,18 @@ def loop(options: RalpherOptions) -> bool:
             'total_time_seconds': td.total_seconds(),
         },
     )
+
+    if complete and not (bool(error) or termination) and options.worktree and options.task_file:
+        lines = ['Probable cleanup commands...']
+        worktree = ralphlib.templater.task_file_slug(options.task_file)
+        branch = f'worktree-{worktree}'
+        cmds = [f'git merge {branch}']
+        cmds.append('git push')
+        cmds.append(f'git worktree unlock {worktree}')
+        cmds.append(f'git worktree remove {worktree}')
+        cmds.append(f'git branch -d {branch}')
+        lines.append(' && '.join(cmds))
+        ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
     return bool(error) or termination
 
