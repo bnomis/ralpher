@@ -260,7 +260,7 @@ def loop(options: RalpherOptions) -> bool:
         lines = ['Probable cleanup commands...']
         worktree = ralphlib.templater.task_file_slug(options.task_file)
         branch = f'worktree-{worktree}'
-        cmds = [f'git merge {branch}']
+        cmds = [f'git merge --no-ff {branch}']
         cmds.append('git push')
         cmds.append(f'git worktree unlock {worktree}')
         cmds.append(f'git worktree remove {worktree}')
