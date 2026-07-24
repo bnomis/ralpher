@@ -552,6 +552,9 @@ def process_line(
         if ptype == 'rate_limit_event':
             return process_rate_limit_event(options, context, payload, line)
 
+        if ptype == 'tool_progress':
+            return process_tool_progress(options, context, payload, line)
+
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
         add_unknown_ptype(context, ptype)
     except Exception as e:
@@ -579,6 +582,7 @@ def process_system(
         'task_started',
         'task_updated',
         'thinking_tokens',
+        'vcs_state_changed',
     ]
     content = payload.get('subtype', '')
     if content and content in skip:
@@ -811,6 +815,15 @@ def process_stream_event(
 
 
 def process_rate_limit_event(
+    options: RalpherOptions,
+    context: IterationContext,
+    payload: dict[str, Any],
+    line: str,
+) -> tuple[ralphlib.types.MessageType, str]:
+    return ralphlib.types.MessageType.NONE, line
+
+
+def process_tool_progress(
     options: RalpherOptions,
     context: IterationContext,
     payload: dict[str, Any],
