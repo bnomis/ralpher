@@ -47,6 +47,10 @@ class RalpherOptions:
             help='Path to settings file. Overrides ~/.ralpher/settings.json',
         ),
     ] = None
+    cleanup: Annotated[
+        bool,
+        cappa.Arg(long=True, help='Print cleanup commands'),
+    ] = False
     quiet: Annotated[
         bool,
         cappa.Arg(long=True, help='Suppress output'),

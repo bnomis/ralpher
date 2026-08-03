@@ -256,8 +256,23 @@ def loop(options: RalpherOptions) -> bool:
         },
     )
 
-    if complete and not (bool(error) or termination) and options.worktree and options.task_file:
+    if complete and not (bool(error) or termination):
+        print_cleanup_cmds(options)
+
+    return bool(error) or termination
+
+
+def print_cleanup_cmds(options: RalpherOptions) -> None:
+    cmds = cleanup_cmds(options)
+    if cmds:
         lines = ['Probable cleanup commands...']
+        lines.append(' && '.join(cmds))
+        ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
+
+
+def cleanup_cmds(options: RalpherOptions) -> list[str]:
+    cmds = []
+    if options.worktree and options.task_file:
         worktree = ralphlib.templater.task_file_slug(options.task_file)
         branch = f'worktree-{worktree}'
         cmds = [f'git merge --no-ff {branch}']
@@ -265,10 +280,7 @@ def loop(options: RalpherOptions) -> bool:
         cmds.append(f'git worktree unlock {worktree}')
         cmds.append(f'git worktree remove {worktree}')
         cmds.append(f'git branch -d {branch}')
-        lines.append(' && '.join(cmds))
-        ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
-
-    return bool(error) or termination
+    return cmds
 
 
 def print_both(
