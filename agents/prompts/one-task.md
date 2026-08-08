@@ -65,7 +65,7 @@ If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks
 
 ## `<task>` blocks
 
-Let the user know what you are working on by writing `<task>` blocks to stdout.
+Let the user know what you are working on by writing `<task>` blocks to your standard out. Do not use `bash printf` or `bash echo` - actually write to your standard out from your process.
 
 `<task>` blocks have the form below:
 

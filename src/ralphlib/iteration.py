@@ -602,19 +602,20 @@ def process_user(
         role = message.get('role', '')
         if role == 'user':
             content = message.get('content', [])
-            if content:
-                for c in content:
-                    tool_use_id = c.get('tool_use_id')
-                    if tool_use_id and tool_use_id in context.background_tools:
-                        tool_type = c.get('type', '')
-                        if tool_type == 'tool_result':
-                            cs = c.get('content', '')
-                            if cs:
-                                m = tool_id_regex.match(cs)
-                                if m:
-                                    tool_id = m.group('id')
-                                    if tool_id:
-                                        add_background_tool_id(context, tool_use_id, tool_id)
+            for c in content:
+                tool_use_id = c.get('tool_use_id', '')
+                tool_type = c.get('type', '')
+                cs = c.get('content', '')
+                if tool_use_id and tool_use_id in context.background_tools:
+                    if tool_type == 'tool_result':
+                        if cs:
+                            m = tool_id_regex.match(cs)
+                            if m:
+                                tool_id = m.group('id')
+                                if tool_id:
+                                    add_background_tool_id(context, tool_use_id, tool_id)
+                elif tool_type == 'tool_result' and cs and '<task>' in cs and '</task>' in cs:
+                    return process_task_progress(options, context, payload, cs)
 
     return ralphlib.types.MessageType.NONE, line
 
