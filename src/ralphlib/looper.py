@@ -266,7 +266,7 @@ def print_cleanup_cmds(options: RalpherOptions) -> None:
     cmds = cleanup_cmds(options)
     if cmds:
         lines = ['Probable cleanup commands...']
-        lines.append(' && '.join(cmds))
+        lines.append(' && \\\n'.join(cmds))
         ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
 
@@ -277,8 +277,8 @@ def cleanup_cmds(options: RalpherOptions) -> list[str]:
         branch = f'worktree-{worktree}'
         cmds = [f'git merge --no-ff {branch}']
         cmds.append('git push')
-        cmds.append(f'git worktree unlock {worktree}')
-        cmds.append(f'git worktree remove {worktree}')
+        cmds.append(f'(git worktree unlock {worktree} 2>/dev/null || true)')
+        cmds.append(f'git worktree remove --force {worktree}')
         cmds.append(f'git branch -d {branch}')
     return cmds
 
