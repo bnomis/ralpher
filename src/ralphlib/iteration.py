@@ -738,9 +738,10 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
         'file_path',
         'pattern',
         'query',
-        'url',
-        'task_id',
         'question',
+        'skill',
+        'task_id',
+        'url',
     ]
     for f in regular_fields:
         if f in input_field and input_field[f]:
