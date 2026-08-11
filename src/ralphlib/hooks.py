@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
     from ralphlib.types import RalpherEventType
 
+processed_hooks: set[str] = set()
+
 
 def event(
     options: RalpherOptions,
@@ -26,9 +28,17 @@ def event(
     hooks = options.settings.get('hooks', {})
     if not hooks:
         return
+
     event_type_string = ralphlib.types.ralpher_event_type_to_str.get(event_type, 'unknown')
     if event_type_string not in hooks:
         return
+
+    # don't process the same hook twice
+    ev_str = event_type_string + str(event_context)
+    ev_str_hash = str(hash(ev_str))
+    if ev_str_hash in processed_hooks:
+        return
+    processed_hooks.add(ev_str_hash)
 
     hook_templates = options.settings.get('hook_templates', True)
     context = {}
