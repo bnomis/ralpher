@@ -266,7 +266,7 @@ def print_cleanup_cmds(options: RalpherOptions) -> None:
     cmds = cleanup_cmds(options)
     if cmds:
         lines = ['Probable cleanup commands...']
-        lines.append(' && \\\n'.join(cmds))
+        lines.append(' && \\\n'.join([f'  {c}' for c in cmds]))
         ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
 
