@@ -276,10 +276,10 @@ def cleanup_cmds(options: RalpherOptions) -> list[str]:
         worktree = ralphlib.templater.task_file_slug(options.task_file)
         branch = f'worktree-{worktree}'
         cmds = [f'git merge --no-ff {branch}']
-        cmds.append('git push')
         cmds.append(f'(git worktree unlock {worktree} 2>/dev/null || true)')
         cmds.append(f'git worktree remove --force {worktree}')
         cmds.append(f'git branch -d {branch}')
+        cmds.append('git push')
     return cmds
 
 
