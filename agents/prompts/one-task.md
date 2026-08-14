@@ -92,7 +92,20 @@ In the above the variables have the following definitions:
 3. Change the task status to `in-progress` in {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %}.
 4. Read any existing code the task will modify or interact with.
 5. Implement the task, following any acceptance criteria listed with it, and following the project wide coding standards defined in AGENTS.md.
-6. Run `ruff check` and `ruff format` on any new or changed files and fix errors.
+6. Run every check the project defines on the new or changed files, and fix
+   what they report. Read the set from the repository rather than assuming it -
+   a check you do not name is a check that does not run:
+   - `.pre-commit-config.yaml`: run `pre-commit run --all-files`, and run it
+     again with `--hook-stage pre-push` if any hook declares
+     `stages: [pre-push]`. Those hooks do not fire on a commit, so nothing in
+     this loop reaches them otherwise.
+   - any verification script under `bin/`, `scripts/` or `tools/`, especially a
+     whole-tree audit or duplication check - the hits it finds are cross-file,
+     so this task is the first point at which they can be seen at all.
+   Treat every hit as blocking. Reading a check's output and continuing past it
+   leaves the finding for whoever merges the branch, by which time nobody holds
+   the context that would fix it cheaply. Fix it, or record the deliberate
+   exception the project's own convention provides, before step 8.
 7. Run tests to verify the implementation
    - If tests fail and the fix is in scope: fix the issues, re-run, repeat
      until tests pass.
