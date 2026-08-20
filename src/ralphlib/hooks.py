@@ -11,6 +11,7 @@ import tzlocal
 from jinja2.sandbox import SandboxedEnvironment
 
 import ralphlib.giter
+import ralphlib.signals
 import ralphlib.types
 
 if TYPE_CHECKING:
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
     from ralphlib.types import RalpherEventType
 
 processed_hooks: set[str] = set()
+seen_task_ids = {}
 
 
 def event(
@@ -37,7 +39,19 @@ def event(
     ev_str = event_type_string + str(event_context)
     ev_str_hash = str(hash(ev_str))
     if ev_str_hash in processed_hooks:
+        if event_type == ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS:
+            task_id = event_context.get('task_id')
+            task_status = event_context.get('task_status')
+            if task_id:
+                if task_id in seen_task_ids and seen_task_ids[task_id] == task_status and task_status != 'blocked':
+                    loguru.logger.debug(f'Already processed task_id {task_id} with status {task_status}: looks like a loop')
+                    ralphlib.signals.set_should_exit(True)
+                    return
+
+                seen_task_ids[task_id] = task_status
         return
+
+    # record the hooks we've seen
     processed_hooks.add(ev_str_hash)
 
     hook_templates = options.settings.get('hook_templates', True)
