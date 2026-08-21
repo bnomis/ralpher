@@ -43,7 +43,7 @@ def event(
             task_id = event_context.get('task_id')
             task_status = event_context.get('task_status')
             if task_id:
-                if task_id in seen_task_ids and seen_task_ids[task_id] == task_status and task_status != 'blocked':
+                if task_id in seen_task_ids and seen_task_ids[task_id] == task_status and task_status == 'blocked':
                     loguru.logger.debug(f'Already processed task_id {task_id} with status {task_status}: looks like a loop')
                     ralphlib.signals.set_should_exit(True)
                     return
