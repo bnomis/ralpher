@@ -741,8 +741,10 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
         'pattern',
         'query',
         'question',
+        'reason',
         'skill',
         'task_id',
+        'title',
         'url',
     ]
     for f in regular_fields:
