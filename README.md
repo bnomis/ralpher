@@ -61,6 +61,8 @@ The following hook events are supported:
 
 To include some context in your hooks they can be preprocessed as Jinja templates before being run. Use the `hook_templates` setting to turn this functionality on/off.
 
+Context values are substituted after the command has been split into arguments, so you never need to escape them. A value containing quotes, spaces or newlines lands in exactly one argument -- a task title such as `Give each project's config.py a module name` will not break the command or split into several arguments. Quote your templates for readability if you like; the quoting applies to the template, not to the values.
+
 The available context is:
 
 ```json

@@ -2,7 +2,7 @@
 name = "ralpher"
 version = "0.1.0"
 description = "A ralph loop"
-requires-python = ">=3.14"
+requires-python = ">=3.14.5"
 dependencies = [
     "cappa>=0.31.0",
     "filelock>=3.24.3",

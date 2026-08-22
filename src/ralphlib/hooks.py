@@ -15,8 +15,13 @@ import ralphlib.signals
 import ralphlib.types
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ralphlib.options import RalpherOptions
     from ralphlib.types import RalpherEventType
+
+HOOK_VALUE_SENTINEL = '\x00'
+HOOK_VALUE_RE = re.compile(f'{HOOK_VALUE_SENTINEL}(\\d+){HOOK_VALUE_SENTINEL}')
 
 processed_hooks: set[str] = set()
 seen_task_ids = {}
@@ -60,9 +65,7 @@ def event(
         context = make_context(options, event_type, event_context)
 
     for cmd in hooks[event_type_string]:
-        if hook_templates:
-            cmd = preprocess_hook(cmd, context)
-        run_hook(cmd)
+        run_hook(cmd, context if hook_templates else None)
 
 
 def ralpher_root() -> pathlib.Path:
@@ -151,23 +154,42 @@ def make_context(
     return context
 
 
-def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
-    env = SandboxedEnvironment()
+def hook_environment(finalize: Callable[[Any], str] | None = None) -> SandboxedEnvironment:
+    env = SandboxedEnvironment(finalize=finalize)
 
     env.filters['basename'] = lambda p: pathlib.PurePosixPath(p).name
     env.filters['dirname'] = lambda p: str(pathlib.PurePosixPath(p).parent)
     env.filters['stem'] = lambda p: pathlib.PurePosixPath(p).stem
     env.filters['suffix'] = lambda p: pathlib.PurePosixPath(p).suffix
 
-    template = env.from_string(cmd)
-    return template.render(**context)
+    return env
 
 
-def run_hook(cmd: str) -> None:
-    # double spaces
-    cmd = re.sub(r'\s+', ' ', cmd)
-    args = shlex.split(cmd)
+def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
+    """Render a template to a plain string. For values used as paths, not as commands."""
+    return hook_environment().from_string(cmd).render(**context)
+
+
+def render_hook_args(cmd: str, context: dict[str, Any]) -> list[str]:
+    """Render a hook command template into an argument list.
+
+    Context values render as sentinels and are spliced back in after the
+    command is split, so a value containing quotes, spaces or newlines can
+    neither break the parse nor turn into extra arguments.
+    """
+    values: list[str] = []
+
+    def stash(value: Any) -> str:
+        values.append(str(value).replace(HOOK_VALUE_SENTINEL, ''))
+        return f'{HOOK_VALUE_SENTINEL}{len(values) - 1}{HOOK_VALUE_SENTINEL}'
+
+    rendered = hook_environment(finalize=stash).from_string(cmd).render(**context)
+    return [HOOK_VALUE_RE.sub(lambda m: values[int(m.group(1))], arg) for arg in shlex.split(rendered)]
+
+
+def run_hook(cmd: str, context: dict[str, Any] | None = None) -> None:
     try:
+        args = shlex.split(cmd) if context is None else render_hook_args(cmd, context)
         subprocess.Popen(  # noqa: S603
             args,
             stdout=subprocess.DEVNULL,
