@@ -28,10 +28,10 @@ def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
 def test_process_line_system_type() -> None:
     options = make_options(quiet=True)
     context = make_context()
-    line = orjson.dumps({'type': 'system', 'subtype': 'init'}).decode()
+    line = orjson.dumps({'type': 'system', 'subtype': 'unknown'}).decode()
     message_type, message = ralphlib.iteration.process_line(options, context, line)
     assert message_type == ralphlib.types.MessageType.SYSTEM
-    assert message == 'init'
+    assert message == 'unknown'
 
 
 def test_process_line_assistant_dispatches() -> None:
@@ -750,7 +750,7 @@ def test_process_terminates_subprocess_on_should_exit() -> None:
     mock_proc.returncode = -15  # SIGTERM
 
     # proc.poll() returns None (still running) on first call, then 0 after kill
-    poll_values = [None, -15]
+    poll_values = [None, -15, -15]
     mock_proc.poll = MagicMock(side_effect=poll_values)
 
     with (
