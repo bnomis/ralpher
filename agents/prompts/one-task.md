@@ -73,6 +73,7 @@ Let the user know what you are working on by writing `<task>` blocks to your sta
 <task>
 <id>task-number</id>
 <title>task-name</title>
+<index>task-index</index>
 <count>tasks-count</count>
 <status>start|done|blocked</status>
 </task>
@@ -82,6 +83,7 @@ In the above the variables have the following definitions:
 
 - `task-number`: the number of the current task
 - `task-name`: the name of the current task
+- `task-index`: the index, starting from 1, of the current task in {{ task_file_relative_path }}
 - `tasks-count`: the total number of tasks in {{ task_file_relative_path }}
 - `status`: one of `start`, `done`, or `blocked`
 

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 task_progress_re = re.compile(
-    r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done))</status>\s*</task>'
+    r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<index>(?P<index>\d+)</index>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done))</status>\s*</task>'
 )
 
 
@@ -689,6 +689,7 @@ def process_task_progress(
         if task:
             tid = task.group('id')
             count = task.group('count')
+            index = task.group('index')
             title = task.group('title')
             status = task.group('status')
             ralphlib.hooks.event(
@@ -697,11 +698,12 @@ def process_task_progress(
                 {
                     'task_id': tid,
                     'task_title': title,
+                    'task_index': index,
                     'task_count': count,
                     'task_status': status,
                 },
             )
-            return ralphlib.types.MessageType.PROGRESS, f'\ntask {tid} of {count}: {title}'
+            return ralphlib.types.MessageType.PROGRESS, f'\ntask {tid}: {title} {index}/{count} {status}\n'
     except Exception as e:
         loguru.logger.exception(f'Exception in process_task_progress: {e}')
         log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
