@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 task_progress_re = re.compile(
-    r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<index>(?P<index>\d+)</index>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done))</status>\s*</task>'
+    r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<index>(?P<index>\d+)</index>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done|blocked|operator))</status>\s*</task>'
 )
 
 
@@ -442,6 +442,11 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
 
     # Wait for the process to complete
     while True:
+        time.sleep(SUBPROCESS_POLL_INTERVAL)
+
+        if proc.poll() is not None:
+            break
+
         if ralphlib.signals.get_should_exit():
             log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
             kill_agent(proc)
@@ -451,11 +456,6 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
             log_msg(options, context, f'Error detected in output. Terminating subprocess {proc.pid}...')
             kill_agent(proc)
             break
-
-        if proc.poll() is not None:
-            break
-
-        time.sleep(SUBPROCESS_POLL_INTERVAL)
 
     # Join threads to ensure all output is read
     stdout_thread.join()
@@ -572,11 +572,13 @@ def process_system(
 ) -> tuple[ralphlib.types.MessageType, str]:
     skip = [
         'background_tasks_changed',
+        'commands_changed',
         'compat_boundary',
         'hook_started',
         'hook_progress',
         'hook_response',
         'init',
+        'notification',
         'status',
         'task_notification',
         'task_progress',
@@ -614,7 +616,8 @@ def process_user(
                                 tool_id = m.group('id')
                                 if tool_id:
                                     add_background_tool_id(context, tool_use_id, tool_id)
-                elif tool_type == 'tool_result' and cs and '<task>' in cs and '</task>' in cs:
+
+                if tool_type == 'tool_result' and cs and '<task>' in cs and '</task>' in cs:
                     return process_task_progress(options, context, payload, cs)
 
     return ralphlib.types.MessageType.NONE, line
@@ -632,6 +635,12 @@ def process_assistant(
         if content:
             for c in content:
                 ctype = c.get('type', '')
+
+                if ctype == 'tool_result':
+                    tool_result = c.get('content', '')
+                    if tool_result and '<task>' in tool_result and '</task>' in tool_result:
+                        return process_task_progress(options, context, payload, tool_result)
+
                 if ctype == 'text':
                     text = c.get('text', '')
                     if text:
@@ -743,6 +752,7 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
         'question',
         'reason',
         'skill',
+        'stop',
         'task_id',
         'title',
         'url',

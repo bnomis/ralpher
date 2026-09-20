@@ -61,7 +61,22 @@ If ALL tasks are `done`, write this message to stdout:
 and exit.
 
 Otherwise, select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`.
+
 If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
+
+If the chosen task needs operator/human input before it can run, e.g. an answer to a question, write the following task block (see [task blocks](#task-blocks) below) to stdout:
+
+```xml
+<task>
+<id>task-number</id>
+<title>task-name</title>
+<index>task-index</index>
+<count>tasks-count</count>
+<status>operator</status>
+</task>
+```
+
+and exit.
 
 ## `<task>` blocks
 
@@ -75,7 +90,7 @@ Let the user know what you are working on by writing `<task>` blocks to your sta
 <title>task-name</title>
 <index>task-index</index>
 <count>tasks-count</count>
-<status>start|done|blocked</status>
+<status>start|done|blocked|operator</status>
 </task>
 ```
 
@@ -85,7 +100,7 @@ In the above the variables have the following definitions:
 - `task-name`: the name of the current task
 - `task-index`: the index, starting from 1, of the current task in {{ task_file_relative_path }}
 - `tasks-count`: the total number of tasks in {{ task_file_relative_path }}
-- `status`: one of `start`, `done`, or `blocked`
+- `status`: one of `start`, `done`, `blocked`, or `operator`
 
 ## Implement the selected task
 

@@ -32,21 +32,15 @@ def event(
     event_type: RalpherEventType,
     event_context: dict[str, Any],
 ) -> None:
-    hooks = options.settings.get('hooks', {})
-    if not hooks:
-        return
-
+    task_id = event_context.get('task_id')
+    task_status = event_context.get('task_status')
     event_type_string = ralphlib.types.ralpher_event_type_to_str.get(event_type, 'unknown')
-    if event_type_string not in hooks:
-        return
 
     # don't process the same hook twice
     ev_str = event_type_string + str(event_context)
     ev_str_hash = str(hash(ev_str))
     if ev_str_hash in processed_hooks:
         if event_type == ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS:
-            task_id = event_context.get('task_id')
-            task_status = event_context.get('task_status')
             if task_id:
                 if task_id in seen_task_ids and seen_task_ids[task_id] == task_status and task_status == 'blocked':
                     loguru.logger.debug(f'Already processed task_id {task_id} with status {task_status}: looks like a loop')
@@ -59,13 +53,22 @@ def event(
     # record the hooks we've seen
     processed_hooks.add(ev_str_hash)
 
-    hook_templates = options.settings.get('hook_templates', True)
-    context = {}
-    if hook_templates:
-        context = make_context(options, event_type, event_context)
+    # check if there are any hooks defined for this event type
+    hooks = options.settings.get('hooks', {})
+    if hooks and event_type_string in hooks:
+        # prepare the context for the hook templates
+        hook_templates = options.settings.get('hook_templates', True)
+        context = {}
+        if hook_templates:
+            context = make_context(options, event_type, event_context)
 
-    for cmd in hooks[event_type_string]:
-        run_hook(cmd, context if hook_templates else None)
+        # run each hook command with the prepared context
+        for cmd in hooks[event_type_string]:
+            run_hook(cmd, context if hook_templates else None)
+
+    # handle operator input required status
+    if task_status == 'operator':
+        ralphlib.signals.set_should_exit(True)
 
 
 def ralpher_root() -> pathlib.Path:
