@@ -12,6 +12,7 @@ import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.printer
+import ralphlib.settings
 import ralphlib.signals
 import ralphlib.state
 import ralphlib.templater
@@ -99,6 +100,9 @@ def loop(options: RalpherOptions) -> bool:
     complete = error = termination = False
 
     for i in range(1, options.iterations + 1):
+        if options.load_settings_on_loop:
+            options = ralphlib.settings.load_settings(options)
+
         options.current_iteration = i
         loop_start = datetime.datetime.now()
         now = loop_start.isoformat()

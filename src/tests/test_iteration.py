@@ -750,7 +750,7 @@ def test_process_terminates_subprocess_on_should_exit() -> None:
     mock_proc.returncode = -15  # SIGTERM
 
     # proc.poll() returns None (still running) on first call, then 0 after kill
-    poll_values = [None, -15, -15]
+    poll_values = [None, None, -15, -15]
     mock_proc.poll = MagicMock(side_effect=poll_values)
 
     with (

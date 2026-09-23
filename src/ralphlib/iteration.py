@@ -469,10 +469,12 @@ def kill_agent(proc: subprocess.Popen) -> None:
     for _ in range(MAX_KILL_ATTEMPTS):
         if proc.poll() is not None:
             break
+
         signal_agent(proc)
         time.sleep(SUBPROCESS_POLL_INTERVAL)
         if proc.poll() is not None:
             break
+
     if proc.poll() is None:
         loguru.logger.warning(f'Process {proc.pid} did not terminate after {MAX_KILL_ATTEMPTS} attempts.')
 

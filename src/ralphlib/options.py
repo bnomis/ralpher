@@ -47,6 +47,10 @@ class RalpherOptions:
             help='Path to settings file. Overrides ~/.ralpher/settings.json',
         ),
     ] = None
+    load_settings_on_loop: Annotated[
+        bool,
+        cappa.Arg(long=True, help='Load settings on each loop iteration'),
+    ] = False
     cleanup: Annotated[
         bool,
         cappa.Arg(long=True, help='Print cleanup commands'),
