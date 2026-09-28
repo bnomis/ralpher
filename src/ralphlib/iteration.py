@@ -753,6 +753,7 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
         'query',
         'question',
         'reason',
+        'run_id',
         'skill',
         'stop',
         'task_id',
