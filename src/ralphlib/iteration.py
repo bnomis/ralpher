@@ -644,11 +644,10 @@ def process_assistant(
                         return process_task_progress(options, context, payload, tool_result)
 
                 if ctype == 'text':
-                    text = c.get('text', '')
+                    text = c.get('text', '').strip()
                     if text:
-                        text = text.strip()
                         for stop in options.stops:
-                            if text.startswith(stop):
+                            if text == stop:
                                 set_complete(context, True)
                                 return ralphlib.types.MessageType.COMPLETE, ''
 
