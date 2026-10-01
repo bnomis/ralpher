@@ -64,7 +64,7 @@ MAX_KILL_ATTEMPTS = 3
 # regex to extract tool IDs from tool results that indicate a background tool has started, e.g. "Command running in background with ID: abc123."
 tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
 # list of tools that are known to run in the background, and thus should be tracked for their IDs
-background_tools_list = frozenset(['Bash'])
+background_tools_list = frozenset(['Agent', 'Bash'])
 # list tool names used to track background tasks
 background_task_tool_name = frozenset(['TaskOutput', 'TaskStop'])
 # message types that should trigger a newline before the next message
