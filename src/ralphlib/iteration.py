@@ -625,6 +625,20 @@ def process_user(
     return ralphlib.types.MessageType.NONE, line
 
 
+def is_stop(
+    options: RalpherOptions,
+    text: str,
+) -> bool:
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        for stop in options.stops:
+            if line == stop:
+                return True
+    return False
+
+
 def process_assistant(
     options: RalpherOptions,
     context: IterationContext,
@@ -646,10 +660,9 @@ def process_assistant(
                 if ctype == 'text':
                     text = c.get('text', '').strip()
                     if text:
-                        for stop in options.stops:
-                            if text == stop:
-                                set_complete(context, True)
-                                return ralphlib.types.MessageType.COMPLETE, ''
+                        if is_stop(options, text):
+                            set_complete(context, True)
+                            return ralphlib.types.MessageType.COMPLETE, ''
 
                         if '<task>' in text and '</task>' in text:
                             return process_task_progress(options, context, payload, text)
@@ -794,10 +807,9 @@ def process_result(
 
     if result:
         # stopping
-        for stop in options.stops:
-            if stop in result:
-                set_complete(context, True)
-                return ralphlib.types.MessageType.COMPLETE, ''
+        if is_stop(options, result):
+            set_complete(context, True)
+            return ralphlib.types.MessageType.COMPLETE, ''
 
     return ralphlib.types.MessageType.NONE, line
 
