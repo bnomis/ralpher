@@ -52,7 +52,7 @@ Otherwise, change the task status to `in-progress`.
 
 ## Select a task
 
-If ALL tasks are `done`, write this message to stdout:
+If ALL tasks are `done`, write this message to stdout on a new line with nothing else on the line:
 
 ```xml
 <promise>COMPLETE</promise>
@@ -149,7 +149,7 @@ DO NOT start a new task, EXIT now.
 
 ### Check for all tasks done
 
-If ALL tasks are `done`, write this message to stdout:
+If ALL tasks are `done`, write this message to stdout on a new line with nothing else on the line:
 
 ```xml
 <promise>COMPLETE</promise>
