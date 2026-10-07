@@ -1,16 +1,43 @@
-Run a ralpher queue in the background and report only when it has finished.
+Run a ralpher queue in the background, relay task progress as it happens,
+and report in full only when it has finished.
 
 Run this command with `run_in_background` set to true:
 
     $RALPHER_PATH/bin/rrq.sh $ARGUMENTS
 
-Then stop. Do not read, tail, grep or otherwise consume the output file
-while the command runs - none of its content should enter the conversation,
-however long it takes or however curious the wait becomes. Do not poll for
-completion either: the harness re-invokes you when the process exits, so a
-check-in loop only burns tokens.
+Note the output file path the background task reports, then start a
+`Monitor` on it with `timeout_ms` set to 1800000, the description
+`ralpher task progress`, and this command, with `<output-file>` replaced
+by that path:
 
-When it completes, show the last 100 lines of the output file and nothing
-else. If it exited non-zero, say so alongside those lines rather than
-investigating - the tail is what was asked for, and the next instruction is
-the user's to give.
+    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal received'
+
+Then stop. The monitor's filtered lines are the only output that may
+enter the conversation. Do not read, tail, grep or otherwise consume the
+output file yourself while the command runs, however long it takes or
+however curious the wait becomes. Do not poll for completion either: the
+harness re-invokes you when the process exits, so a check-in loop only
+burns tokens.
+
+When a monitor event arrives, relay each new line as one short line and
+nothing else:
+
+- a `task …` line → `▶` for `start`, `✓` for `done`, `✗` for `blocked`,
+  `?` for `operator` (the queue needs the operator's input), then the
+  task position and title, for example `✓ 3/12 Add SearchBatch dataclass`.
+  A line with no status, such as `task 1 of 4: add the compress config
+  setting`, is shown as `▶ 1/4 add the compress config setting`
+- `===== Loop <reason> signal received, … =====` → `■ loop <reason>`
+
+Skip a `task` line identical to the previous one. Do not comment on,
+investigate or act on an event.
+
+If the monitor expires while the background command is still running,
+start it again with the same command and say nothing else. `tail -n +1`
+replays the file from the start, so drop lines you have already relayed.
+
+When the background command completes, stop the monitor with `TaskStop`
+if it is still running, then show the last 100 lines of the output file
+and nothing else. If it exited non-zero, say so alongside those lines
+rather than investigating - the tail is what was asked for, and the next
+instruction is the user's to give.
