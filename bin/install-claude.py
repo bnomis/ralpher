@@ -56,11 +56,19 @@ def dest_claude_dir() -> pathlib.Path:
     return pathlib.Path.home() / '.claude'
 
 
-def find_dangling_symlinks(options, dir: pathlib.Path) -> None:
+def find_dangling_symlinks(options, dir: pathlib.Path, max_depth: int = 2) -> None:
+    root_depth = len(dir.parts)
     dangle = []
-    for p in dir.rglob('*'):
-        if p.is_symlink() and not p.exists():
-            dangle.append(p)
+    for dirpath, dirnames, filenames in dir.walk(top_down=True):
+        depth = len(dirpath.parts) - root_depth
+        if depth >= max_depth - 1:
+            dirnames.clear()
+
+        for f in filenames:
+            p = pathlib.Path(dirpath) / f
+            if p.is_symlink() and not p.exists():
+                dangle.append(p)
+
     if dangle:
         print('Dangling symlinks found:')
         for p in dangle:
