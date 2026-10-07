@@ -56,6 +56,19 @@ def dest_claude_dir() -> pathlib.Path:
     return pathlib.Path.home() / '.claude'
 
 
+def find_dangling_symlinks(options, dir: pathlib.Path) -> None:
+    dangle = []
+    for p in dir.rglob('*'):
+        if p.is_symlink() and not p.exists():
+            dangle.append(p)
+    if dangle:
+        print('Dangling symlinks found:')
+        for p in dangle:
+            print(f'  {p}')
+        print('Remove with:')
+        print(f'rm {" ".join(str(p) for p in dangle)}')
+
+
 def install_claude(options) -> None:
     """link files from source to target"""
     fdir = src_claude_dir()
@@ -71,6 +84,8 @@ def install_claude(options) -> None:
             symlink_dir(options, src, dest)
         else:
             symlink_file(options, src, dest)
+
+    find_dangling_symlinks(options, tdir)
 
 
 def parse_args(argv) -> argparse.Namespace:
