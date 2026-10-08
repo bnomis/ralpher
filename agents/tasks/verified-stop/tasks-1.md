@@ -132,7 +132,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 4: Reject an unverified stop in the loop
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`no_verify_stop` option); Implementation > When the check runs; Implementation > Outcomes; Settings; Tests
@@ -141,25 +141,25 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] Add `no_verify_stop` to `RalpherOptions` in `src/ralphlib/options.py`, after `stops`, with `long='--no-verify-stop'` and the spec's help text
-- [ ] In `looper.loop`, after the iteration's end is recorded and before the exit test, call `ralphlib.verifier.check_stop(options)` when `complete and options.task_file and not options.no_verify_stop and not error`
-- [ ] When `verified` and not `all_done`: set `complete = False`; print `===== Loop complete signal rejected, <n> of <m> tasks not done =====` with `print_both` and `MessageType.SYSTEM`, followed by one `  Task <n>: <title> (<status>)` line per unfinished task (`(no status)` for `''`); record `stop_rejected` with `total` and the `not_done` task numbers under the iteration's key in `state.json`
-- [ ] When not `verified`: log `loguru.logger.warning` with the reason and stop as today
-- [ ] Add tests to `src/tests/test_looper.py` with `ralphlib.iteration.run` patched to return `(True, False)`: unfinished task -> the loop runs a second iteration and prints the rejection line; all done -> stops after one iteration; `--no-verify-stop` -> stops after one iteration; unreadable tasks file -> stops after one iteration and a warning is logged
-- [ ] Add a test that a rejected signal on the last iteration ends with exit reason `completed all iterations`
+- [x] Add `no_verify_stop` to `RalpherOptions` in `src/ralphlib/options.py`, after `stops`, with `long='--no-verify-stop'` and the spec's help text
+- [x] In `looper.loop`, after the iteration's end is recorded and before the exit test, call `ralphlib.verifier.check_stop(options)` when `complete and options.task_file and not options.no_verify_stop and not error`
+- [x] When `verified` and not `all_done`: set `complete = False`; print `===== Loop complete signal rejected, <n> of <m> tasks not done =====` with `print_both` and `MessageType.SYSTEM`, followed by one `  Task <n>: <title> (<status>)` line per unfinished task (`(no status)` for `''`); record `stop_rejected` with `total` and the `not_done` task numbers under the iteration's key in `state.json`
+- [x] When not `verified`: log `loguru.logger.warning` with the reason and stop as today
+- [x] Add tests to `src/tests/test_looper.py` with `ralphlib.iteration.run` patched to return `(True, False)`: unfinished task -> the loop runs a second iteration and prints the rejection line; all done -> stops after one iteration; `--no-verify-stop` -> stops after one iteration; unreadable tasks file -> stops after one iteration and a warning is logged
+- [x] Add a test that a rejected signal on the last iteration ends with exit reason `completed all iterations`
 
 **Acceptance Criteria:**
 
-- [ ] A false stop signal no longer ends the loop when `--task-file` is given
-- [ ] A true stop signal ends the loop exactly as before
-- [ ] Without `--task-file`, or with `--no-verify-stop`, behaviour is unchanged
-- [ ] `state.json` records `stop_rejected` for a rejected iteration
+- [x] A false stop signal no longer ends the loop when `--task-file` is given
+- [x] A true stop signal ends the loop exactly as before
+- [x] Without `--task-file`, or with `--no-verify-stop`, behaviour is unchanged
+- [x] `state.json` records `stop_rejected` for a rejected iteration
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
 - [ ] `uv run pytest src/tests` passes
 
 **Notes:**
@@ -168,6 +168,8 @@ file that imports a changed module directly. Every test file imports
 - Key files: `src/ralphlib/looper.py`, `src/ralphlib/options.py`, `src/tests/test_looper.py`
 - The rejection line must not contain `signal received`, so the existing rrq filter and any log searches still mean "the loop stopped"
 - `loop` resolves `options.task_file` to an absolute path before the loop starts; `check_stop` relies on that
+- `uv run pytest src/tests` fails on three `test_iteration.py` tests that also fail on the base commit (stale since `9faa842`, see Task 6). Task 4's own tests in `test_looper.py` pass. Task 4 is done once Task 6 is done and the full run is green
+- `uv run ruff check` and `uv run ruff format --check` pass
 
 ---
 
@@ -206,3 +208,33 @@ file that imports a changed module directly. Every test file imports
 - Last task of the list: the full `uv run pytest src/tests` run above is the whole-suite gate before merging
 
 ---
+
+## Task 6: Fix stale stop-marker tests in test_iteration.py
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** none (pre-existing failure found while running Task 4's Definition of Done)
+
+**Technical Goal:** Make `uv run pytest src/tests` pass again. Three tests in `src/tests/test_iteration.py` expect a stop marker embedded in a longer line to set `complete`, but `iteration.is_stop` has matched whole lines only since commit `9faa842`.
+
+**Subtasks:**
+
+- [ ] Update `test_process_result_with_stop_marker_sets_complete`, `test_process_assistant_text_with_stop_marker_sets_complete` and `test_process_result_custom_stop_markers_respected` so the marker is on a line of its own
+- [ ] Add a test that a marker embedded in a longer line does not set `complete`
+
+**Acceptance Criteria:**
+
+- [ ] `uv run pytest src/tests` passes with no changes to `src/ralphlib/iteration.py`
+
+**Definition of Done:**
+
+- [ ] `pre-commit run --all-files` passes
+- [ ] `uv run ruff check` passes
+- [ ] `uv run ruff format --check` passes
+- [ ] `uv run pytest src/tests` passes
+
+**Notes:**
+
+- Blocks Task 4's last Definition of Done item; after it, mark Task 4 `done`
+- Key files: `src/tests/test_iteration.py`
