@@ -10,7 +10,11 @@ Note the output file path the background task reports, then start a
 `ralpher task progress`, and this command, with `<output-file>` replaced
 by that path:
 
-    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal received'
+    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal received' | awk -v f="<output-file>.seen" 'BEGIN { if ((getline n < f) <= 0) n = 0; close(f) } NR > n { print; fflush(); print NR > f; close(f) }'
+
+The `awk` stage records in `<output-file>.seen` how many lines it has
+delivered, so a restarted monitor delivers only lines it has not
+delivered before.
 
 Then stop. The monitor's filtered lines are the only output that may
 enter the conversation. Do not read, tail, grep or otherwise consume the
@@ -33,8 +37,10 @@ Skip a `task` line identical to the previous one. Do not comment on,
 investigate or act on an event.
 
 If the monitor expires while the background command is still running,
-start it again with the same command and say nothing else. `tail -n +1`
-replays the file from the start, so drop lines you have already relayed.
+start it again with the same command and say nothing at all: no
+"monitor restarted", no summary of progress so far. The restarted
+monitor delivers only new lines, so relay each event it delivers as
+above.
 
 When the background command completes, stop the monitor with `TaskStop`
 if it is still running, then show the last 100 lines of the output file
