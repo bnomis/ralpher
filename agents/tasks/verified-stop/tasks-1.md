@@ -14,7 +14,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 1: Parse task headings and statuses
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`TaskStatus`, `StopCheck`, `parse_tasks`); Implementation > Parsing; Tests
@@ -23,26 +23,26 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] Create `src/ralphlib/verifier.py` with the `TaskStatus` and `StopCheck` dataclasses exactly as the spec's API section gives them
-- [ ] Implement `parse_tasks(text: str) -> list[TaskStatus]`: headings match `^## Task (\d+):\s*(.*)$`, status is the first `^\*\*Status:\*\*\s*(\S+)` line after the heading and before the next `## ` heading, lowercased and stripped, `''` when absent
-- [ ] Skip lines inside fenced code blocks (lines between a pair of lines starting with three backticks or three tildes)
-- [ ] Create `src/tests/test_verifier.py` with tests for: headings with and without status lines; mixed-case statuses (`Done` -> `done`); a task-shaped example inside a fenced block is ignored; text with no headings returns `[]`
-- [ ] Add a hypothesis test: generate a list of `(number, title, status)` tuples, render them in the tasks-file format, parse, and check that the numbers and statuses round-trip
-- [ ] Add `verifier.py` and `test_verifier.py` to the project structure tree in `AGENTS.md`, in alphabetical position
+- [x] Create `src/ralphlib/verifier.py` with the `TaskStatus` and `StopCheck` dataclasses exactly as the spec's API section gives them
+- [x] Implement `parse_tasks(text: str) -> list[TaskStatus]`: headings match `^## Task (\d+):\s*(.*)$`, status is the first `^\*\*Status:\*\*\s*(\S+)` line after the heading and before the next `## ` heading, lowercased and stripped, `''` when absent
+- [x] Skip lines inside fenced code blocks (lines between a pair of lines starting with three backticks or three tildes)
+- [x] Create `src/tests/test_verifier.py` with tests for: headings with and without status lines; mixed-case statuses (`Done` -> `done`); a task-shaped example inside a fenced block is ignored; text with no headings returns `[]`
+- [x] Add a hypothesis test: generate a list of `(number, title, status)` tuples, render them in the tasks-file format, parse, and check that the numbers and statuses round-trip
+- [x] Add `verifier.py` and `test_verifier.py` to the project structure tree in `AGENTS.md`, in alphabetical position
 
 **Acceptance Criteria:**
 
-- [ ] `parse_tasks` returns tasks in file order with lowercased statuses
-- [ ] A heading with no status line yields status `''`
-- [ ] Example tasks inside fenced blocks are not returned
-- [ ] The hypothesis round-trip test passes
+- [x] `parse_tasks` returns tasks in file order with lowercased statuses
+- [x] A heading with no status line yields status `''`
+- [x] Example tasks inside fenced blocks are not returned
+- [x] The hypothesis round-trip test passes
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests/test_verifier.py` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
+- [x] `uv run pytest src/tests/test_verifier.py` passes
 
 **Notes:**
 
