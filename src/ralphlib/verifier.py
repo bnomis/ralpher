@@ -3,6 +3,8 @@ import pathlib
 import re
 from typing import TYPE_CHECKING
 
+import git
+
 import ralphlib.giter
 import ralphlib.templater
 
@@ -96,3 +98,32 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
         if entry_branch == branch:
             return path / task_file
     return None
+
+
+def check_stop(options: RalpherOptions) -> StopCheck:
+    """Check a stop signal against the tasks file.
+
+    Reads the worktree copy when `options.worktree` is set, otherwise
+    `options.task_file`.
+    """
+    path: pathlib.Path | None
+    try:
+        if options.worktree:
+            path = worktree_task_file(options)
+            if path is None:
+                slug = ralphlib.templater.task_file_slug(options.task_file)
+                return unverified(f'worktree for {slug} not found')
+        else:
+            path = pathlib.Path(options.task_file)
+        tasks = parse_tasks(path.read_text())
+    except (OSError, UnicodeDecodeError, git.GitCommandError) as e:
+        return unverified(f'cannot read {options.task_file}: {e!r}')
+
+    if not tasks:
+        return unverified(f'no tasks found in {path}')
+    not_done = [t for t in tasks if t.status != 'done']
+    return StopCheck(verified=True, all_done=not not_done, not_done=not_done, total=len(tasks), reason='')
+
+
+def unverified(reason: str) -> StopCheck:
+    return StopCheck(verified=False, all_done=False, not_done=[], total=0, reason=reason)

@@ -93,7 +93,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 3: Check a stop signal against the tasks file
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`check_stop`); Implementation > Finding the tasks file; Error handling; Tests
@@ -102,26 +102,26 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] Implement `check_stop` in `src/ralphlib/verifier.py`: with `options.worktree` set, use `worktree_task_file(options)`; otherwise use `pathlib.Path(options.task_file)`
-- [ ] Return `verified=False` with reason `worktree for <slug> not found` when `worktree_task_file` returns `None`
-- [ ] Catch `OSError`, `UnicodeDecodeError` and `git.GitCommandError` only, returning `verified=False` with a reason naming the path and the error
-- [ ] Return `verified=False` with reason `no tasks found in <path>` when `parse_tasks` returns `[]`
-- [ ] Otherwise return `verified=True`, `all_done` true when every status is `done`, `not_done` listing the others, and `total` the number of tasks
-- [ ] Add tests without a worktree: all done; some not done (`not_done` lists them in order); missing file; empty file
-- [ ] Add a test with a worktree (reusing Task 2's fixture): the worktree copy says not done while the main checkout copy says done, and `check_stop` reports not done
+- [x] Implement `check_stop` in `src/ralphlib/verifier.py`: with `options.worktree` set, use `worktree_task_file(options)`; otherwise use `pathlib.Path(options.task_file)`
+- [x] Return `verified=False` with reason `worktree for <slug> not found` when `worktree_task_file` returns `None`
+- [x] Catch `OSError`, `UnicodeDecodeError` and `git.GitCommandError` only, returning `verified=False` with a reason naming the path and the error
+- [x] Return `verified=False` with reason `no tasks found in <path>` when `parse_tasks` returns `[]`
+- [x] Otherwise return `verified=True`, `all_done` true when every status is `done`, `not_done` listing the others, and `total` the number of tasks
+- [x] Add tests without a worktree: all done; some not done (`not_done` lists them in order); missing file; empty file
+- [x] Add a test with a worktree (reusing Task 2's fixture): the worktree copy says not done while the main checkout copy says done, and `check_stop` reports not done
 
 **Acceptance Criteria:**
 
-- [ ] Every outcome row in the spec's Implementation > Outcomes table can be produced by `check_stop`
-- [ ] With `--worktree`, the worktree copy is read and the main copy is never used as a fallback
-- [ ] No exception other than the three named escapes the function in the tested failure cases
+- [x] Every outcome row in the spec's Implementation > Outcomes table can be produced by `check_stop`
+- [x] With `--worktree`, the worktree copy is read and the main copy is never used as a fallback
+- [x] No exception other than the three named escapes the function in the tested failure cases
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests/test_verifier.py` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
+- [x] `uv run pytest src/tests/test_verifier.py` passes
 
 **Notes:**
 
