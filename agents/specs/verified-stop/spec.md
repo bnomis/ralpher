@@ -169,6 +169,10 @@ rest of ralpher does.
   agent controls.
 - `git worktree list` failing (`git.GitCommandError`): not `verified`, same
   handling.
+- With `--worktree`, a tasks file outside the repository (`ValueError` from
+  `relative_to`): not `verified`, same handling. The repository root is
+  resolved before the comparison, so a `--cwd` reached through a symlink
+  still matches the resolved tasks file path.
 - Any other exception propagates, as AGENTS.md requires.
 
 No new exception classes are needed.

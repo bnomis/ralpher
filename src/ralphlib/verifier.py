@@ -84,7 +84,8 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
 
     The worktree is the entry whose branch is `refs/heads/worktree-<slug>`.
     Returns None if there is no repository or no such worktree.
-    `git.GitCommandError` propagates.
+    `git.GitCommandError` propagates, and `ValueError` when the tasks file
+    is outside the repository.
     """
     repo = ralphlib.giter.discover_repo_path(options.cwd)
     if repo is None or repo.working_tree_dir is None or not options.task_file:
@@ -93,7 +94,7 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
     branch = f'refs/heads/worktree-{ralphlib.templater.task_file_slug(options.task_file)}'
     task_file = pathlib.Path(options.task_file)
     if task_file.is_absolute():
-        task_file = task_file.relative_to(repo.working_tree_dir)
+        task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
     for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
         if entry_branch == branch:
             return path / task_file
@@ -116,7 +117,7 @@ def check_stop(options: RalpherOptions) -> StopCheck:
         else:
             path = pathlib.Path(options.task_file)
         tasks = parse_tasks(path.read_text())
-    except (OSError, UnicodeDecodeError, git.GitCommandError) as e:
+    except (OSError, UnicodeDecodeError, ValueError, git.GitCommandError) as e:
         return unverified(f'cannot read {options.task_file}: {e!r}')
 
     if not tasks:

@@ -176,3 +176,23 @@ def test_check_stop_worktree_missing_file(tmp_path: pathlib.Path) -> None:
     (wt / TASK_FILE).unlink()
     check = ralphlib.verifier.check_stop(make_options(repo))
     assert not check.verified
+
+
+def test_worktree_task_file_cwd_through_symlink(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    wt = (tmp_path / 'wt').resolve()
+    run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
+    link = tmp_path / 'link'
+    link.symlink_to(repo)
+    options = ralphlib.options.RalpherOptions(prompt='p', task_file=str(repo / TASK_FILE), worktree=True, cwd=str(link))
+    assert ralphlib.verifier.worktree_task_file(options) == wt / TASK_FILE
+
+
+def test_check_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    outside = tmp_path / 'outside.md'
+    outside.write_text('## Task 1: T\n**Status:** todo\n')
+    options = ralphlib.options.RalpherOptions(prompt='p', task_file=str(outside), worktree=True, cwd=str(repo))
+    check = ralphlib.verifier.check_stop(options)
+    assert not check.verified
+    assert str(outside) in check.reason
