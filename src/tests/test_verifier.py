@@ -1,8 +1,14 @@
+import pathlib
+
+import git
 from hypothesis import given, settings, strategies as st
 
+import ralphlib.options
 import ralphlib.verifier
 
 STATUSES = ['todo', 'in-progress', 'done']
+TASK_FILE = 'agents/tasks/feat/tasks-1.md'
+SLUG = 'feat-tasks-1'
 
 
 def test_headings_with_and_without_status() -> None:
@@ -55,3 +61,44 @@ def test_round_trip(entries: list[tuple[int, str, str]]) -> None:
     text = '# Tasks\n\n' + ''.join(f'## Task {n}: {title}\n\n**Status:** {status}\n**Priority:** high\n\n' for n, title, status in entries)
     tasks = ralphlib.verifier.parse_tasks(text)
     assert [(t.number, t.status) for t in tasks] == [(n, s) for n, _, s in entries]
+
+
+def run_git(cwd: pathlib.Path, *args: str) -> None:
+    git.Git(str(cwd)).execute(['git', '-c', 'user.name=t', '-c', 'user.email=t@example.com', *args])
+
+
+def make_repo(tmp_path: pathlib.Path) -> pathlib.Path:
+    repo = (tmp_path / 'repo').resolve()
+    (repo / 'agents/tasks/feat').mkdir(parents=True)
+    (repo / TASK_FILE).write_text('## Task 1: T\n**Status:** todo\n')
+    run_git(repo, 'init', '-b', 'main')
+    run_git(repo, 'add', '.')
+    run_git(repo, 'commit', '-m', 'init')
+    return repo
+
+
+def make_options(repo: pathlib.Path) -> ralphlib.options.RalpherOptions:
+    return ralphlib.options.RalpherOptions(prompt='p', task_file=str(repo / TASK_FILE), worktree=True, cwd=str(repo))
+
+
+def test_worktree_task_file_found(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    wt = (tmp_path / 'wt').resolve()
+    run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
+    assert ralphlib.verifier.worktree_task_file(make_options(repo)) == wt / TASK_FILE
+
+
+def test_worktree_task_file_no_match(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    assert ralphlib.verifier.worktree_task_file(make_options(repo)) is None
+
+
+def test_worktree_task_file_ignores_unrelated_branch(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    run_git(repo, 'worktree', 'add', '-b', 'worktree-other', str((tmp_path / 'wt').resolve()))
+    assert ralphlib.verifier.worktree_task_file(make_options(repo)) is None
+
+
+def test_worktree_task_file_no_repository(tmp_path: pathlib.Path) -> None:
+    options = ralphlib.options.RalpherOptions(prompt='p', task_file=TASK_FILE, worktree=True, cwd=str(tmp_path))
+    assert ralphlib.verifier.worktree_task_file(options) is None

@@ -53,7 +53,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 2: Locate the tasks file inside the agent's worktree
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`worktree_task_file`); Implementation > Finding the tasks file; Error handling; Tests
@@ -62,25 +62,25 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] Implement `worktree_task_file(options: RalpherOptions) -> pathlib.Path | None` in `src/ralphlib/verifier.py`
-- [ ] Get the repository with `ralphlib.giter.discover_repo_path(options.cwd)` and run `repo.git.worktree('list', '--porcelain')`
-- [ ] Parse the porcelain output into `(worktree path, branch)` pairs and pick the entry whose branch is `refs/heads/worktree-<slug>`, `<slug>` from `ralphlib.templater.task_file_slug(options.task_file)`
-- [ ] Return that worktree path joined with `options.task_file` relative to `repo.working_tree_dir`; return `None` when no entry matches or there is no repository
-- [ ] Let `git.GitCommandError` propagate from this function (Task 3 catches it)
-- [ ] Add tests to `src/tests/test_verifier.py` using a temporary git repository (`tmp_path`, an initial commit, then `git worktree add -b worktree-<slug> <path>`): the matching worktree is found and the returned path points at its copy of the tasks file; a repository with no matching worktree returns `None`
+- [x] Implement `worktree_task_file(options: RalpherOptions) -> pathlib.Path | None` in `src/ralphlib/verifier.py`
+- [x] Get the repository with `ralphlib.giter.discover_repo_path(options.cwd)` and run `repo.git.worktree('list', '--porcelain')`
+- [x] Parse the porcelain output into `(worktree path, branch)` pairs and pick the entry whose branch is `refs/heads/worktree-<slug>`, `<slug>` from `ralphlib.templater.task_file_slug(options.task_file)`
+- [x] Return that worktree path joined with `options.task_file` relative to `repo.working_tree_dir`; return `None` when no entry matches or there is no repository
+- [x] Let `git.GitCommandError` propagate from this function (Task 3 catches it)
+- [x] Add tests to `src/tests/test_verifier.py` using a temporary git repository (`tmp_path`, an initial commit, then `git worktree add -b worktree-<slug> <path>`): the matching worktree is found and the returned path points at its copy of the tasks file; a repository with no matching worktree returns `None`
 
 **Acceptance Criteria:**
 
-- [ ] With a worktree on branch `worktree-<slug>`, the returned path is inside that worktree
-- [ ] With no matching worktree, the result is `None`
-- [ ] A worktree on an unrelated branch is not returned
+- [x] With a worktree on branch `worktree-<slug>`, the returned path is inside that worktree
+- [x] With no matching worktree, the result is `None`
+- [x] A worktree on an unrelated branch is not returned
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests/test_verifier.py` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
+- [x] `uv run pytest src/tests/test_verifier.py` passes
 
 **Notes:**
 
