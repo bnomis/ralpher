@@ -132,7 +132,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 4: Reject an unverified stop in the loop
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`no_verify_stop` option); Implementation > When the check runs; Implementation > Outcomes; Settings; Tests
@@ -160,7 +160,7 @@ file that imports a changed module directly. Every test file imports
 - [x] `pre-commit run --all-files` passes
 - [x] `uv run ruff check` passes
 - [x] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests` passes
+- [x] `uv run pytest src/tests` passes
 
 **Notes:**
 
@@ -211,7 +211,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 6: Fix stale stop-marker tests in test_iteration.py
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** none (pre-existing failure found while running Task 4's Definition of Done)
@@ -220,19 +220,19 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] Update `test_process_result_with_stop_marker_sets_complete`, `test_process_assistant_text_with_stop_marker_sets_complete` and `test_process_result_custom_stop_markers_respected` so the marker is on a line of its own
-- [ ] Add a test that a marker embedded in a longer line does not set `complete`
+- [x] Update `test_process_result_with_stop_marker_sets_complete`, `test_process_assistant_text_with_stop_marker_sets_complete` and `test_process_result_custom_stop_markers_respected` so the marker is on a line of its own
+- [x] Add a test that a marker embedded in a longer line does not set `complete`
 
 **Acceptance Criteria:**
 
-- [ ] `uv run pytest src/tests` passes with no changes to `src/ralphlib/iteration.py`
+- [x] `uv run pytest src/tests` passes with no changes to `src/ralphlib/iteration.py`
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
+- [x] `uv run pytest src/tests` passes
 
 **Notes:**
 
