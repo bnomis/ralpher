@@ -112,6 +112,13 @@ class RalpherOptions:
             '<promise>COMPLETE</promise>',
         ]
     )
+    no_verify_stop: Annotated[
+        bool,
+        cappa.Arg(
+            long='--no-verify-stop',
+            help='Trust a stop marker without checking that every task in the tasks file is done',
+        ),
+    ] = False
     settings: dict = dataclasses.field(init=False, default_factory=dict)
     current_iteration: int = dataclasses.field(init=False, default=0)
     iteration_count: int = dataclasses.field(init=False, default=0)

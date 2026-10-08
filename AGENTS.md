@@ -30,7 +30,8 @@ src/
 │   ├── signals.py
 │   ├── state.py
 │   ├── templater.py
-│   └── types.py
+│   ├── types.py
+│   └── verifier.py
 └── tests/                 # Tests mirror source structure
     ├── __init__.py
     ├── test_giter.py
@@ -43,7 +44,8 @@ src/
     ├── test_settings.py
     ├── test_signals.py
     ├── test_state.py
-    └── test_templater.py
+    ├── test_templater.py
+    └── test_verifier.py
 bin/                       # Entry point scripts
 ├── activate.sh
 ├── ralpher.py

@@ -17,6 +17,7 @@ import ralphlib.signals
 import ralphlib.state
 import ralphlib.templater
 import ralphlib.types
+import ralphlib.verifier
 
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
@@ -170,6 +171,9 @@ def loop(options: RalpherOptions) -> bool:
             },
         )
 
+        if complete and options.task_file and not options.no_verify_stop and not error:
+            complete = reject_unverified_stop(options, i, iterations_key)
+
         if complete or error or ralphlib.signals.get_should_exit():
             words = []
             message_type = ralphlib.types.MessageType.SYSTEM
@@ -265,6 +269,24 @@ def loop(options: RalpherOptions) -> bool:
         print_cleanup_cmds(options)
 
     return bool(error) or termination
+
+
+def reject_unverified_stop(options: RalpherOptions, iteration: int, iterations_key: str) -> bool:
+    """Check a stop signal against the tasks file; return whether the loop should still stop."""
+    check = ralphlib.verifier.check_stop(options)
+    if not check.verified:
+        loguru.logger.warning(f'Cannot verify stop signal, trusting it: {check.reason}')
+        return True
+    if check.all_done:
+        return True
+
+    lines = [f'\n{"=" * 5} Loop complete signal rejected, {len(check.not_done)} of {check.total} tasks not done {"=" * 5}']
+    lines.extend(f'  Task {t.number}: {t.title} ({t.status or "no status"})' for t in check.not_done)
+    print_both(options, '\n'.join(lines) + '\n\n', iteration, message_type=ralphlib.types.MessageType.SYSTEM)
+
+    state_payload = {'stop_rejected': {'total': check.total, 'not_done': [t.number for t in check.not_done]}}
+    ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
+    return False
 
 
 def print_cleanup_cmds(options: RalpherOptions) -> None:

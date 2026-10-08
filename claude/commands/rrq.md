@@ -10,7 +10,7 @@ Note the output file path the background task reports, then start a
 `ralpher task progress`, and this command, with `<output-file>` replaced
 by that path:
 
-    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal received' | awk -v f="<output-file>.seen" 'BEGIN { if ((getline n < f) <= 0) n = 0; close(f) } NR > n { print; fflush(); print NR > f; close(f) }'
+    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal (received|rejected)' | awk -v f="<output-file>.seen" 'BEGIN { if ((getline n < f) <= 0) n = 0; close(f) } NR > n { print; fflush(); print NR > f; close(f) }'
 
 The `awk` stage records in `<output-file>.seen` how many lines it has
 delivered, so a restarted monitor delivers only lines it has not
@@ -32,6 +32,8 @@ nothing else:
   A line with no status, such as `task 1 of 4: add the compress config
   setting`, is shown as `▶ 1/4 add the compress config setting`
 - `===== Loop <reason> signal received, … =====` → `■ loop <reason>`
+- `===== Loop complete signal rejected, <n> of <m> tasks not done =====` →
+  `■ loop complete rejected, <n> of <m> tasks not done`
 
 Skip a `task` line identical to the previous one. Do not comment on,
 investigate or act on an event.

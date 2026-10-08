@@ -1,9 +1,16 @@
 import datetime
+import json
+import pathlib
 
+import loguru
 import pytest
 from hypothesis import given, strategies as st
 
+import ralphlib.iteration
+import ralphlib.looper
+import ralphlib.settings
 from ralphlib.looper import timedelta_to_readable
+from ralphlib.options import RalpherOptions
 
 
 class TestTimedeltaToReadableExplicit:
@@ -81,3 +88,92 @@ class TestTimedeltaToReadableHypothesis:
             assert 'second' not in result
         else:
             assert 'second' in result
+
+
+TASKS_UNFINISHED = '## Task 1: A\n**Status:** done\n## Task 2: Second thing\n**Status:** todo\n## Task 3: Third\n'
+TASKS_DONE = '## Task 1: A\n**Status:** done\n'
+
+
+class LoopRun:
+    def __init__(self, calls: list[int], out: str, state: dict) -> None:
+        self.calls = calls
+        self.out = out
+        self.state = state
+
+
+def run_loop(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tasks_text: str,
+    iterations: int = 3,
+    no_verify_stop: bool = False,
+    remove_tasks_file: bool = False,
+) -> LoopRun:
+    """Run the loop with every iteration reporting a stop marker."""
+    task_file = tmp_path / 'tasks.md'
+    task_file.write_text(tasks_text)
+    calls: list[int] = []
+
+    def fake_run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
+        calls.append(iteration)
+        if remove_tasks_file:
+            task_file.unlink()
+        return True, False
+
+    monkeypatch.setattr(ralphlib.iteration, 'run', fake_run)
+    options = RalpherOptions(
+        prompts='p',
+        task_file=str(task_file),
+        iterations=iterations,
+        skip_git_check=True,
+        no_verify_stop=no_verify_stop,
+        state='state.json',
+        logdir=str(tmp_path / 'logs'),
+    )
+    options.settings = ralphlib.settings.default_settings.copy()
+    ralphlib.looper.loop(options)
+    state = json.loads((tmp_path / 'logs' / 'state.json').read_text())
+    return LoopRun(calls, capsys.readouterr().out, state)
+
+
+def test_loop_rejects_stop_while_tasks_unfinished(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_UNFINISHED, iterations=2)
+    assert result.calls == [1, 2]
+    assert 'Loop complete signal rejected, 2 of 3 tasks not done' in result.out
+    assert '  Task 2: Second thing (todo)' in result.out
+    assert '  Task 3: Third (no status)' in result.out
+    assert result.state['iterations']['1']['stop_rejected'] == {'total': 3, 'not_done': [2, 3]}
+
+
+def test_loop_rejected_stop_on_last_iteration_completes_all_iterations(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_UNFINISHED, iterations=1)
+    assert result.calls == [1]
+    assert result.state['exit_reason'] == 'completed all iterations'
+    assert 'signal received' not in result.out
+
+
+def test_loop_stops_when_all_tasks_done(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_DONE)
+    assert result.calls == [1]
+    assert result.state['exit_reason'] == 'complete'
+    assert 'rejected' not in result.out
+
+
+def test_loop_no_verify_stop_trusts_the_marker(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_UNFINISHED, no_verify_stop=True)
+    assert result.calls == [1]
+    assert 'rejected' not in result.out
+
+
+def test_loop_stops_and_warns_when_tasks_file_unreadable(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    messages: list[str] = []
+    sink = loguru.logger.add(messages.append, level='WARNING')
+    try:
+        result = run_loop(tmp_path, monkeypatch, capsys, TASKS_UNFINISHED, remove_tasks_file=True)
+    finally:
+        loguru.logger.remove(sink)
+    assert result.calls == [1]
+    assert any('Cannot verify stop signal' in m for m in messages)

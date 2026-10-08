@@ -140,7 +140,7 @@ def test_process_result_success_with_is_error_sets_error_flag() -> None:
 def test_process_result_with_stop_marker_sets_complete() -> None:
     options = make_options(quiet=True)
     context = make_context()
-    result_text = 'output with <promise>COMPLETE</promise> marker'
+    result_text = 'output\n<promise>COMPLETE</promise>\n'
     payload = {'type': 'result', 'subtype': 'success', 'result': result_text}
     line = orjson.dumps(payload).decode()
 
@@ -149,6 +149,19 @@ def test_process_result_with_stop_marker_sets_complete() -> None:
     assert message_type == ralphlib.types.MessageType.COMPLETE
     assert message == ''
     assert ralphlib.iteration.get_complete(context) is True
+
+
+def test_process_result_with_stop_marker_in_longer_line_not_complete() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    result_text = 'output with <promise>COMPLETE</promise> marker'
+    payload = {'type': 'result', 'subtype': 'success', 'result': result_text}
+    line = orjson.dumps(payload).decode()
+
+    message_type, _ = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type != ralphlib.types.MessageType.COMPLETE
+    assert ralphlib.iteration.get_complete(context) is False
 
 
 def test_process_result_no_stop_marker_no_error_returns_none() -> None:
@@ -168,7 +181,7 @@ def test_process_result_no_stop_marker_no_error_returns_none() -> None:
 def test_process_result_custom_stop_markers_respected() -> None:
     options = make_options(quiet=True, stops=['DONE', 'FINISHED'])
     context = make_context()
-    payload = {'type': 'result', 'subtype': 'success', 'result': 'task is FINISHED now'}
+    payload = {'type': 'result', 'subtype': 'success', 'result': 'task done\nFINISHED'}
     line = orjson.dumps(payload).decode()
 
     message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
@@ -200,7 +213,7 @@ def test_process_assistant_text_with_stop_marker_sets_complete() -> None:
         'type': 'assistant',
         'message': {
             'content': [
-                {'type': 'text', 'text': 'output with <promise>COMPLETE</promise> marker'},
+                {'type': 'text', 'text': 'output\n<promise>COMPLETE</promise>'},
             ],
         },
     }

@@ -4,6 +4,23 @@ A ralph loop.
 
 More ralph.
 
+## Verified stop
+
+When the agent prints a completion marker, ralpher stops the loop. With `--task-file`, ralpher first checks the tasks file, and ignores the marker while any task is not done:
+
+```shell
+ralpher.sh --task-file agents/tasks/my-feature/tasks-1.md ...
+```
+
+- The check passes when every `**Status:**` line in the tasks file is `done`. Task-shaped examples inside fenced code blocks are ignored.
+- With `--worktree`, ralpher reads the copy of the tasks file inside the agent's worktree (branch `worktree-<name>`), never the copy in the main checkout.
+- On rejection ralpher prints `===== Loop complete signal rejected, <n> of <m> tasks not done =====`, lists the unfinished tasks, records `stop_rejected` for the iteration in `state.json`, and carries on with the next iteration. A rejection on the last iteration ends the loop with the exit reason `completed all iterations`.
+- If the check cannot be made (file missing, unreadable, no tasks found, worktree not found), ralpher trusts the marker, logs a warning and stops.
+
+`--no-verify-stop` (default: off) skips the check and stops on any marker. Use it when the tasks file does not follow the `## Task <n>: <title>` and `**Status:** <status>` format. The trade-off is that one premature marker from the agent ends the whole queue.
+
+Without `--task-file` the check never runs.
+
 ## Configuration
 
 ralpher will read the file `~/.ralpher/settings.json` if it exists.
