@@ -78,6 +78,16 @@ If the chosen task needs operator/human input before it can run, e.g. an answer 
 
 and exit.
 
+### Announce the selected task
+
+As soon as you have selected a task, and before any further tool call, write a
+`<task>` block (see [task blocks](#task-blocks) below) with
+`<status>start</status>` as plain text in your reply.
+
+The operator follows progress only through `<task>` blocks. Without the start
+block they cannot tell which task is running until it finishes, so do not skip
+it, even when the task looks quick.
+
 ## `<task>` blocks
 
 Let the user know what you are working on by writing `<task>` blocks to your standard out. Do not use `bash printf` or `bash echo` - actually write to your standard out from your process.
@@ -104,7 +114,7 @@ In the above the variables have the following definitions:
 
 ## Implement the selected task
 
-1. To let the user know what you are working on, write a `<task>` block to stdout with `<status>start</status>`.
+1. If you have not yet written the start `<task>` block for this task, write it now.
 2. If the selected task references a spec, read the relevant spec before starting implementation.
 3. Change the task status to `in-progress` in {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %}.
 4. Read any existing code the task will modify or interact with.
