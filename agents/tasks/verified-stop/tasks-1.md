@@ -175,7 +175,7 @@ file that imports a changed module directly. Every test file imports
 
 ## Task 5: Relay rejections in rrq and document the behaviour
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** rrq relay; Settings; Module location (`README.md`)
@@ -184,21 +184,21 @@ file that imports a changed module directly. Every test file imports
 
 **Subtasks:**
 
-- [ ] In `claude/commands/rrq.md`, widen the monitor's grep pattern from `^=+ Loop .* signal received` to `^=+ Loop .* signal (received|rejected)`
-- [ ] Add a relay rule to `rrq.md`: `===== Loop complete signal rejected, <n> of <m> tasks not done =====` -> `■ loop complete rejected, <n> of <m> tasks not done`
-- [ ] In `README.md`, describe the verified stop: when it applies (`--task-file`), what it checks (every `**Status:**` is `done`, worktree copy with `--worktree`), what happens on rejection, that an unverifiable signal is trusted with a warning, and the `--no-verify-stop` flag with its default
+- [x] In `claude/commands/rrq.md`, widen the monitor's grep pattern from `^=+ Loop .* signal received` to `^=+ Loop .* signal (received|rejected)`
+- [x] Add a relay rule to `rrq.md`: `===== Loop complete signal rejected, <n> of <m> tasks not done =====` -> `■ loop complete rejected, <n> of <m> tasks not done`
+- [x] In `README.md`, describe the verified stop: when it applies (`--task-file`), what it checks (every `**Status:**` is `done`, worktree copy with `--worktree`), what happens on rejection, that an unverifiable signal is trusted with a warning, and the `--no-verify-stop` flag with its default
 
 **Acceptance Criteria:**
 
-- [ ] The rrq monitor command matches both the stop line and the rejection line (check with `grep -E` against sample lines)
-- [ ] `README.md` documents `--no-verify-stop` with its default and trade-off
+- [x] The rrq monitor command matches both the stop line and the rejection line (check with `grep -E` against sample lines)
+- [x] `README.md` documents `--no-verify-stop` with its default and trade-off
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `uv run ruff check` passes
-- [ ] `uv run ruff format --check` passes
-- [ ] `uv run pytest src/tests` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `uv run ruff check` passes
+- [x] `uv run ruff format --check` passes
+- [x] `uv run pytest src/tests` passes
 
 **Notes:**
 
