@@ -10,11 +10,14 @@ Note the output file path the background task reports, then start a
 `ralpher task progress`, and this command, with `<output-file>` replaced
 by that path:
 
-    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal (received|rejected)' | awk -v f="<output-file>.seen" 'BEGIN { if ((getline n < f) <= 0) n = 0; close(f) } NR > n { print; fflush(); print NR > f; close(f) }'
+    tail -n +1 -F "<output-file>" | grep -E --line-buffered '^task [0-9]+|^=+ Loop .* signal (received|rejected)' | { n=$(cat "<output-file>.seen" 2>/dev/null || echo 0); i=0; while IFS= read -r line; do i=$((i+1)); if [ "$i" -gt "$n" ]; then printf '%s\n' "$line"; echo "$i" > "<output-file>.seen"; fi; done; }
 
-The `awk` stage records in `<output-file>.seen` how many lines it has
+The last stage records in `<output-file>.seen` how many lines it has
 delivered, so a restarted monitor delivers only lines it has not
-delivered before.
+delivered before. It is a shell `read` loop, not `awk`, because `mawk`
+(which some systems install as `awk`) buffers piped input in
+blocks: the few short progress lines never fill a block, so an `awk`
+stage delivers nothing until the queue ends.
 
 Then stop. The monitor's filtered lines are the only output that may
 enter the conversation. Do not read, tail, grep or otherwise consume the
