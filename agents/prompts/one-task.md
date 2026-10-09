@@ -50,44 +50,6 @@ Mark all implementation complete but unchecked Subtasks and "Acceptance Criteria
 If everything in the task, Subtasks, and "Acceptance Criteria" is complete, change the task status to `done`.
 Otherwise, change the task status to `in-progress`.
 
-## Select a task
-
-Check the status of all the tasks, if ALL tasks are `done`, write this message to stdout on a new line with nothing else on the line:
-
-```xml
-<promise>COMPLETE</promise>
-```
-
-and exit.
-
-Otherwise, select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`.
-
-If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
-
-If the chosen task needs operator/human input before it can run, e.g. an answer to a question, write the following task block (see [task blocks](#task-blocks) below) to stdout:
-
-```xml
-<task>
-<id>task-number</id>
-<title>task-name</title>
-<index>task-index</index>
-<count>tasks-count</count>
-<status>operator</status>
-</task>
-```
-
-and exit.
-
-### Announce the selected task
-
-As soon as you have selected a task, and before any further tool call, write a
-`<task>` block (see [task blocks](#task-blocks) below) with
-`<status>start</status>` as plain text in your reply.
-
-The operator follows progress only through `<task>` blocks. Without the start
-block they cannot tell which task is running until it finishes, so do not skip
-it, even when the task looks quick.
-
 ## `<task>` blocks
 
 Let the user know what you are working on by writing `<task>` blocks to your standard out. Do not use `bash printf` or `bash echo` - actually write to your standard out from your process.
@@ -111,6 +73,50 @@ In the above the variables have the following definitions:
 - `task-index`: the index, starting from 1, of the current task in {{ task_file_relative_path }}
 - `tasks-count`: the total number of tasks in {{ task_file_relative_path }}
 - `status`: one of `start`, `done`, `blocked`, or `operator`
+
+## Select a task
+
+Check the status of all the tasks, if ALL tasks are `done`, write this message to stdout on a new line with nothing else on the line:
+
+```xml
+<promise>COMPLETE</promise>
+```
+
+and exit.
+
+Otherwise, select exactly ONE task to work on: choose the first `todo` task whose dependencies are all `done`.
+
+If no task is eligible (all remaining `todo` tasks depend on `in-progress` tasks), choose the first `in-progress` task.
+
+If the chosen task needs operator/human input before it can run, e.g. an answer to a question, write the following task block (see [task blocks](#task-blocks)) to stdout:
+
+```xml
+<task>
+<id>task-number</id>
+<title>task-name</title>
+<index>task-index</index>
+<count>tasks-count</count>
+<status>operator</status>
+</task>
+```
+
+and exit.
+
+## Announce the start of the selected task
+
+When you have selected a task, and before any further tool call, write a `<task>` block (see [task blocks](#task-blocks)) with the following form:
+
+```xml
+<task>
+<id>task-number</id>
+<title>task-name</title>
+<index>task-index</index>
+<count>tasks-count</count>
+<status>start</status>
+</task>
+```
+
+The operator follows progress only through `<task>` blocks. Without the start block they cannot tell which task is running until it finishes, so always write the start task block, even when the task looks quick.
 
 ## Implement the selected task
 
@@ -146,18 +152,17 @@ In the above the variables have the following definitions:
 
 Throughout implementation, print your current status to stdout including: which task you're working on, what actions you're taking, and your reasoning.
 
-## Finish and exit
+## Finishing a task
 
-To let the user know what you've finished the task, write a `<task>` block to stdout with `<status>done</status>`.
+To let the user know you've finished the task, write a `<task>` block to stdout with `<status>done</status>`.
 
-### Check for more `todo` or `in-progress` tasks
+## Check for more `todo` or `in-progress` tasks
 
 Check {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %} for tasks with status `todo` or `in-progress`.
 
-If there are tasks with status `todo` or `in-progress`,
-DO NOT start a new task, EXIT now.
+If there are tasks with status `todo` or `in-progress`, DO NOT start a new task, EXIT now.
 
-### Check for all tasks done
+## Check for all tasks done
 
 Check the status of all the tasks, if ALL tasks are `done`, write this message to stdout on a new line with nothing else on the line:
 
