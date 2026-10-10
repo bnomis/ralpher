@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 HEADING = re.compile(r'^## Task (\d+):\s*(.*)$')
 STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
 FENCES = ('```', '~~~')
+READ_ERRORS = (LookupError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
 
 
 @dataclasses.dataclass
@@ -101,23 +102,33 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
     return None
 
 
-def check_stop(options: RalpherOptions) -> StopCheck:
-    """Check a stop signal against the tasks file.
+def agent_task_file(options: RalpherOptions) -> pathlib.Path:
+    """Return the tasks file the agent edits: the worktree copy when `options.worktree` is set, otherwise `options.task_file`.
 
-    Reads the worktree copy when `options.worktree` is set, otherwise
-    `options.task_file`.
+    Raises `LookupError` when the worktree does not exist, `git.GitCommandError`
+    and `ValueError` as `worktree_task_file` does.
     """
-    path: pathlib.Path | None
+    if not options.worktree:
+        return pathlib.Path(options.task_file)
+    path = worktree_task_file(options)
+    if path is None:
+        raise LookupError(f'worktree for {ralphlib.templater.task_file_slug(options.task_file)} not found')
+    return path
+
+
+def read_tasks(options: RalpherOptions) -> list[TaskStatus]:
+    """Parse the tasks file the agent edits. Raises the errors in `READ_ERRORS`."""
+    return parse_tasks(agent_task_file(options).read_text())
+
+
+def check_stop(options: RalpherOptions) -> StopCheck:
+    """Check a stop signal against the tasks file the agent edits."""
     try:
-        if options.worktree:
-            path = worktree_task_file(options)
-            if path is None:
-                slug = ralphlib.templater.task_file_slug(options.task_file)
-                return unverified(f'worktree for {slug} not found')
-        else:
-            path = pathlib.Path(options.task_file)
+        path = agent_task_file(options)
         tasks = parse_tasks(path.read_text())
-    except (OSError, UnicodeDecodeError, ValueError, git.GitCommandError) as e:
+    except LookupError as e:
+        return unverified(str(e))
+    except READ_ERRORS as e:
         return unverified(f'cannot read {options.task_file}: {e!r}')
 
     if not tasks:

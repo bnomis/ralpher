@@ -1,3 +1,5 @@
+import io
+import pathlib
 import signal
 import subprocess
 import sys
@@ -1022,3 +1024,95 @@ def test_process_user_always_returns_none_and_line() -> None:
 
     assert message_type == ralphlib.types.MessageType.NONE
     assert message == line
+
+
+TASKS_MD = """# Tasks
+
+## Task 1: First thing
+
+**Status:** done
+
+## Task 2: Second thing
+
+**Status:** {second}
+
+## Task 3: Third thing
+
+**Status:** todo
+"""
+
+
+def write_tasks(path: pathlib.Path, second: str) -> None:
+    path.write_text(TASKS_MD.format(second=second))
+
+
+def start_block(tid: str) -> str:
+    return f'<task><id>{tid}</id><title>Second thing</title><index>2</index><count>3</count><status>start</status></task>'
+
+
+def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'todo')
+    options = make_options(quiet=True, task_file=str(path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    ralphlib.iteration.announce_started_tasks(options, context)
+    assert context.progressfd.getvalue() == ''
+
+    write_tasks(path, 'in-progress')
+    ralphlib.iteration.announce_started_tasks(options, context)
+    ralphlib.iteration.announce_started_tasks(options, context)
+    assert context.progressfd.getvalue() == '\ntask 2: Second thing 2/3 start\n\n'
+
+
+def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'in-progress')
+    options = make_options(quiet=True, task_file=str(path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+    context.in_progress_tasks = {'2'}
+
+    ralphlib.iteration.announce_started_tasks(options, context)
+    assert context.progressfd.getvalue() == ''
+
+
+def test_announce_started_tasks_unreadable_task_file_is_silent(tmp_path: pathlib.Path) -> None:
+    options = make_options(quiet=True, task_file=str(tmp_path / 'missing.md'))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    ralphlib.iteration.announce_started_tasks(options, context)
+    assert context.progressfd.getvalue() == ''
+
+
+def test_announce_started_tasks_skips_task_the_agent_announced(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'in-progress')
+    options = make_options(quiet=True, task_file=str(path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    message_type, _ = ralphlib.iteration.process_task_progress(options, context, {}, start_block('2'))
+    assert message_type == ralphlib.types.MessageType.PROGRESS
+
+    ralphlib.iteration.announce_started_tasks(options, context)
+    assert context.progressfd.getvalue() == ''
+
+
+def test_process_task_progress_suppresses_start_already_announced(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'in-progress')
+    options = make_options(quiet=True, task_file=str(path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    ralphlib.iteration.announce_started_tasks(options, context)
+    message_type, _ = ralphlib.iteration.process_task_progress(options, context, {}, start_block('2'))
+    assert message_type == ralphlib.types.MessageType.NONE
+
+    done = start_block('2').replace('start', 'done')
+    message_type, message = ralphlib.iteration.process_task_progress(options, context, {}, done)
+    assert message_type == ralphlib.types.MessageType.PROGRESS
+    assert message == '\ntask 2: Second thing 2/3 done\n'

@@ -19,6 +19,7 @@ import ralphlib.printer
 import ralphlib.signals
 import ralphlib.state
 import ralphlib.types
+import ralphlib.verifier
 
 if TYPE_CHECKING:
     import io
@@ -32,6 +33,15 @@ task_progress_re = re.compile(
 
 
 @dataclasses.dataclass
+class TaskEntry:
+    id: str
+    title: str
+    index: int
+    count: int
+    status: str
+
+
+@dataclasses.dataclass
 class IterationContext:
     cmd: list[str]
     iteration: int
@@ -42,6 +52,10 @@ class IterationContext:
     error: bool = False
     gil: threading.Lock = dataclasses.field(default_factory=threading.Lock)
     message_type_queue: list[ralphlib.types.MessageType] = dataclasses.field(default_factory=list)
+    started_tasks: set[str] = dataclasses.field(default_factory=set)
+    """Task ids whose start line has been printed this iteration."""
+    in_progress_tasks: set[str] = dataclasses.field(default_factory=set)
+    """Task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
     progress: pathlib.Path | None = None
     errors: pathlib.Path | None = None
     stderr: pathlib.Path | None = None
@@ -405,6 +419,8 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
     if options.cwd:
         kwargs['cwd'] = options.cwd
 
+    context.in_progress_tasks = {t.id for t in read_task_statuses(options) if t.status == 'in-progress'}
+
     # log_msg(options, context, f'Forking subprocess {context.cmd}')
     proc = subprocess.Popen(  # noqa: S603
         context.cmd,
@@ -446,6 +462,8 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
 
         if proc.poll() is not None:
             break
+
+        announce_started_tasks(options, context)
 
         if ralphlib.signals.get_should_exit():
             log_msg(options, context, f'Received termination signal. Terminating subprocess {proc.pid}...')
@@ -713,26 +731,70 @@ def process_task_progress(
         task = task_progress_re.search(line)
         if task:
             tid = task.group('id')
-            count = task.group('count')
-            index = task.group('index')
-            title = task.group('title')
             status = task.group('status')
-            ralphlib.hooks.event(
-                options,
-                ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS,
-                {
-                    'task_id': tid,
-                    'task_title': title,
-                    'task_index': index,
-                    'task_count': count,
-                    'task_status': status,
-                },
-            )
-            return ralphlib.types.MessageType.PROGRESS, f'\ntask {tid}: {title} {index}/{count} {status}\n'
+            if status == 'start' and not mark_started(context, tid):
+                return ralphlib.types.MessageType.NONE, line
+            message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
+            return ralphlib.types.MessageType.PROGRESS, message
     except Exception as e:
         loguru.logger.exception(f'Exception in process_task_progress: {e}')
         log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
     return ralphlib.types.MessageType.NONE, line
+
+
+def task_progress(options: RalpherOptions, tid: str, title: str, index: str, count: str, status: str) -> str:
+    ralphlib.hooks.event(
+        options,
+        ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS,
+        {
+            'task_id': tid,
+            'task_title': title,
+            'task_index': index,
+            'task_count': count,
+            'task_status': status,
+        },
+    )
+    return f'\ntask {tid}: {title} {index}/{count} {status}\n'
+
+
+def mark_started(context: IterationContext, tid: str) -> bool:
+    """Record that task `tid` has a start line; False if it already had one this iteration."""
+    with context.gil:
+        if tid in context.started_tasks:
+            return False
+        context.started_tasks.add(tid)
+        return True
+
+
+def read_task_statuses(options: RalpherOptions) -> list[TaskEntry]:
+    """Return the tasks in the file the agent edits, or an empty list when it cannot be read yet."""
+    if not options.task_file:
+        return []
+    try:
+        tasks = ralphlib.verifier.read_tasks(options)
+    except ralphlib.verifier.READ_ERRORS:
+        return []
+    return [TaskEntry(str(t.number), t.title, i, len(tasks), t.status) for i, t in enumerate(tasks, start=1)]
+
+
+def announce_started_tasks(options: RalpherOptions, context: IterationContext) -> None:
+    """Print a start line for each task the agent has newly marked `in-progress`.
+
+    The agent is asked to write a start `<task>` block but often does not;
+    the status change in the tasks file is the reliable signal.
+    """
+    for t in read_task_statuses(options):
+        if t.status != 'in-progress' or t.id in context.in_progress_tasks:
+            continue
+        context.in_progress_tasks.add(t.id)
+        if not mark_started(context, t.id):
+            continue
+        message = task_progress(options, t.id, t.title, str(t.index), str(t.count), 'start')
+        write_progress(options, context, message)
+        print_progress(options, context, ralphlib.types.MessageType.PROGRESS, message)
+        write_progress_eol(options, context)
+        print_progress_eol(options, context)
+        append_message_type(context, ralphlib.types.MessageType.PROGRESS)
 
 
 def indent_lines(s: str, indent: str = '  ') -> str:
