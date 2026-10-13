@@ -1,6 +1,8 @@
 Run a ralpher queue in the background, relay task progress as it happens,
 and report in full only when it has finished.
 
+Before any /rrq, check pwd; if it is a worktree, prefix the command with cd to the main checkout.
+
 Run this command with `run_in_background` set to true:
 
     $RALPHER_PATH/bin/rrq.sh $ARGUMENTS
