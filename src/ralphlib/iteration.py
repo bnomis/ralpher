@@ -930,7 +930,7 @@ def process_tool_progress(
     return ralphlib.types.MessageType.NONE, line
 
 
-def process_tool_command_lifecycle(
+def process_command_lifecycle(
     options: RalpherOptions,
     context: IterationContext,
     payload: dict[str, Any],
