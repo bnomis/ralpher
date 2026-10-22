@@ -62,7 +62,7 @@ Let the user know what you are working on by writing `<task>` blocks to your sta
 <title>task-name</title>
 <index>task-index</index>
 <count>tasks-count</count>
-<status>start|done|blocked|operator</status>
+<status>start|done|blocked|operator|in-progress</status>
 </task>
 ```
 
@@ -72,7 +72,7 @@ In the above the variables have the following definitions:
 - `task-name`: the name of the current task
 - `task-index`: the index, starting from 1, of the current task in {{ task_file_relative_path }}
 - `tasks-count`: the total number of tasks in {{ task_file_relative_path }}
-- `status`: one of `start`, `done`, `blocked`, or `operator`
+- `status`: one of `start`, `done`, `blocked`, `operator`, or `in-progress`
 
 ## Select a task
 
@@ -151,6 +151,20 @@ The operator follows progress only through `<task>` blocks. Without the start bl
 9. Commit the changes with git{% if worktree %} in the worktree{% endif %} using a message that starts with the task number, e.g. "Task 3: add SearchBatch dataclass".
 
 Throughout implementation, print your current status to stdout including: which task you're working on, what actions you're taking, and your reasoning.
+
+## Monitoring a process
+
+If you are monitoring a long running process as part of a task, e.g. a long test run, and you output a task block, use the status `in-progress` and append a description of the process you are monitoring to the `task-name`. For example:
+
+```xml
+<task>
+<id>task-number</id>
+<title>task-name: long-running-process-description</title>
+<index>task-index</index>
+<count>tasks-count</count>
+<status>in-progress</status>
+</task>
+```
 
 ## Finishing a task
 
