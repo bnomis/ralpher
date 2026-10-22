@@ -1,8 +1,12 @@
 import pathlib
+import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
+
+log_file_cache_lock = threading.Lock()
+log_file_cache = {}
 
 
 def init(options: RalpherOptions) -> None:
@@ -23,14 +27,29 @@ def iteration_to_str(options: RalpherOptions, iteration: int) -> str:
     return str(iteration).zfill(width)
 
 
+def fetch_log_path(file: str, iteration: int) -> pathlib.Path | None:
+    key = (file, iteration)
+    with log_file_cache_lock:
+        return log_file_cache.get(key)
+
+
 def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path:
-    iteration_str = iteration_to_str(options, iteration)
-    path = pathlib.Path(file)
-    path = pathlib.Path(path.stem + '-' + iteration_str + path.suffix)
-    if options.logdir:
-        logdir = log_dir(options)
-        path = logdir / path
-    return make_unique(path)
+    # we want a unique name at the start of a run, not every time this is called
+    path = fetch_log_path(file, iteration)
+    if path:
+        return path
+
+    with log_file_cache_lock:
+        iteration_str = iteration_to_str(options, iteration)
+        path = pathlib.Path(file)
+        path = pathlib.Path(path.stem + '-' + iteration_str + path.suffix)
+        if options.logdir:
+            logdir = log_dir(options)
+            path = logdir / path
+        unique_path = make_unique(path)
+        key = (file, iteration)
+        log_file_cache[key] = unique_path
+        return unique_path
 
 
 def make_unique(path: pathlib.Path) -> pathlib.Path:
