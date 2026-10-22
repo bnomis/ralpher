@@ -30,7 +30,16 @@ def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path
     if options.logdir:
         logdir = log_dir(options)
         path = logdir / path
-    return path
+    return make_unique(path)
+
+
+def make_unique(path: pathlib.Path) -> pathlib.Path:
+    counter = 1
+    new_path = path
+    while new_path.exists():
+        new_path = path.with_name(f'{path.stem}-{counter}{path.suffix}')
+        counter += 1
+    return new_path
 
 
 def state_file(options: RalpherOptions) -> pathlib.Path | None:
