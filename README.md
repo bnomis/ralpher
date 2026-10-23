@@ -21,6 +21,10 @@ ralpher.sh --task-file agents/tasks/my-feature/tasks-1.md ...
 
 Without `--task-file` the check never runs.
 
+## The agent's environment
+
+The agent starts with the environment ralpher was started with, minus ralpher's own Python: `bin/activate.sh` puts ralpher's `.venv` on `PATH` and its `src` on `PYTHONPATH`, and ralpher removes both, and `VIRTUAL_ENV` when it names that `.venv`, before starting the agent. So `python` and `pytest` in the agent's shell are whatever the project's own setup provides (its `bin/activate.sh`, or the user's `PATH`), never ralpher's packages. Any other virtual environment active when ralpher started is kept.
+
 ## Configuration
 
 ralpher will read the file `~/.ralpher/settings.json` if it exists.

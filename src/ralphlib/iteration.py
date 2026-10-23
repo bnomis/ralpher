@@ -5,6 +5,7 @@ import re
 import shlex
 import signal
 import subprocess
+import sys
 import threading
 import time
 from typing import TYPE_CHECKING, Any
@@ -406,6 +407,29 @@ def newline_required(context: IterationContext, message_type: ralphlib.types.Mes
     return False
 
 
+def agent_environment(environ: dict[str, str], venv: pathlib.Path, src: pathlib.Path) -> dict[str, str]:
+    """environ without ralpher's own virtual environment and source directory.
+
+    bin/activate.sh puts ralpher's venv on PATH and its src on PYTHONPATH; left in place,
+    `python` and `pytest` in the agent's shell resolve to ralpher's packages, not the project's.
+    Entries that are not ralpher's own are kept.
+    """
+    env = dict(environ)
+    venv_bin = venv / 'bin'
+    if env.get('VIRTUAL_ENV') and pathlib.Path(env['VIRTUAL_ENV']).resolve() == venv.resolve():
+        env.pop('VIRTUAL_ENV')
+        env.pop('VIRTUAL_ENV_PROMPT', None)
+    for name, own in (('PATH', venv_bin), ('PYTHONPATH', src)):
+        if name not in env:
+            continue
+        kept = [entry for entry in env[name].split(os.pathsep) if not entry or pathlib.Path(entry).resolve() != own.resolve()]
+        if any(kept):
+            env[name] = os.pathsep.join(kept)
+        else:
+            env.pop(name)
+    return env
+
+
 def process(options: RalpherOptions, context: IterationContext) -> None:
     kwargs = {
         'stdin': subprocess.DEVNULL,
@@ -415,6 +439,7 @@ def process(options: RalpherOptions, context: IterationContext) -> None:
         'text': True,
         'errors': 'replace',
         'start_new_session': True,
+        'env': agent_environment(dict(os.environ), pathlib.Path(sys.prefix), pathlib.Path(__file__).resolve().parents[1]),
     }
     if options.cwd:
         kwargs['cwd'] = options.cwd

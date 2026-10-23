@@ -1116,3 +1116,72 @@ def test_process_task_progress_suppresses_start_already_announced(tmp_path: path
     message_type, message = ralphlib.iteration.process_task_progress(options, context, {}, done)
     assert message_type == ralphlib.types.MessageType.PROGRESS
     assert message == '\ntask 2: Second thing 2/3 done\n'
+
+
+RALPHER_VENV = pathlib.Path('/opt/ralpher/.venv')
+RALPHER_SRC = pathlib.Path('/opt/ralpher/src')
+
+
+def test_agent_environment_drops_ralphers_venv_and_src() -> None:
+    environ = {
+        'HOME': '/home/someone',
+        'PATH': f'{RALPHER_VENV}/bin:/usr/local/bin:/usr/bin',
+        'PYTHONPATH': f'{RALPHER_SRC}:/work/project/src',
+        'VIRTUAL_ENV': str(RALPHER_VENV),
+        'VIRTUAL_ENV_PROMPT': 'ralpher',
+    }
+    env = ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
+    assert env == {
+        'HOME': '/home/someone',
+        'PATH': '/usr/local/bin:/usr/bin',
+        'PYTHONPATH': '/work/project/src',
+    }
+
+
+def test_agent_environment_removes_variables_left_empty() -> None:
+    environ = {'PATH': '/usr/bin', 'PYTHONPATH': str(RALPHER_SRC)}
+    env = ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
+    assert env == {'PATH': '/usr/bin'}
+
+
+def test_agent_environment_keeps_another_virtual_environment() -> None:
+    environ = {
+        'PATH': f'/work/featenv/.venv/bin:{RALPHER_VENV}/bin:/usr/bin',
+        'VIRTUAL_ENV': '/work/featenv/.venv',
+    }
+    env = ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
+    assert env == {'PATH': '/work/featenv/.venv/bin:/usr/bin', 'VIRTUAL_ENV': '/work/featenv/.venv'}
+
+
+def test_agent_environment_leaves_environ_unchanged() -> None:
+    environ = {'PATH': f'{RALPHER_VENV}/bin:/usr/bin', 'VIRTUAL_ENV': str(RALPHER_VENV)}
+    before = dict(environ)
+    ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
+    assert environ == before
+
+
+def test_process_starts_agent_without_ralphers_python(tmp_path: pathlib.Path) -> None:
+    """The agent's `python` must not be ralpher's: bin/activate.sh put ralpher's venv first on PATH."""
+    options = make_options(quiet=True)
+    context = make_context()
+    context.cmd = ['true']
+
+    mock_proc = MagicMock()
+    mock_proc.pid = 12345
+    mock_proc.stdout = MagicMock()
+    mock_proc.stderr = MagicMock()
+    mock_proc.stdout.readline = MagicMock(return_value='')
+    mock_proc.stderr.readline = MagicMock(return_value='')
+    mock_proc.poll = MagicMock(return_value=0)
+    mock_proc.returncode = 0
+
+    venv_bin = str(pathlib.Path(sys.prefix) / 'bin')
+    with (
+        patch.dict('os.environ', {'PATH': f'{venv_bin}:/usr/bin', 'VIRTUAL_ENV': sys.prefix}),
+        patch('subprocess.Popen', return_value=mock_proc) as mock_popen,
+    ):
+        ralphlib.iteration.process(options, context)
+
+    env = mock_popen.call_args[1]['env']
+    assert 'VIRTUAL_ENV' not in env
+    assert venv_bin not in env['PATH'].split(':')
