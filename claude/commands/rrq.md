@@ -54,3 +54,7 @@ if it is still running, then show the last 100 lines of the output file
 and nothing else. If it exited non-zero, say so alongside those lines
 rather than investigating - the tail is what was asked for, and the next
 instruction is the user's to give.
+
+Show means paste: read the lines with a tool, then copy them verbatim into
+your reply inside a code block. The user does not see tool output, so a
+reply that only points at it ("the lines are above") shows them nothing.
