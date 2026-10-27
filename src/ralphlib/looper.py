@@ -175,6 +175,7 @@ def loop(options: RalpherOptions) -> bool:
             complete = reject_unverified_stop(options, i, iterations_key)
 
         if complete or error or ralphlib.signals.get_should_exit():
+            reason = ''
             words = []
             message_type = ralphlib.types.MessageType.SYSTEM
             if complete:
@@ -183,11 +184,15 @@ def loop(options: RalpherOptions) -> bool:
                 words.append('error')
                 message_type = ralphlib.types.MessageType.ERROR
             if ralphlib.signals.get_should_exit():
+                reason = ralphlib.signals.get_should_exit_reason()
                 words.append('termination')
                 termination = True
             exit_reason = ', '.join(words)
 
-            s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
+            s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n'
+            if reason:
+                s += f'Reason: {reason}\n'
+            s += '\n'
             print_both(options, s, i, message_type=message_type)
             break
 

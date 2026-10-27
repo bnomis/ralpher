@@ -11,19 +11,27 @@ import ralphlib.types
 if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
-should_exit = False
-should_exit_lock = threading.Lock()
+should_exit: bool = False
+should_exit_lock: threading.Lock = threading.Lock()
+should_exit_reason: str | None = None
 
 
-def set_should_exit(value: bool) -> None:
+def set_should_exit(value: bool, reason: str | None = None) -> None:
     global should_exit
+    global should_exit_reason
     with should_exit_lock:
         should_exit = value
+        should_exit_reason = reason
 
 
 def get_should_exit() -> bool:
     with should_exit_lock:
         return should_exit
+
+
+def get_should_exit_reason() -> str | None:
+    with should_exit_lock:
+        return should_exit_reason
 
 
 class GracefulTerminator:
@@ -79,4 +87,4 @@ class GracefulTerminator:
 
     def perform_shutdown(self) -> None:
         self.is_shutting_down = True
-        set_should_exit(True)
+        set_should_exit(True, reason='Graceful shutdown initiated')
