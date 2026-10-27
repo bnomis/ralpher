@@ -26,13 +26,6 @@ from ralphlib.signals import GracefulTerminator
 SLEEP_SCRIPT = 'import time; time.sleep(60)'
 
 
-@pytest.fixture(autouse=True)
-def _reset_should_exit():
-    ralphlib.signals.set_should_exit(False)
-    yield
-    ralphlib.signals.set_should_exit(False)
-
-
 @pytest.fixture
 def _fast_poll():
     """Reduce poll interval so tests don't wait 3 seconds per cycle."""

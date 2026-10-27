@@ -15,11 +15,6 @@ def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
     return ralphlib.settings.load_settings(options)
 
 
-@pytest.fixture(autouse=True)
-def reset_should_exit() -> None:
-    signals.set_should_exit(False)
-
-
 @pytest.fixture
 def terminator() -> GracefulTerminator:
     with patch('ralphlib.signals.signal.signal'):
