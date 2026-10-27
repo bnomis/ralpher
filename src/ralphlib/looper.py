@@ -191,7 +191,7 @@ def loop(options: RalpherOptions) -> bool:
 
             s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n'
             if reason:
-                s += f'Reason: {reason}\n'
+                s += f'{"=" * 5} Stopping reason: {reason} {"=" * 5}\n'
             s += '\n'
             print_both(options, s, i, message_type=message_type)
             break
