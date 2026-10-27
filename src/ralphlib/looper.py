@@ -272,6 +272,8 @@ def loop(options: RalpherOptions) -> bool:
 
     if complete and not (bool(error) or termination):
         print_cleanup_cmds(options)
+    else:
+        print_stopping_prompt(options)
 
     return bool(error) or termination
 
@@ -292,6 +294,14 @@ def reject_unverified_stop(options: RalpherOptions, iteration: int, iterations_k
     state_payload = {'stop_rejected': {'total': check.total, 'not_done': [t.number for t in check.not_done]}}
     ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
     return False
+
+
+def print_stopping_prompt(options: RalpherOptions) -> None:
+    stopping_prompt = ralphlib.signals.get_should_exit_prompt()
+    if stopping_prompt:
+        lines = ['Probable next prompt...']
+        lines.append(stopping_prompt)
+        ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
 
 def print_cleanup_cmds(options: RalpherOptions) -> None:

@@ -44,7 +44,11 @@ def event(
             if task_id:
                 if task_id in seen_task_ids and seen_task_ids[task_id] == task_status and task_status == 'blocked':
                     loguru.logger.debug(f'Already processed task_id {task_id} with status {task_status}: looks like a loop')
-                    ralphlib.signals.set_should_exit(True, reason=f'Loop detected for task {task_id} with status {task_status}')
+                    ralphlib.signals.set_should_exit(
+                        True,
+                        reason=f'Loop detected for task {task_id} with status {task_status}',
+                        prompt=f'unblock task {task_id} in {options.task_file}',
+                    )
                     return
 
                 seen_task_ids[task_id] = task_status
@@ -68,7 +72,11 @@ def event(
 
     # handle operator input required status
     if task_status == 'operator':
-        ralphlib.signals.set_should_exit(True, reason=f'Operator input required for task {task_id}')
+        ralphlib.signals.set_should_exit(
+            True,
+            reason=f'Operator input required for task {task_id}',
+            prompt=f'unblock task {task_id} in {options.task_file}',
+        )
 
 
 def ralpher_root() -> pathlib.Path:

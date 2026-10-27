@@ -14,14 +14,17 @@ if TYPE_CHECKING:
 should_exit: bool = False
 should_exit_lock: threading.Lock = threading.Lock()
 should_exit_reason: str | None = None
+should_exit_prompt: str | None = None
 
 
-def set_should_exit(value: bool, reason: str | None = None) -> None:
+def set_should_exit(value: bool, reason: str | None = None, prompt: str | None = None) -> None:
     global should_exit
     global should_exit_reason
     with should_exit_lock:
         should_exit = value
         should_exit_reason = reason
+        global should_exit_prompt
+        should_exit_prompt = prompt
 
 
 def get_should_exit() -> bool:
@@ -32,6 +35,11 @@ def get_should_exit() -> bool:
 def get_should_exit_reason() -> str | None:
     with should_exit_lock:
         return should_exit_reason
+
+
+def get_should_exit_prompt() -> str | None:
+    with should_exit_lock:
+        return should_exit_prompt
 
 
 class GracefulTerminator:
