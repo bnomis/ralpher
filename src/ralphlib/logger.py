@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 log_file_cache_lock = threading.Lock()
-log_file_cache = {}
+log_file_cache: dict[tuple[str | None, str, int], pathlib.Path] = {}
 
 
 def init(options: RalpherOptions) -> None:
@@ -27,15 +27,15 @@ def iteration_to_str(options: RalpherOptions, iteration: int) -> str:
     return str(iteration).zfill(width)
 
 
-def fetch_log_path(file: str, iteration: int) -> pathlib.Path | None:
-    key = (file, iteration)
+def fetch_log_path(logdir: str | None, file: str, iteration: int) -> pathlib.Path | None:
+    key = (logdir, file, iteration)
     with log_file_cache_lock:
         return log_file_cache.get(key)
 
 
 def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path:
     # we want a unique name at the start of a run, not every time this is called
-    path = fetch_log_path(file, iteration)
+    path = fetch_log_path(options.logdir, file, iteration)
     if path:
         return path
 
@@ -47,7 +47,7 @@ def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path
             logdir = log_dir(options)
             path = logdir / path
         unique_path = make_unique(path)
-        key = (file, iteration)
+        key = (options.logdir, file, iteration)
         log_file_cache[key] = unique_path
         return unique_path
 

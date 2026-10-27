@@ -11,6 +11,11 @@ def make_options(**kwargs: Any) -> ralphlib.options.RalpherOptions:
     return ralphlib.options.RalpherOptions(**kwargs)
 
 
+@pytest.fixture(autouse=True)
+def clear_log_file_cache() -> None:
+    ralphlib.logger.log_file_cache.clear()
+
+
 class TestIterationToStr:
     def test_zero_pads_based_on_max_iterations(self) -> None:
         options = make_options(iterations=100)
@@ -31,6 +36,12 @@ class TestLogFile:
         options = make_options(logdir=None, iterations=10)
         result = ralphlib.logger.log_file(options, 'output.log', 3)
         assert result == pathlib.Path('output-03.log')
+
+    def test_cache_is_per_logdir(self, tmp_path: pathlib.Path) -> None:
+        first = ralphlib.logger.log_file(make_options(logdir=str(tmp_path / 'a'), iterations=10), 'output.log', 3)
+        second = ralphlib.logger.log_file(make_options(logdir=str(tmp_path / 'b'), iterations=10), 'output.log', 3)
+        assert first == tmp_path / 'a' / 'output-03.log'
+        assert second == tmp_path / 'b' / 'output-03.log'
 
     def test_filename_with_multiple_dots(self, tmp_path: pathlib.Path) -> None:
         options = make_options(logdir=str(tmp_path), iterations=10)
