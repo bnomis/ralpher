@@ -1,4 +1,5 @@
 import contextlib
+import json
 import pathlib
 import sys
 from typing import TYPE_CHECKING
@@ -82,7 +83,11 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
 
 
 def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
-    wts = 'Git worktrees will be created from the origin repo.'
+    from_head = options.worktree and claude_worktree_base_ref(repo) == 'head'
+    if from_head:
+        wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
+    else:
+        wts = 'Git worktrees will be created from the origin repo.'
     if not is_clean_strict(repo):
         lines = ['Warning: the git working tree is not clean.']
         if options.worktree:
@@ -92,7 +97,7 @@ def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
-    if has_unpushed_commits(repo):
+    if not from_head and has_unpushed_commits(repo):
         lines = ['Warning: there are unpushed commits.']
         if options.worktree:
             lines.append(wts)
@@ -161,6 +166,9 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
 
 
 def check_divergence(options: RalpherOptions, repo: git.Repo) -> None:
+    if claude_worktree_base_ref(repo) != 'fresh':
+        return
+
     base, base_short = get_origin(repo)
     if not base:
         console_stderr.print('Warning: origin/HEAD is not set locally. Cannot check for divergence.')
@@ -195,3 +203,34 @@ def get_current_branch(repo: git.Repo) -> str | None:
     if repo.head.is_detached:
         return None
     return repo.active_branch.name
+
+
+def claude_worktree_base_ref(repo: git.Repo) -> str:
+    """
+    The ref Claude Code branches new worktrees from: the `worktree.baseRef` setting, or its default "fresh".
+    "fresh" branches from origin/<default-branch>, "head" from the local HEAD.
+    """
+    base_ref = 'fresh'
+    for path in claude_settings_paths(repo):
+        with contextlib.suppress(OSError, ValueError):
+            settings = json.loads(path.read_text())
+            worktree = settings.get('worktree') if isinstance(settings, dict) else None
+            if isinstance(worktree, dict) and 'baseRef' in worktree:
+                base_ref = worktree['baseRef']
+    return base_ref
+
+
+def claude_settings_paths(repo: git.Repo) -> list[pathlib.Path]:
+    """Claude Code settings files, lowest precedence first."""
+    paths = [pathlib.Path.home() / '.claude' / 'settings.json']
+    if repo.working_tree_dir is not None:
+        project = pathlib.Path(repo.working_tree_dir) / '.claude'
+        paths += [project / 'settings.json', project / 'settings.local.json']
+
+    managed_dir = {
+        'darwin': pathlib.Path('/Library/Application Support/ClaudeCode'),
+        'win32': pathlib.Path('C:/Program Files/ClaudeCode'),
+    }.get(sys.platform, pathlib.Path('/etc/claude-code'))
+    paths.append(managed_dir / 'managed-settings.json')
+    paths += sorted((managed_dir / 'managed-settings.d').glob('[!.]*.json'))
+    return paths
