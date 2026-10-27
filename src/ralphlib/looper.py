@@ -99,6 +99,7 @@ def loop(options: RalpherOptions) -> bool:
     loop_tds = []
     exit_reason = 'completed all iterations'
     complete = error = termination = False
+    stopping_reason = ''
 
     for i in range(1, options.iterations + 1):
         if options.load_settings_on_loop:
@@ -175,7 +176,6 @@ def loop(options: RalpherOptions) -> bool:
             complete = reject_unverified_stop(options, i, iterations_key)
 
         if complete or error or ralphlib.signals.get_should_exit():
-            reason = ''
             words = []
             message_type = ralphlib.types.MessageType.SYSTEM
             if complete:
@@ -184,15 +184,12 @@ def loop(options: RalpherOptions) -> bool:
                 words.append('error')
                 message_type = ralphlib.types.MessageType.ERROR
             if ralphlib.signals.get_should_exit():
-                reason = ralphlib.signals.get_should_exit_reason()
+                stopping_reason = ralphlib.signals.get_should_exit_reason()
                 words.append('termination')
                 termination = True
             exit_reason = ', '.join(words)
 
-            s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n'
-            if reason:
-                s += f'{"=" * 5} Stopping reason: {reason} {"=" * 5}\n'
-            s += '\n'
+            s = f'\n{"=" * 5} Loop {exit_reason} signal received, stopping after {i} iteration{"s" if i != 1 else ""}. {"=" * 5}\n\n'
             print_both(options, s, i, message_type=message_type)
             break
 
@@ -228,6 +225,8 @@ def loop(options: RalpherOptions) -> bool:
         lines.append(f'overhead: {readable_overhead_time}')
 
     lines.append(f'Exit reason: {exit_reason}')
+    if stopping_reason:
+        lines.append(f'Stopping reason: {stopping_reason}')
     ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
     # state json
@@ -241,6 +240,7 @@ def loop(options: RalpherOptions) -> bool:
         'loop_time_seconds': total_loop_time_td.total_seconds(),
         'overhead_time_readable': readable_overhead_time,
         'overhead_time_seconds': ralpher_overhead_td.total_seconds(),
+        'stopping_reason': stopping_reason,
     }
     ralphlib.state.add_to_state(options, new_state)
 
