@@ -13,6 +13,7 @@ from jinja2.sandbox import SandboxedEnvironment
 import ralphlib.giter
 import ralphlib.signals
 import ralphlib.types
+import ralphlib.verifier
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -39,6 +40,16 @@ def event(
     # don't process the same hook twice
     ev_str = event_type_string + str(event_context)
     ev_str_hash = str(hash(ev_str))
+    tf = ralphlib.verifier.worktree_task_file(options)
+
+    # unblock prompt
+    if not tf:
+        tf = options.task_file
+    wt = ''
+    if options.worktree:
+        wt = ' worktree'
+    prompt = f'unblock task {task_id} in{wt} task file {tf}'
+
     if ev_str_hash in processed_hooks:
         if event_type == ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS:
             if task_id:
@@ -47,7 +58,7 @@ def event(
                     ralphlib.signals.set_should_exit(
                         True,
                         reason=f'Loop detected for task {task_id} with status {task_status}',
-                        prompt=f'unblock task {task_id} in {options.task_file}',
+                        prompt=prompt,
                     )
                     return
 
@@ -75,7 +86,7 @@ def event(
         ralphlib.signals.set_should_exit(
             True,
             reason=f'Operator input required for task {task_id}',
-            prompt=f'unblock task {task_id} in {options.task_file}',
+            prompt=prompt,
         )
 
 
