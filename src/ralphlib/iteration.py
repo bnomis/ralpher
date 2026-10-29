@@ -190,6 +190,16 @@ def task_file_slug(task_file: str) -> str:
     return slugify(slug)
 
 
+def add_settings(options: RalpherOptions, cmd: list[str]) -> list[str]:
+    if '--settings' in cmd:
+        return cmd
+
+    if options.worktree_base_ref:
+        cmd.append('--settings')
+        cmd.append('{"worktree": {"baseRef": "%s"}}' % options.worktree_base_ref)
+    return cmd
+
+
 def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
     # dont add twice
     if '--worktree' in cmd or '-w' in cmd:
@@ -205,7 +215,8 @@ def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
 def make_context(options: RalpherOptions, prompt: str, iteration: int) -> IterationContext:
     cmd = [options.agent]
     cmd.extend(shlex.split(options.args))
-    add_worktree_arg(options, cmd)
+    cmd = add_settings(options, cmd)
+    cmd = add_worktree_arg(options, cmd)
     cmd.append(prompt)
     context = IterationContext(
         cmd=cmd,

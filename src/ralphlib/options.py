@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Annotated
+from typing import Annotated, Literal
 
 import cappa
 
@@ -63,6 +63,13 @@ class RalpherOptions:
         bool,
         cappa.Arg(long=True, help='Use worktrees (add --worktree) named for the tasks file if it exists'),
     ] = False
+    worktree_base_ref: Annotated[
+        Literal['fresh', 'head'] | None,
+        cappa.Arg(
+            long='--worktree-base-ref',
+            help='Add worktree.baseRef setting to the cli arguments, i.e. override your default settings. See https://code.claude.com/docs/en/settings-reference#worktree-baseref',
+        ),
+    ] = None
     skip_git_check: Annotated[
         bool,
         cappa.Arg(long='--skip-git-check', help='Dont do git checks (not committed/pushed etc.) before starting'),
