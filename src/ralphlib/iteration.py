@@ -9,7 +9,6 @@ import sys
 import threading
 import time
 import typing
-from typing import TYPE_CHECKING, Any
 
 import loguru
 import orjson
@@ -24,10 +23,10 @@ import ralphlib.templater
 import ralphlib.types
 import ralphlib.verifier
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     import io
 
-    from ralphlib.options import RalpherOptions
+    import ralphlib.options
 
 
 task_progress_re = re.compile(
@@ -64,7 +63,7 @@ class IterationContext:
     stderr: pathlib.Path | None = None
     stdout: pathlib.Path | None = None
     tools_used_set: set[str] = dataclasses.field(default_factory=set)
-    unknown_tools: dict[str, dict[str, Any]] = dataclasses.field(default_factory=dict)
+    unknown_tools: dict[str, dict[str, typing.Any]] = dataclasses.field(default_factory=dict)
     progressfd: io.TextIOWrapper | None = None
     stdoutfd: io.TextIOWrapper | None = None
     stderrfd: io.TextIOWrapper | None = None
@@ -162,7 +161,7 @@ def last_message_type(context: IterationContext) -> ralphlib.types.MessageType |
     return None
 
 
-def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
+def run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
     context = make_context(options, prompt, iteration)
     try:
         process(options, context)
@@ -175,7 +174,7 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     return get_complete(context), get_error(context)
 
 
-def add_settings(options: RalpherOptions, cmd: list[str]) -> list[str]:
+def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
     if '--settings' in cmd:
         return cmd
 
@@ -185,7 +184,7 @@ def add_settings(options: RalpherOptions, cmd: list[str]) -> list[str]:
     return cmd
 
 
-def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
+def add_worktree_arg(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
     # dont add twice
     if '--worktree' in cmd or '-w' in cmd:
         return cmd
@@ -197,7 +196,7 @@ def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
     return cmd
 
 
-def make_context(options: RalpherOptions, prompt: str, iteration: int) -> IterationContext:
+def make_context(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> IterationContext:
     cmd = [options.agent]
     cmd.extend(shlex.split(options.args))
     cmd = add_settings(options, cmd)
@@ -248,7 +247,7 @@ def unmake_context(context: IterationContext) -> None:
         flush_and_close_fd(context.errorsfd)
 
 
-def summary(options: RalpherOptions, context: IterationContext, iteration: int) -> None:
+def summary(options: ralphlib.options.RalpherOptions, context: IterationContext, iteration: int) -> None:
     state_payload = {}
     lines = []
     if context.tools_used_set:
@@ -290,7 +289,7 @@ def summary(options: RalpherOptions, context: IterationContext, iteration: int) 
         )
 
 
-def print_progress_lines(options: RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+def print_progress_lines(options: ralphlib.options.RalpherOptions, context: IterationContext, lines: list[str]) -> None:
     if options.quiet:
         return
     with context.gil:
@@ -299,7 +298,7 @@ def print_progress_lines(options: RalpherOptions, context: IterationContext, lin
 
 
 def print_progress(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
     message_type: ralphlib.types.MessageType,
     message: str,
@@ -311,28 +310,28 @@ def print_progress(
         console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
 
 
-def print_progress_eol(options: RalpherOptions, context: IterationContext) -> None:
+def print_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
         console.print('')
 
 
-def print_error(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def print_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if options.quiet:
         return
     with context.gil:
         console_stderr.print(message, style='red', end='', soft_wrap=True)
 
 
-def print_error_eol(options: RalpherOptions, context: IterationContext) -> None:
+def print_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
         console_stderr.print('\n')
 
 
-def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> None:
+def log_msg(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
     write_progress(options, context, msg)
     write_progress_eol(options, context)
 
@@ -340,7 +339,7 @@ def log_msg(options: RalpherOptions, context: IterationContext, msg: str) -> Non
     print_progress_eol(options, context)
 
 
-def log_error(options: RalpherOptions, context: IterationContext, msg: str) -> None:
+def log_error(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
     write_error(options, context, msg)
     write_error_eol(options, context)
 
@@ -348,46 +347,46 @@ def log_error(options: RalpherOptions, context: IterationContext, msg: str) -> N
     print_error_eol(options, context)
 
 
-def write_progress(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def write_progress(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write(message)
 
 
-def write_progress_lines(options: RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+def write_progress_lines(options: ralphlib.options.RalpherOptions, context: IterationContext, lines: list[str]) -> None:
     if context.progressfd:
         with context.gil:
             for line in lines:
                 context.progressfd.write(line)
 
 
-def write_progress_eol(options: RalpherOptions, context: IterationContext) -> None:
+def write_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write('\n')
             context.progressfd.flush()
 
 
-def write_error(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def write_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write(message)
 
 
-def write_error_eol(options: RalpherOptions, context: IterationContext) -> None:
+def write_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write('\n')
             context.errorsfd.flush()
 
 
-def write_stdout(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stdout(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if context.stdoutfd:
         with context.gil:
             context.stdoutfd.write(message)
 
 
-def write_stderr(options: RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stderr(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if context.stderrfd:
         with context.gil:
             context.stderrfd.write(message)
@@ -426,7 +425,7 @@ def agent_environment(environ: dict[str, str], venv: pathlib.Path, src: pathlib.
     return env
 
 
-def process(options: RalpherOptions, context: IterationContext) -> None:
+def process(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     kwargs = {
         'stdin': subprocess.DEVNULL,
         'stdout': subprocess.PIPE,
@@ -527,7 +526,7 @@ def signal_agent(proc: subprocess.Popen) -> None:
 
 
 def process_stdout(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
@@ -554,7 +553,7 @@ def process_stdout(
 
 
 def process_stderr(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
@@ -568,7 +567,7 @@ def process_stderr(
 
 
 def process_line(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
@@ -610,9 +609,9 @@ def process_line(
 
 
 def process_system(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     skip = [
@@ -639,9 +638,9 @@ def process_system(
 
 
 def process_user(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     message = payload.get('message', {})
@@ -669,7 +668,7 @@ def process_user(
 
 
 def is_stop(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     text: str,
 ) -> bool:
     for line in text.splitlines():
@@ -683,9 +682,9 @@ def is_stop(
 
 
 def process_assistant(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     message = payload.get('message', {})
@@ -747,9 +746,9 @@ def process_assistant(
 
 
 def process_task_progress(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     try:
@@ -768,7 +767,7 @@ def process_task_progress(
     return ralphlib.types.MessageType.NONE, line
 
 
-def task_progress(options: RalpherOptions, tid: str, title: str, index: str, count: str, status: str) -> str:
+def task_progress(options: ralphlib.options.RalpherOptions, tid: str, title: str, index: str, count: str, status: str) -> str:
     ralphlib.hooks.event(
         options,
         ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS,
@@ -792,7 +791,7 @@ def mark_started(context: IterationContext, tid: str) -> bool:
         return True
 
 
-def read_task_statuses(options: RalpherOptions) -> list[TaskEntry]:
+def read_task_statuses(options: ralphlib.options.RalpherOptions) -> list[TaskEntry]:
     """Return the tasks in the file the agent edits, or an empty list when it cannot be read yet."""
     if not options.task_file:
         return []
@@ -803,7 +802,7 @@ def read_task_statuses(options: RalpherOptions) -> list[TaskEntry]:
     return [TaskEntry(str(t.number), t.title, i, len(tasks), t.status) for i, t in enumerate(tasks, start=1)]
 
 
-def announce_started_tasks(options: RalpherOptions, context: IterationContext) -> None:
+def announce_started_tasks(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     """Print a start line for each task the agent has newly marked `in-progress`.
 
     The agent is asked to write a start `<task>` block but often does not;
@@ -829,7 +828,7 @@ def indent_lines(s: str, indent: str = '  ') -> str:
     return '\n'.join(f'{indent}{line}' for line in s.splitlines())
 
 
-def get_run_in_background(content: dict[str, Any]) -> bool:
+def get_run_in_background(content: dict[str, typing.Any]) -> bool:
     input_field = content.get('input', {})
     if input_field:
         run_in_background = input_field.get('run_in_background', False)
@@ -838,7 +837,7 @@ def get_run_in_background(content: dict[str, Any]) -> bool:
     return False
 
 
-def get_tool_input(content: dict[str, Any]) -> str:
+def get_tool_input(content: dict[str, typing.Any]) -> str:
     tool_input = ''
     input_field = content.get('input', {})
     if input_field:
@@ -846,7 +845,7 @@ def get_tool_input(content: dict[str, Any]) -> str:
     return indent_lines(tool_input)
 
 
-def input_field_to_content(input_field: dict[str, Any]) -> str:
+def input_field_to_content(input_field: dict[str, typing.Any]) -> str:
     regular_fields = [
         'command',
         'description',
@@ -879,9 +878,9 @@ def input_field_to_content(input_field: dict[str, Any]) -> str:
 
 
 def process_result(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     subtype = payload.get('subtype', '')
@@ -903,9 +902,9 @@ def process_result(
 
 
 def process_stream_event(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     event = payload.get('event') or {}
@@ -936,27 +935,27 @@ def process_stream_event(
 
 
 def process_rate_limit_event(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     return ralphlib.types.MessageType.NONE, line
 
 
 def process_tool_progress(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     return ralphlib.types.MessageType.NONE, line
 
 
 def process_command_lifecycle(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     context: IterationContext,
-    payload: dict[str, Any],
+    payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
     return ralphlib.types.MessageType.NONE, line

@@ -9,7 +9,7 @@ import argparse
 import logging
 import pathlib
 import sys
-from typing import NoReturn
+import typing
 
 
 def symlink_file(options, src: pathlib.Path, dst: pathlib.Path) -> None:
@@ -106,7 +106,7 @@ def parse_args(argv) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv) -> NoReturn:
+def main(argv) -> typing.NoReturn:
     options = parse_args(argv)
     logging.basicConfig(level=logging.DEBUG)
     options.logger = logging.getLogger('install-claude')

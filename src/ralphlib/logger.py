@@ -1,28 +1,28 @@
 import pathlib
 import threading
-from typing import TYPE_CHECKING
+import typing
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 log_file_cache_lock = threading.Lock()
 # auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 log_file_cache: dict[tuple[str | None, str, int], pathlib.Path] = {}
 
 
-def init(options: RalpherOptions) -> None:
+def init(options: ralphlib.options.RalpherOptions) -> None:
     if options.logdir:
         logdir = log_dir(options)
         logdir.mkdir(parents=True, exist_ok=True)
 
 
-def log_dir(options: RalpherOptions) -> pathlib.Path:
+def log_dir(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
     if not options.logdir:
         raise ValueError('logdir is not set')
     return pathlib.Path(options.logdir).expanduser().absolute()
 
 
-def iteration_to_str(options: RalpherOptions, iteration: int) -> str:
+def iteration_to_str(options: ralphlib.options.RalpherOptions, iteration: int) -> str:
     max_iterations = options.iterations
     width = len(str(max_iterations))
     return str(iteration).zfill(width)
@@ -34,7 +34,7 @@ def fetch_log_path(logdir: str | None, file: str, iteration: int) -> pathlib.Pat
         return log_file_cache.get(key)
 
 
-def log_file(options: RalpherOptions, file: str, iteration: int) -> pathlib.Path:
+def log_file(options: ralphlib.options.RalpherOptions, file: str, iteration: int) -> pathlib.Path:
     # we want a unique name at the start of a run, not every time this is called
     path = fetch_log_path(options.logdir, file, iteration)
     if path:
@@ -62,7 +62,7 @@ def make_unique(path: pathlib.Path) -> pathlib.Path:
     return new_path
 
 
-def state_file(options: RalpherOptions) -> pathlib.Path | None:
+def state_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path | None:
     if not options.state:
         return None
     path = pathlib.Path(options.state)
@@ -72,7 +72,7 @@ def state_file(options: RalpherOptions) -> pathlib.Path | None:
     return path
 
 
-def state_lock_file(options: RalpherOptions) -> pathlib.Path | None:
+def state_lock_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path | None:
     if not options.state:
         return None
     path = pathlib.Path(options.state + '.lock')

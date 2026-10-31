@@ -1,13 +1,13 @@
 import pathlib
 import re
-from typing import TYPE_CHECKING
+import typing
 
 import jinja2
 
 import ralphlib.exceptions
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
 def slugify(value: str) -> str:
@@ -27,7 +27,7 @@ def task_file_slug(task_file: str) -> str:
     return slugify(slug)
 
 
-def render(options: RalpherOptions, prompt: str, iteration: int) -> str:
+def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> str:
     context: dict[str, str | bool] = {
         'iteration': str(iteration),
         'iterations': str(options.iterations),

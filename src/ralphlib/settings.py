@@ -1,10 +1,9 @@
 import json
 import pathlib
 import typing
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
 def default_settings() -> dict[str, typing.Any]:
@@ -27,7 +26,7 @@ def default_settings() -> dict[str, typing.Any]:
     }
 
 
-def load_settings(options: RalpherOptions) -> RalpherOptions:
+def load_settings(options: ralphlib.options.RalpherOptions) -> ralphlib.options.RalpherOptions:
     options.settings = default_settings()
     # home
     options = load_settings_from_file(options, '~/.ralpher/settings.json')
@@ -41,7 +40,7 @@ def load_settings(options: RalpherOptions) -> RalpherOptions:
     return options
 
 
-def load_settings_from_file(options: RalpherOptions, paths: str | pathlib.Path) -> RalpherOptions:
+def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str | pathlib.Path) -> ralphlib.options.RalpherOptions:
     path = pathlib.Path(paths).expanduser().resolve()
     if path.is_file():
         with path.open('r', encoding='utf-8') as f:

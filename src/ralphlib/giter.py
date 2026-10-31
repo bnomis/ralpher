@@ -2,7 +2,7 @@ import contextlib
 import json
 import pathlib
 import sys
-from typing import TYPE_CHECKING
+import typing
 
 import git
 import loguru
@@ -13,8 +13,8 @@ import rich.text
 import ralphlib.printer
 import ralphlib.types
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
 console_stderr = rich.console.Console(stderr=True, highlight=False)
@@ -29,7 +29,7 @@ class YNConfirm(rich.prompt.Confirm):
         return prompt
 
 
-def lines_to_text(options: RalpherOptions, lines: list[str]) -> rich.text.Text:
+def lines_to_text(options: ralphlib.options.RalpherOptions, lines: list[str]) -> rich.text.Text:
     return rich.text.Text(
         '\n'.join(lines),
         style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ALERT),
@@ -47,7 +47,7 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     return last_commit_summary
 
 
-def check_git(options: RalpherOptions, path: pathlib.Path | str | None = None) -> None:
+def check_git(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
 
@@ -83,7 +83,7 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
+def check_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     from_head = options.worktree and claude_worktree_base_ref(repo) == 'head'
     if from_head:
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
@@ -159,7 +159,7 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
     return tracking
 
 
-def check_divergence(options: RalpherOptions, repo: git.Repo) -> None:
+def check_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     if claude_worktree_base_ref(repo) != 'fresh':
         return
 

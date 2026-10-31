@@ -262,7 +262,7 @@ number it prints.)
 
 ## Task 8: Convert from-imports in the library and scripts
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation (`from-import`)
@@ -271,20 +271,20 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] For each `from X import Y` in `src/ralphlib/*.py` and `bin/*.py`: `from typing import TYPE_CHECKING` becomes `import typing` and `if typing.TYPE_CHECKING:`; `from typing import Any, Annotated, Literal, NoReturn` become `typing.Any` and so on; `from collections.abc import Callable` becomes `collections.abc.Callable`; `from jinja2.sandbox import SandboxedEnvironment` becomes `import jinja2.sandbox` and `jinja2.sandbox.SandboxedEnvironment`
-- [ ] Each TYPE_CHECKING-only `from ralphlib.options import RalpherOptions` (and `from ralphlib.types import RalpherEventType`) becomes `import ralphlib.options` inside the `typing.TYPE_CHECKING` block, and annotations name `ralphlib.options.RalpherOptions`
-- [ ] Check that every changed module imports (`uv run python -c "import ralphlib.<module>"` for each)
+- [x] For each `from X import Y` in `src/ralphlib/*.py` and `bin/*.py`: `from typing import TYPE_CHECKING` becomes `import typing` and `if typing.TYPE_CHECKING:`; `from typing import Any, Annotated, Literal, NoReturn` become `typing.Any` and so on; `from collections.abc import Callable` becomes `collections.abc.Callable`; `from jinja2.sandbox import SandboxedEnvironment` becomes `import jinja2.sandbox` and `jinja2.sandbox.SandboxedEnvironment`
+- [x] Each TYPE_CHECKING-only `from ralphlib.options import RalpherOptions` (and `from ralphlib.types import RalpherEventType`) becomes `import ralphlib.options` inside the `typing.TYPE_CHECKING` block, and annotations name `ralphlib.options.RalpherOptions`
+- [x] Check that every changed module imports (`uv run python -c "import ralphlib.<module>"` for each)
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn -E '^\s*from \S+ import' src/ralphlib bin --include='*.py' | grep -v __init__.py` prints nothing
-- [ ] `bin/ralpher.sh --help` still prints the help
+- [x] `grep -rn -E '^\s*from \S+ import' src/ralphlib bin --include='*.py' | grep -v __init__.py` prints nothing
+- [x] `bin/ralpher.sh --help` still prints the help
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
-- [ ] The checker reports no unaccepted `from-import` hit in `src/ralphlib/` or `bin/`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
+- [x] The checker reports no unaccepted `from-import` hit in `src/ralphlib/` or `bin/`
 
 **Notes:**
 

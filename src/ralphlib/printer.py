@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+import typing
 
 import rich.console
 
@@ -7,12 +7,12 @@ import ralphlib.types
 
 console = rich.console.Console(highlight=False)
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
 def prt(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     message: str,
     iteration: int,
     dont_print: bool = False,
@@ -30,7 +30,7 @@ def prt(
 
 
 def console_print(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     message: str,
     message_type: ralphlib.types.MessageType = ralphlib.types.MessageType.REGULAR,
 ) -> None:
@@ -38,7 +38,7 @@ def console_print(
 
 
 def type_to_style(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     message_type: ralphlib.types.MessageType,
 ) -> str:
     s = ralphlib.types.message_type_to_str.get(message_type, 'regular')

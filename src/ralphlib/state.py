@@ -1,7 +1,6 @@
 import json
 import pathlib
 import typing
-from typing import TYPE_CHECKING
 
 import filelock
 import loguru
@@ -11,14 +10,14 @@ import tenacity
 import ralphlib.exceptions
 import ralphlib.logger
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 STATE_LOCK_TIMEOUT = 10
 console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
-def load_state(options: RalpherOptions) -> dict[str, typing.Any] | None:
+def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any] | None:
     if not options.state:
         return None
 
@@ -36,7 +35,7 @@ def load_state(options: RalpherOptions) -> dict[str, typing.Any] | None:
     return {}
 
 
-def save_state(options: RalpherOptions, state: dict[str, typing.Any]) -> None:
+def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing.Any]) -> None:
     if not options.state:
         return
 
@@ -49,7 +48,7 @@ def save_state(options: RalpherOptions, state: dict[str, typing.Any]) -> None:
 
 
 def add_to_state(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     value: dict[str, typing.Any],
     key1: str | None = None,
     key2: str | None = None,
@@ -78,7 +77,7 @@ def add_to_state(
     stop=tenacity.stop_after_attempt(3),
 )
 def add_to_state_work(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     lock_path: pathlib.Path,
     value: dict[str, typing.Any],
     key1: str | None = None,

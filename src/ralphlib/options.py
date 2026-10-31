@@ -1,6 +1,5 @@
 import dataclasses
 import typing
-from typing import Annotated, Literal
 
 import cappa
 
@@ -14,102 +13,102 @@ class RalpherOptions:
     a ralph loop
     """
 
-    agent: Annotated[
+    agent: typing.Annotated[
         str,
         cappa.Arg(long=True, help='Agent'),
     ] = 'claude'
-    args: Annotated[
+    args: typing.Annotated[
         str,
         cappa.Arg(long=True, help='Agent args'),
     ] = '--verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json'
-    iterations: Annotated[
+    iterations: typing.Annotated[
         int,
         cappa.Arg(long=True, help='Number of iterations to run'),
     ] = 3
-    prompt: Annotated[
+    prompt: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Read prompt from file'),
     ] = None
-    prompts: Annotated[
+    prompts: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Prompt as a positional argument, does not override --prompt', value_name='PROMPT'),
     ] = None
-    task_file: Annotated[
+    task_file: typing.Annotated[
         str | None,
         cappa.Arg(
             long='--task-file',
             help='Path to tasks file. If --worktree is set, the worktree will be named after the tasks file (without extension)',
         ),
     ] = None
-    settings_file: Annotated[
+    settings_file: typing.Annotated[
         str | None,
         cappa.Arg(
             long='--settings-file',
             help='Path to settings file. Overrides ~/.ralpher/settings.json',
         ),
     ] = None
-    load_settings_on_loop: Annotated[
+    load_settings_on_loop: typing.Annotated[
         bool,
         cappa.Arg(long=True, help='Load settings on each loop iteration'),
     ] = False
-    cleanup: Annotated[
+    cleanup: typing.Annotated[
         bool,
         cappa.Arg(long=True, help='Print cleanup commands'),
     ] = False
-    quiet: Annotated[
+    quiet: typing.Annotated[
         bool,
         cappa.Arg(long=True, help='Suppress output'),
     ] = False
-    worktree: Annotated[
+    worktree: typing.Annotated[
         bool,
         cappa.Arg(long=True, help='Use worktrees (add --worktree) named for the tasks file if it exists'),
     ] = False
-    worktree_base_ref: Annotated[
-        Literal['fresh', 'head'] | None,
+    worktree_base_ref: typing.Annotated[
+        typing.Literal['fresh', 'head'] | None,
         cappa.Arg(
             long='--worktree-base-ref',
             help='Add worktree.baseRef setting to the cli arguments, i.e. override your default settings. See https://code.claude.com/docs/en/settings-reference#worktree-baseref',
         ),
     ] = None
-    skip_git_check: Annotated[
+    skip_git_check: typing.Annotated[
         bool,
         cappa.Arg(long='--skip-git-check', help='Dont do git checks (not committed/pushed etc.) before starting'),
     ] = False
-    vars: Annotated[
+    vars: typing.Annotated[
         list[str],
         cappa.Arg(
             long=True, help='Variables to set, in the form KEY=VALUE. Will be passed as context to jinja2 when rendering prompts. Can be given multiple times.'
         ),
     ] = dataclasses.field(default_factory=list)
-    logdir: Annotated[
+    logdir: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Directory to prepend to stdout/stderr/progress/state filenames'),
     ] = None
-    stdout: Annotated[
+    stdout: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Write raw agent stdout to STDOUT file in logdir, iteration numbers are appended to the filename'),
     ] = None
-    stderr: Annotated[
+    stderr: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Write raw agent stderr to STDERR file in logdir, iteration numbers are appended to the filename'),
     ] = None
-    progress: Annotated[
+    progress: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Write parsed agent stdout to PROGRESS file in logdir, iteration numbers are appended to the filename'),
     ] = None
-    errors: Annotated[
+    errors: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Write errors to ERRORS file in logdir, iteration numbers are appended to the filename'),
     ] = None
-    state: Annotated[
+    state: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Write ralpher state to JSON STATE file in logdir. Useful for debugging.'),
     ] = None
-    cwd: Annotated[
+    cwd: typing.Annotated[
         str | None,
         cappa.Arg(long=True, help='Current working directory for the agent command'),
     ] = None
-    stops: Annotated[
+    stops: typing.Annotated[
         list[str],
         cappa.Arg(
             long=True,
@@ -120,7 +119,7 @@ class RalpherOptions:
             '<promise>COMPLETE</promise>',
         ]
     )
-    no_verify_stop: Annotated[
+    no_verify_stop: typing.Annotated[
         bool,
         cappa.Arg(
             long='--no-verify-stop',
