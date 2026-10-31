@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+import unittest.mock
 
 import pytest
 
@@ -17,19 +17,19 @@ def reset_hook_state() -> None:
 class TestEvent:
     def test_returns_early_when_no_hooks_configured(self) -> None:
         options = tests.helpers.make_options_with_settings(settings={})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_returns_early_when_event_type_not_in_hooks(self) -> None:
         options = tests.helpers.make_options_with_settings(settings={'hooks': {'end': ['echo done']}})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_passes_context_to_run_hook_for_matching_event(self) -> None:
         options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo hello']}})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_called_once()
             cmd, context = mock_run.call_args[0]
@@ -43,7 +43,7 @@ class TestEvent:
                 'hook_templates': False,
             }
         )
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_called_once_with('echo raw', None)
 
@@ -54,7 +54,7 @@ class TestEvent:
                 'hook_templates': False,
             }
         )
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             assert mock_run.call_count == 3
             mock_run.assert_any_call('echo one', None)
@@ -171,28 +171,28 @@ class TestRenderHookArgs:
 
 
 class TestRunHook:
-    @patch('subprocess.Popen')
-    def test_calls_popen_with_correct_args(self, mock_popen: MagicMock) -> None:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_calls_popen_with_correct_args(self, mock_popen: unittest.mock.MagicMock) -> None:
         ralphlib.hooks.run_hook('echo hello world')
         mock_popen.assert_called_once()
         args, kwargs = mock_popen.call_args
         assert args[0] == ['echo', 'hello', 'world']
 
-    @patch('subprocess.Popen')
-    def test_renders_context_when_given(self, mock_popen: MagicMock) -> None:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_renders_context_when_given(self, mock_popen: unittest.mock.MagicMock) -> None:
         ralphlib.hooks.run_hook('echo {{ msg }}', {'msg': "it's here"})
         assert mock_popen.call_args[0][0] == ['echo', "it's here"]
 
-    @patch('subprocess.Popen')
-    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: MagicMock) -> None:
-        with patch('loguru.logger.exception') as mock_log:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.exception') as mock_log:
             ralphlib.hooks.run_hook("echo 'unclosed", {})
             mock_popen.assert_not_called()
             mock_log.assert_called_once()
 
-    @patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
-    def test_logs_exception_on_subprocess_failure(self, mock_popen: MagicMock) -> None:
-        with patch('loguru.logger.exception') as mock_log:
+    @unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
+    def test_logs_exception_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.exception') as mock_log:
             ralphlib.hooks.run_hook('nonexistent_cmd')
             mock_log.assert_called_once()
             log_msg = mock_log.call_args[0][0]

@@ -1,5 +1,6 @@
+import hypothesis
+import hypothesis.strategies
 import pytest
-from hypothesis import given, settings as hypothesis_settings, strategies as st
 
 import ralphlib.exceptions
 import ralphlib.options
@@ -81,8 +82,8 @@ def test_slugify_returns_empty_string_for_empty_input() -> None:
     assert ralphlib.templater.slugify('') == ''
 
 
-@given(st.text())
-@hypothesis_settings(max_examples=20, deadline=10000)
+@hypothesis.given(hypothesis.strategies.text())
+@hypothesis.settings(max_examples=20, deadline=10000)
 def test_slugify_output_contains_only_valid_chars(value: str) -> None:
     result = ralphlib.templater.slugify(value)
     assert all(c in 'abcdefghijklmnopqrstuvwxyz0123456789-' for c in result)

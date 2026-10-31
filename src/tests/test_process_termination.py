@@ -14,7 +14,7 @@ import sys
 import threading
 import time
 import typing
-from unittest.mock import patch
+import unittest.mock
 
 import pytest
 
@@ -23,7 +23,6 @@ import ralphlib.options
 import ralphlib.settings
 import ralphlib.signals
 import tests.helpers
-from ralphlib.signals import GracefulTerminator
 
 SLEEP_SCRIPT = 'import time; time.sleep(60)'
 
@@ -31,7 +30,7 @@ SLEEP_SCRIPT = 'import time; time.sleep(60)'
 @pytest.fixture
 def fast_poll():
     """Reduce poll interval so tests don't wait 3 seconds per cycle."""
-    with patch.object(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05):
+    with unittest.mock.patch.object(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05):
         yield
 
 
@@ -102,7 +101,7 @@ class TestProcessTerminatesOnShouldExit:
 
         timer = threading.Thread(target=set_exit_after_delay)
 
-        with patch('ralphlib.iteration.subprocess.Popen', side_effect=capturing_popen(holder)):
+        with unittest.mock.patch('ralphlib.iteration.subprocess.Popen', side_effect=capturing_popen(holder)):
             timer.start()
             ralphlib.iteration.process(options, context)
 
@@ -123,8 +122,8 @@ class TestGracefulTerminatorTerminatesSubprocess:
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
-        with patch('ralphlib.signals.signal.signal'):
-            terminator = GracefulTerminator(options)
+        with unittest.mock.patch('ralphlib.signals.signal.signal'):
+            terminator = ralphlib.signals.GracefulTerminator(options)
 
         def send_double_sigint():
             time.sleep(0.2)
@@ -168,7 +167,7 @@ class TestChildSessionIsolation:
         timer = threading.Thread(target=set_exit_after_delay)
         timer.start()
 
-        with patch.object(ralphlib.iteration, 'process_stdout', capturing_process_stdout):
+        with unittest.mock.patch.object(ralphlib.iteration, 'process_stdout', capturing_process_stdout):
             ralphlib.iteration.process(options, context)
 
         timer.join()

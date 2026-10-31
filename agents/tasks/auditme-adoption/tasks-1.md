@@ -295,7 +295,7 @@ number it prints.)
 
 ## Task 9: Convert from-imports in the tests
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation (`from-import`)
@@ -304,20 +304,20 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] `from unittest.mock import MagicMock, patch` becomes `import unittest.mock` and `unittest.mock.MagicMock` / `unittest.mock.patch`
-- [ ] `from hypothesis import given, settings, strategies` becomes `import hypothesis` and `hypothesis.given`, `hypothesis.settings`, `hypothesis.strategies`
-- [ ] `from typing import Any` and `from collections.abc import Iterator` become `typing.Any` and `collections.abc.Iterator`
-- [ ] `from ralphlib.x import y` becomes `import ralphlib.x` and `ralphlib.x.y` (`test_looper.py`, `test_process_termination.py`, `test_signals.py`)
+- [x] `from unittest.mock import MagicMock, patch` becomes `import unittest.mock` and `unittest.mock.MagicMock` / `unittest.mock.patch`
+- [x] `from hypothesis import given, settings, strategies` becomes `import hypothesis` and `hypothesis.given`, `hypothesis.settings`, `hypothesis.strategies`
+- [x] `from typing import Any` and `from collections.abc import Iterator` become `typing.Any` and `collections.abc.Iterator`
+- [x] `from ralphlib.x import y` becomes `import ralphlib.x` and `ralphlib.x.y` (`test_looper.py`, `test_process_termination.py`, `test_signals.py`)
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn -E '^\s*from \S+ import' src/tests --include='*.py' | grep -v __init__.py` prints nothing
+- [x] `grep -rn -E '^\s*from \S+ import' src/tests --include='*.py' | grep -v __init__.py` prints nothing
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_process_termination.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
-- [ ] The per-rule audit check for `from-import` prints `0`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_process_termination.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
+- [x] The per-rule audit check for `from-import` prints `0`
 
 **Notes:**
 

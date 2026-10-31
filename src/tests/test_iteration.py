@@ -3,7 +3,7 @@ import pathlib
 import signal
 import subprocess
 import sys
-from unittest.mock import MagicMock, patch
+import unittest.mock
 
 import orjson
 import pytest
@@ -43,7 +43,7 @@ def test_process_line_assistant_dispatches() -> None:
     line = orjson.dumps(payload).decode()
     expected = (ralphlib.types.MessageType.TOOL_USE, 'mocked')
 
-    with patch.object(ralphlib.iteration, 'process_assistant', return_value=expected) as mock_fn:
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_assistant', return_value=expected) as mock_fn:
         result = ralphlib.iteration.process_line(options, context, line)
         mock_fn.assert_called_once()
         assert result == expected
@@ -56,7 +56,7 @@ def test_process_line_result_dispatches() -> None:
     line = orjson.dumps(payload).decode()
     expected = (ralphlib.types.MessageType.NONE, line)
 
-    with patch.object(ralphlib.iteration, 'process_result', return_value=expected) as mock_fn:
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_result', return_value=expected) as mock_fn:
         result = ralphlib.iteration.process_line(options, context, line)
         mock_fn.assert_called_once()
         assert result == expected
@@ -69,7 +69,7 @@ def test_process_line_user_dispatches() -> None:
     line = orjson.dumps(payload).decode()
     expected = (ralphlib.types.MessageType.NONE, line)
 
-    with patch.object(ralphlib.iteration, 'process_user', return_value=expected) as mock_fn:
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_user', return_value=expected) as mock_fn:
         result = ralphlib.iteration.process_line(options, context, line)
         mock_fn.assert_called_once()
         assert result == expected
@@ -82,7 +82,7 @@ def test_process_line_stream_event_dispatches() -> None:
     line = orjson.dumps(payload).decode()
     expected = (ralphlib.types.MessageType.NONE, '')
 
-    with patch.object(ralphlib.iteration, 'process_stream_event', return_value=expected) as mock_fn:
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_stream_event', return_value=expected) as mock_fn:
         result = ralphlib.iteration.process_line(options, context, line)
         mock_fn.assert_called_once()
         assert result == expected
@@ -94,7 +94,7 @@ def test_process_line_unknown_ptype_returns_none() -> None:
     payload = {'type': 'unknown_type'}
     line = orjson.dumps(payload).decode()
 
-    with patch.object(ralphlib.iteration, 'print_error') as mock_print_error:
+    with unittest.mock.patch.object(ralphlib.iteration, 'print_error') as mock_print_error:
         message_type, message = ralphlib.iteration.process_line(options, context, line)
         assert message_type == ralphlib.types.MessageType.NONE
         assert message == line
@@ -116,7 +116,7 @@ def test_process_line_exception_returns_error() -> None:
     payload = {'type': 'assistant'}
     line = orjson.dumps(payload).decode()
 
-    with patch.object(
+    with unittest.mock.patch.object(
         ralphlib.iteration,
         'process_assistant',
         side_effect=RuntimeError('boom'),
@@ -339,7 +339,7 @@ def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() ->
     }
     line = orjson.dumps(payload).decode()
 
-    with patch('loguru.logger.warning') as mock_warning:
+    with unittest.mock.patch('loguru.logger.warning') as mock_warning:
         ralphlib.iteration.process_assistant(options, context, payload, line)
         mock_warning.assert_called()
         warning_msg = mock_warning.call_args[0][0]
@@ -429,7 +429,7 @@ def test_process_assistant_tool_use_without_name_logs_warning() -> None:
     }
     line = orjson.dumps(payload).decode()
 
-    with patch('loguru.logger.warning') as mock_warning:
+    with unittest.mock.patch('loguru.logger.warning') as mock_warning:
         message_type, message = ralphlib.iteration.process_assistant(options, context, payload, line)
         mock_warning.assert_called()
 
@@ -731,16 +731,16 @@ def test_process_passes_stdin_devnull_to_popen() -> None:
     context = make_context()
     context.cmd = list(TRUE_CMD)
 
-    mock_proc = MagicMock()
+    mock_proc = unittest.mock.MagicMock()
     mock_proc.pid = 12345
-    mock_proc.stdout = MagicMock()
-    mock_proc.stderr = MagicMock()
-    mock_proc.stdout.readline = MagicMock(return_value='')
-    mock_proc.stderr.readline = MagicMock(return_value='')
-    mock_proc.poll = MagicMock(return_value=0)
+    mock_proc.stdout = unittest.mock.MagicMock()
+    mock_proc.stderr = unittest.mock.MagicMock()
+    mock_proc.stdout.readline = unittest.mock.MagicMock(return_value='')
+    mock_proc.stderr.readline = unittest.mock.MagicMock(return_value='')
+    mock_proc.poll = unittest.mock.MagicMock(return_value=0)
     mock_proc.returncode = 0
 
-    with patch('subprocess.Popen', return_value=mock_proc) as mock_popen:
+    with unittest.mock.patch('subprocess.Popen', return_value=mock_proc) as mock_popen:
         ralphlib.iteration.process(options, context)
 
         mock_popen.assert_called_once()
@@ -756,22 +756,22 @@ def test_process_terminates_subprocess_on_should_exit() -> None:
     context = make_context()
     context.cmd = ['sleep', '60']
 
-    mock_proc = MagicMock()
+    mock_proc = unittest.mock.MagicMock()
     mock_proc.pid = 99999
-    mock_proc.stdout = MagicMock()
-    mock_proc.stderr = MagicMock()
-    mock_proc.stdout.readline = MagicMock(return_value='')
-    mock_proc.stderr.readline = MagicMock(return_value='')
+    mock_proc.stdout = unittest.mock.MagicMock()
+    mock_proc.stderr = unittest.mock.MagicMock()
+    mock_proc.stdout.readline = unittest.mock.MagicMock(return_value='')
+    mock_proc.stderr.readline = unittest.mock.MagicMock(return_value='')
     mock_proc.returncode = -15  # SIGTERM
 
     # proc.poll() returns None (still running) on first call, then 0 after kill
     poll_values = [None, None, -15, -15]
-    mock_proc.poll = MagicMock(side_effect=poll_values)
+    mock_proc.poll = unittest.mock.MagicMock(side_effect=poll_values)
 
     with (
-        patch('subprocess.Popen', return_value=mock_proc),
-        patch.object(ralphlib.signals, 'get_should_exit', return_value=True),
-        patch('os.killpg') as mock_killpg,
+        unittest.mock.patch('subprocess.Popen', return_value=mock_proc),
+        unittest.mock.patch.object(ralphlib.signals, 'get_should_exit', return_value=True),
+        unittest.mock.patch('os.killpg') as mock_killpg,
     ):
         ralphlib.iteration.process(options, context)
 
@@ -1127,19 +1127,19 @@ def test_process_starts_agent_without_ralphers_python(tmp_path: pathlib.Path) ->
     context = make_context()
     context.cmd = list(TRUE_CMD)
 
-    mock_proc = MagicMock()
+    mock_proc = unittest.mock.MagicMock()
     mock_proc.pid = 12345
-    mock_proc.stdout = MagicMock()
-    mock_proc.stderr = MagicMock()
-    mock_proc.stdout.readline = MagicMock(return_value='')
-    mock_proc.stderr.readline = MagicMock(return_value='')
-    mock_proc.poll = MagicMock(return_value=0)
+    mock_proc.stdout = unittest.mock.MagicMock()
+    mock_proc.stderr = unittest.mock.MagicMock()
+    mock_proc.stdout.readline = unittest.mock.MagicMock(return_value='')
+    mock_proc.stderr.readline = unittest.mock.MagicMock(return_value='')
+    mock_proc.poll = unittest.mock.MagicMock(return_value=0)
     mock_proc.returncode = 0
 
     venv_bin = str(pathlib.Path(sys.prefix) / 'bin')
     with (
-        patch.dict('os.environ', {'PATH': f'{venv_bin}:/usr/bin', 'VIRTUAL_ENV': sys.prefix}),
-        patch('subprocess.Popen', return_value=mock_proc) as mock_popen,
+        unittest.mock.patch.dict('os.environ', {'PATH': f'{venv_bin}:/usr/bin', 'VIRTUAL_ENV': sys.prefix}),
+        unittest.mock.patch('subprocess.Popen', return_value=mock_proc) as mock_popen,
     ):
         ralphlib.iteration.process(options, context)
 
