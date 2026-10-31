@@ -25,7 +25,7 @@ number it prints.)
 
 ## Task 1: Treat an explicit null in the agent stream as empty
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (`get-container-default-then-method-call`); Error handling (behaviour changes)
@@ -45,7 +45,7 @@ number it prints.)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 - [ ] `uv run pytest src/tests/test_iteration.py` passes (blocked: three tests fail on the baseline, see Task 14)
 - [x] The per-rule audit check for `get-container-default-then-method-call` prints `0`
 

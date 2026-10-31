@@ -1185,3 +1185,54 @@ def test_process_starts_agent_without_ralphers_python(tmp_path: pathlib.Path) ->
     env = mock_popen.call_args[1]['env']
     assert 'VIRTUAL_ENV' not in env
     assert venv_bin not in env['PATH'].split(':')
+
+
+# --- Explicit null values in the agent stream ---
+
+
+def test_process_user_null_content_returns_none() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'user', 'message': {'role': 'user', 'content': None}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+def test_process_stream_event_null_event_returns_line() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'stream_event', 'event': None}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+def test_process_stream_event_null_content_block_returns_line() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'stream_event', 'event': {'type': 'content_block_start', 'content_block': None}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line
+
+
+def test_process_stream_event_null_delta_returns_line() -> None:
+    options = make_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'stream_event', 'event': {'type': 'content_block_delta', 'delta': None}}
+    line = orjson.dumps(payload).decode()
+
+    message_type, message = ralphlib.iteration.process_stream_event(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == line

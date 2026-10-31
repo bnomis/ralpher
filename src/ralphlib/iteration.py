@@ -662,7 +662,7 @@ def process_user(
     if message:
         role = message.get('role', '')
         if role == 'user':
-            content = message.get('content', [])
+            content = message.get('content') or []
             for c in content:
                 tool_use_id = c.get('tool_use_id', '')
                 tool_type = c.get('type', '')
@@ -921,14 +921,14 @@ def process_stream_event(
     payload: dict[str, Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    event = payload.get('event', {})
+    event = payload.get('event') or {}
     etype = event.get('type', '')
 
     if etype in ['message_start', 'message_stop', 'message_delta']:
         return ralphlib.types.MessageType.NONE, ''
 
     if etype == 'content_block_start':
-        content_block = event.get('content_block', {})
+        content_block = event.get('content_block') or {}
         cb_type = content_block.get('type', '')
         if cb_type == 'text':
             return ralphlib.types.MessageType.CONTENT_START, content_block.get('text', '')
@@ -939,7 +939,7 @@ def process_stream_event(
         return ralphlib.types.MessageType.CONTENT_STOP, ''
 
     if etype == 'content_block_delta':
-        delta = event.get('delta', {})
+        delta = event.get('delta') or {}
         cb_type = delta.get('type', '')
         if cb_type == 'text_delta':
             return ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', '')
