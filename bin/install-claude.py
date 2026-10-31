@@ -112,6 +112,7 @@ def main(argv) -> NoReturn:
     try:
         install_claude(options)
     except Exception as e:
+        # auditme: accept[except-interpolation] the message is the exit message, which shows no traceback
         m = f'Exception: {e}'
         options.logger.exception(m)
     sys.exit(m)

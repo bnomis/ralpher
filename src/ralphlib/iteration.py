@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import time
+import typing
 from typing import TYPE_CHECKING, Any
 
 import loguru
@@ -130,7 +131,7 @@ def add_unknown_ptype(context: IterationContext, ptype: str) -> None:
         context.unknown_ptype_set.add(ptype)
 
 
-def add_unknown_tool(context: IterationContext, tool_name: str, input_values: dict) -> None:
+def add_unknown_tool(context: IterationContext, tool_name: str, input_values: dict[str, typing.Any]) -> None:
     with context.gil:
         if tool_name not in context.unknown_tools:
             context.unknown_tools[tool_name] = input_values
@@ -165,8 +166,8 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     context = make_context(options, prompt, iteration)
     try:
         process(options, context)
-    except Exception as e:
-        loguru.logger.exception(f'Exception in run: {e}')
+    except Exception:
+        loguru.logger.exception('Exception in run')
         raise
     finally:
         summary(options, context, iteration)
@@ -220,8 +221,8 @@ def make_context(options: RalpherOptions, prompt: str, iteration: int) -> Iterat
         if options.errors:
             context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
             context.errorsfd = context.errors.open('a', encoding='utf-8')
-    except Exception as e:
-        loguru.logger.exception(f'Exception in make_context: {e}')
+    except Exception:
+        loguru.logger.exception('Exception in make_context')
         unmake_context(context)
         raise
     return context
@@ -232,8 +233,8 @@ def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
         if fd:
             fd.flush()
             fd.close()
-    except Exception as e:
-        loguru.logger.exception(f'Exception in flush_and_close_fd: {e}')
+    except Exception:
+        loguru.logger.exception('Exception in flush_and_close_fd')
 
 
 def unmake_context(context: IterationContext) -> None:
@@ -601,7 +602,8 @@ def process_line(
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
         add_unknown_ptype(context, ptype)
     except Exception as e:
-        loguru.logger.exception(f'Exception in process_line: {e}')
+        loguru.logger.exception('Exception in process_line')
+        # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
     return ralphlib.types.MessageType.NONE, line
@@ -760,7 +762,8 @@ def process_task_progress(
             message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
             return ralphlib.types.MessageType.PROGRESS, message
     except Exception as e:
-        loguru.logger.exception(f'Exception in process_task_progress: {e}')
+        loguru.logger.exception('Exception in process_task_progress')
+        # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
         log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
     return ralphlib.types.MessageType.NONE, line
 

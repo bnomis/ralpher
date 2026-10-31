@@ -131,6 +131,7 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
     try:
         origin.fetch()
     except git.GitCommandError as e:
+        # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
         message = f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}'
         console_stderr.print(message)
         loguru.logger.warning(message)

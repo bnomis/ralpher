@@ -1,6 +1,7 @@
 import datetime
 import json
 import pathlib
+import typing
 
 import loguru
 import pytest
@@ -95,7 +96,7 @@ TASKS_DONE = '## Task 1: A\n**Status:** done\n'
 
 
 class LoopRun:
-    def __init__(self, calls: list[int], out: str, state: dict) -> None:
+    def __init__(self, calls: list[int], out: str, state: dict[str, typing.Any]) -> None:
         self.calls = list(calls)
         self.out = out
         self.state = dict(state)

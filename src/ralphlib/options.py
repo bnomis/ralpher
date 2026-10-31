@@ -1,4 +1,5 @@
 import dataclasses
+import typing
 from typing import Annotated, Literal
 
 import cappa
@@ -126,7 +127,7 @@ class RalpherOptions:
             help='Trust a stop marker without checking that every task in the tasks file is done',
         ),
     ] = False
-    settings: dict = dataclasses.field(init=False, default_factory=dict)
+    settings: dict[str, typing.Any] = dataclasses.field(init=False, default_factory=dict)
     current_iteration: int = dataclasses.field(init=False, default=0)
     iteration_count: int = dataclasses.field(init=False, default=0)
 

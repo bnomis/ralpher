@@ -199,7 +199,7 @@ number it prints.)
 
 ## Task 6: Exception messages and bare dict annotations
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation (`except-interpolation`, `bare-parametric-annotation`)
@@ -208,20 +208,20 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Drop the `{e}` from each message passed to `loguru.logger.exception`: `hooks.py`, `iteration.py` (`run`, `make_context`, `flush_and_close_fd`, `process_line`, `process_task_progress`), `looper.py`, `state.py` (`load_state`)
-- [ ] Add `# auditme: accept[except-interpolation] <reason>` where the message reaches a person with no traceback, with the reason naming where it goes: `giter.py` fetch message (console), `iteration.py` `log_error` calls (session error log), `state.py` `add_to_state` (also printed to stderr), `verifier.py` `check_stop` (stop-check reason), `bin/install-claude.py` (exit message)
-- [ ] Change bare `dict` to `dict[str, typing.Any]` in `iteration.py` (`add_unknown_tool`), `options.py` (`settings`), `state.py` (`load_state`, `save_state`, `add_to_state`, `add_to_state_work`), `test_looper.py` (`LoopRun`) and `test_process_termination.py` (`holder`)
+- [x] Drop the `{e}` from each message passed to `loguru.logger.exception`: `hooks.py`, `iteration.py` (`run`, `make_context`, `flush_and_close_fd`, `process_line`, `process_task_progress`), `looper.py`, `state.py` (`load_state`)
+- [x] Add `# auditme: accept[except-interpolation] <reason>` where the message reaches a person with no traceback, with the reason naming where it goes: `giter.py` fetch message (console), `iteration.py` `log_error` calls (session error log), `state.py` `add_to_state` (also printed to stderr), `verifier.py` `check_stop` (stop-check reason), `bin/install-claude.py` (exit message)
+- [x] Change bare `dict` to `dict[str, typing.Any]` in `iteration.py` (`add_unknown_tool`), `options.py` (`settings`), `state.py` (`load_state`, `save_state`, `add_to_state`, `add_to_state_work`), `test_looper.py` (`LoopRun`) and `test_process_termination.py` (`holder`)
 
 **Acceptance Criteria:**
 
-- [ ] No `loguru.logger.exception` message interpolates the caught exception
-- [ ] Every accepted site's marker names where the message goes
+- [x] No `loguru.logger.exception` message interpolates the caught exception
+- [x] Every accepted site's marker names where the message goes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_state.py src/tests/test_verifier.py src/tests/test_giter.py src/tests/test_process_termination.py` passes
-- [ ] The per-rule audit check for `except-interpolation|bare-parametric-annotation` prints `0`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_state.py src/tests/test_verifier.py src/tests/test_giter.py src/tests/test_process_termination.py` passes
+- [x] The per-rule audit check for `except-interpolation|bare-parametric-annotation` prints `0`
 
 **Notes:**
 

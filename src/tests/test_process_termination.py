@@ -13,6 +13,7 @@ import subprocess
 import sys
 import threading
 import time
+import typing
 from unittest.mock import patch
 
 import pytest
@@ -93,7 +94,7 @@ class TestProcessTerminatesOnShouldExit:
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
-        holder: dict = {}
+        holder: dict[str, typing.Any] = {}
 
         def set_exit_after_delay():
             time.sleep(0.2)

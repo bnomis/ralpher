@@ -129,6 +129,7 @@ def check_stop(options: RalpherOptions) -> StopCheck:
     except LookupError as e:
         return unverified(str(e))
     except READ_ERRORS as e:
+        # auditme: accept[except-interpolation] the text is the stop-check reason, which shows no traceback
         return unverified(f'cannot read {options.task_file}: {e!r}')
 
     if not tasks:

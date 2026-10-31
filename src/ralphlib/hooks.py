@@ -220,5 +220,5 @@ def run_hook(cmd: str, context: dict[str, Any] | None = None) -> None:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except Exception as e:
-        loguru.logger.exception(f'Exception running hook: "{cmd}": {e}')
+    except Exception:
+        loguru.logger.exception(f'Exception running hook: "{cmd}"')

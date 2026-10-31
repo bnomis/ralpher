@@ -131,8 +131,8 @@ def loop(options: RalpherOptions) -> bool:
         # run the iteration
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
-        except Exception as e:
-            loguru.logger.exception(f'Exception during iteration {i}: {e}')
+        except Exception:
+            loguru.logger.exception(f'Exception during iteration {i}')
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)

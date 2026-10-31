@@ -1,5 +1,6 @@
 import json
 import pathlib
+import typing
 from typing import TYPE_CHECKING
 
 import filelock
@@ -17,7 +18,7 @@ STATE_LOCK_TIMEOUT = 10
 console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
-def load_state(options: RalpherOptions) -> dict | None:
+def load_state(options: RalpherOptions) -> dict[str, typing.Any] | None:
     if not options.state:
         return None
 
@@ -29,13 +30,13 @@ def load_state(options: RalpherOptions) -> dict | None:
         if path.exists():
             with path.open('r') as fp:
                 return json.load(fp)
-    except Exception as e:
-        loguru.logger.exception(f'Exception in load_state: {e}')
+    except Exception:
+        loguru.logger.exception('Exception in load_state')
 
     return {}
 
 
-def save_state(options: RalpherOptions, state: dict) -> None:
+def save_state(options: RalpherOptions, state: dict[str, typing.Any]) -> None:
     if not options.state:
         return
 
@@ -49,7 +50,7 @@ def save_state(options: RalpherOptions, state: dict) -> None:
 
 def add_to_state(
     options: RalpherOptions,
-    value: dict,
+    value: dict[str, typing.Any],
     key1: str | None = None,
     key2: str | None = None,
 ) -> None:
@@ -63,6 +64,7 @@ def add_to_state(
     try:
         add_to_state_work(options, lock_path, value, key1, key2)
     except Exception as e:
+        # auditme: accept[except-interpolation] the message is also printed to stderr, which shows no traceback
         s = f'Exception in add_to_state: {e}'
         loguru.logger.exception(s)
         console_stderr.print(s)
@@ -78,7 +80,7 @@ def add_to_state(
 def add_to_state_work(
     options: RalpherOptions,
     lock_path: pathlib.Path,
-    value: dict,
+    value: dict[str, typing.Any],
     key1: str | None = None,
     key2: str | None = None,
 ) -> None:
