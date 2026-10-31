@@ -328,7 +328,7 @@ number it prints.)
 
 ## Task 10: Adopt the auditme hooks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (hook adoption steps 1-2)
@@ -337,21 +337,21 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/audit.py . | grep -c '"accepted": false'`. If it does not print `0`, set this task `blocked`, list the hits, and stop: the gate is never enabled over a backlog
-- [ ] Resolve the agents revision: `git ls-remote git@github.com:bnomis/agents.git refs/heads/main`, first field. If it fails, set `blocked` and stop
-- [ ] Add after the existing repos in `.pre-commit-config.yaml`, with the template's upgrade comment: repo `git@github.com:bnomis/agents.git`, `rev:` that commit, hooks `auditme-changed` and `auditme-all` with `stages: [manual, pre-push]` (the operator allowed this file to change on 2026-10-31)
-- [ ] Run `pre-commit install --hook-type pre-commit --hook-type pre-push`
-- [ ] Look for a project-local hook, script or `.claude/settings.json` Stop hook that already runs an audit on changed files; if one exists, set `blocked` naming it, for the operator to decide whether to remove it
+- [x] Run `python3 ~/.claude/skills/auditme/checks/audit.py . | grep -c '"accepted": false'`. If it does not print `0`, set this task `blocked`, list the hits, and stop: the gate is never enabled over a backlog
+- [x] Resolve the agents revision: `git ls-remote git@github.com:bnomis/agents.git refs/heads/main`, first field. If it fails, set `blocked` and stop
+- [x] Add after the existing repos in `.pre-commit-config.yaml`, with the template's upgrade comment: repo `git@github.com:bnomis/agents.git`, `rev:` that commit, hooks `auditme-changed` and `auditme-all` with `stages: [manual, pre-push]` (the operator allowed this file to change on 2026-10-31)
+- [x] Run `pre-commit install --hook-type pre-commit --hook-type pre-push`
+- [x] Look for a project-local hook, script or `.claude/settings.json` Stop hook that already runs an audit on changed files; if one exists, set `blocked` naming it, for the operator to decide whether to remove it
 
 **Acceptance Criteria:**
 
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `.git/hooks/pre-push` exists and calls pre-commit
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `.git/hooks/pre-push` exists and calls pre-commit
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks, now including `auditme-changed` (never `--no-verify`)
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] The task's commit passes its pre-commit hooks, now including `auditme-changed` (never `--no-verify`)
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
 
 **Notes:**
 

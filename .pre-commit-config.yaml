@@ -13,3 +13,12 @@ repos:
       hooks:
       - id: shellcheck
         args: ["--external-sources", "--source-path=SCRIPTDIR"]
+
+  # The shared audit hooks, pinned to one commit of the checker.
+  # Upgrade with: pre-commit autoupdate --repo git@github.com:bnomis/agents.git
+  - repo: git@github.com:bnomis/agents.git
+    rev: a98cb19de5abd1651d08c5ba2b7ce8edda91428b
+    hooks:
+      - id: auditme-changed
+      - id: auditme-all
+        stages: [manual, pre-push]
