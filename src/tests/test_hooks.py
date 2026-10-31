@@ -105,6 +105,11 @@ class TestMakeContext:
         assert context['task_file_stem'] == 'my-task'
         assert context['task_file_suffix'] == '.md'
 
+    def test_non_numeric_task_file_suffix_gives_empty_number(self) -> None:
+        options = make_options(iterations=1, task_file='tasks/my-task-abc.md')
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == ''
+
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
         options = make_options(iterations=1)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})

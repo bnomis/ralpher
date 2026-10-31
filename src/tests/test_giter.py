@@ -1,7 +1,9 @@
 import json
 import pathlib
+import unittest.mock
 
 import git
+import loguru
 import pytest
 import rich.text
 
@@ -242,3 +244,25 @@ class TestCheckRepoClean:
         ralphlib.giter.check_repo_clean(make_options(worktree=False), dirty_repo)
         assert len(prompts) == 2
         assert not any('worktree' in prompt for prompt in prompts)
+
+
+class TestHasUnpushedCommitsFetch:
+    def make_repo(self, error: Exception) -> unittest.mock.MagicMock:
+        repo = unittest.mock.MagicMock()
+        repo.remotes.origin.fetch.side_effect = error
+        return repo
+
+    def test_fetch_git_error_warns_and_returns_false(self) -> None:
+        repo = self.make_repo(git.GitCommandError('fetch', 1))
+        messages: list[str] = []
+        sink_id = loguru.logger.add(messages.append, level='WARNING')
+        try:
+            assert ralphlib.giter.has_unpushed_commits(repo) is False
+        finally:
+            loguru.logger.remove(sink_id)
+        assert any('Fetch failed' in message for message in messages)
+
+    def test_fetch_other_error_propagates(self) -> None:
+        repo = self.make_repo(RuntimeError('boom'))
+        with pytest.raises(RuntimeError):
+            ralphlib.giter.has_unpushed_commits(repo)

@@ -25,7 +25,7 @@ number it prints.)
 
 ## Task 1: Treat an explicit null in the agent stream as empty
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (`get-container-default-then-method-call`); Error handling (behaviour changes)
@@ -34,20 +34,20 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] In `src/tests/test_iteration.py`, add one test per site: a stream line whose `message.content`, `event`, `event.content_block` or `event.delta` is `null` is processed without raising, and handled as the empty case is today. Run them and see each fail
-- [ ] In `src/ralphlib/iteration.py`, change each `x = d.get(k, {})` / `d.get(k, [])` flagged by the rule to `d.get(k) or {}` / `d.get(k) or []`
-- [ ] Run the new tests and see them pass
+- [x] In `src/tests/test_iteration.py`, add one test per site: a stream line whose `message.content`, `event`, `event.content_block` or `event.delta` is `null` is processed without raising, and handled as the empty case is today. Run them and see each fail
+- [x] In `src/ralphlib/iteration.py`, change each `x = d.get(k, {})` / `d.get(k, [])` flagged by the rule to `d.get(k) or {}` / `d.get(k) or []`
+- [x] Run the new tests and see them pass
 
 **Acceptance Criteria:**
 
-- [ ] Each new test fails before the change and passes after it
-- [ ] Existing `process_line` tests still pass
+- [x] Each new test fails before the change and passes after it
+- [x] Existing `process_line` tests still pass
 
 **Definition of Done:**
 
 - [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
-- [ ] The per-rule audit check for `get-container-default-then-method-call` prints `0`
+- [ ] `uv run pytest src/tests/test_iteration.py` passes (blocked: three tests fail on the baseline, see Task 14)
+- [x] The per-rule audit check for `get-container-default-then-method-call` prints `0`
 
 **Notes:**
 
@@ -57,7 +57,7 @@ number it prints.)
 
 ## Task 2: Narrow the broad excepts
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (`silent-broad-except`); Error handling (behaviour changes)
@@ -66,23 +66,23 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] In `src/tests/test_giter.py`, add tests: a fetch raising `git.GitCommandError` prints the console message, logs a `loguru` warning and returns `False`; a fetch raising `RuntimeError` propagates. Run them and see the new ones fail
-- [ ] In `src/ralphlib/giter.py`, change `except Exception as e:` around `origin.fetch()` to `except git.GitCommandError as e:` and add `loguru.logger.warning(...)` beside the console print
-- [ ] In `src/tests/test_hooks.py`, add a test that a task-file name whose last `-` part is not a number gives task file number `0`
-- [ ] In `src/ralphlib/hooks.py`, change the bare `except:` around `int(name_parts[-1])` to `except ValueError:`
-- [ ] Run the new tests and see them pass
+- [x] In `src/tests/test_giter.py`, add tests: a fetch raising `git.GitCommandError` prints the console message, logs a `loguru` warning and returns `False`; a fetch raising `RuntimeError` propagates. Run them and see the new ones fail
+- [x] In `src/ralphlib/giter.py`, change `except Exception as e:` around `origin.fetch()` to `except git.GitCommandError as e:` and add `loguru.logger.warning(...)` beside the console print
+- [x] In `src/tests/test_hooks.py`, add a test that a task-file name whose last `-` part is not a number gives task file number `0`
+- [x] In `src/ralphlib/hooks.py`, change the bare `except:` around `int(name_parts[-1])` to `except ValueError:`
+- [x] Run the new tests and see them pass
 
 **Acceptance Criteria:**
 
-- [ ] A `git.GitCommandError` from fetch still returns `False`, and now also logs a warning
-- [ ] Any other exception from fetch propagates
-- [ ] A non-numeric task-file suffix still gives `0`
+- [x] A `git.GitCommandError` from fetch still returns `False`, and now also logs a warning
+- [x] Any other exception from fetch propagates
+- [x] A non-numeric task-file suffix still gives `0`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py` passes
-- [ ] The per-rule audit check for `silent-broad-except` prints `0`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py` passes
+- [x] The per-rule audit check for `silent-broad-except` prints `0`
 
 **Notes:**
 
@@ -455,6 +455,37 @@ number it prints.)
 
 **Notes:**
 
-- Depends on Task 12
+- Depends on Task 12 and Task 14
+
+---
+
+## Task 14: Fix three failing tests that predate this task list
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** Acceptance (the full suite passes)
+
+**Technical Goal:** Make `test_process_task_progress_suppresses_start_already_announced`, `test_announce_started_tasks_skips_task_the_agent_announced` and `test_announce_started_tasks_prints_start_when_task_goes_in_progress` in `src/tests/test_iteration.py` pass.
+
+**Background:** Found while doing Task 1 on 2026-10-31. All three fail on an unmodified checkout of `8849c60`. Each passes an absolute `tmp_path` task file to `announce_started_tasks` or `process_task_progress`; `ralphlib.verifier.worktree_task_file` then calls `relative_to` against the repository root and raises `ValueError` because the file is outside the repository. The behaviour came in with `fix(iteration): announce task start from tasks file` (`ffa497c`) and `fix(verifier): resolve repo root before relative_to` (`099717c`).
+
+**Subtasks:**
+
+- [ ] Decide whether the tests or `worktree_task_file` is wrong: the docstring says `ValueError` propagates when the tasks file is outside the repository, so the likely fix is for the tests to run with `options.cwd` set to a repository that holds the tasks file, or to patch `ralphlib.verifier.worktree_task_file`
+- [ ] Fix it and run `uv run pytest src/tests/test_iteration.py`
+
+**Acceptance Criteria:**
+
+- [ ] The three tests pass, and no other test in `src/tests/test_iteration.py` fails
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `uv run pytest src/tests/test_iteration.py` passes
+
+**Notes:**
+
+- Blocks the `uv run pytest src/tests/test_iteration.py` check in Task 1 and the full-suite check in Task 13
 
 ---

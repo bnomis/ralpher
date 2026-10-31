@@ -123,7 +123,7 @@ def make_context(
                 if len(name_parts) > 1:
                     try:
                         task_file_number = int(name_parts[-1])
-                    except:
+                    except ValueError:
                         task_file_number = 0
                     if task_file_number:
                         task_file_number_str = str(task_file_number)

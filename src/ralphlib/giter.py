@@ -5,6 +5,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import git
+import loguru
 import rich.console
 import rich.prompt
 import rich.text
@@ -139,8 +140,10 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
 
     try:
         origin.fetch()
-    except Exception as e:
-        console_stderr.print(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
+    except git.GitCommandError as e:
+        message = f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}'
+        console_stderr.print(message)
+        loguru.logger.warning(message)
         return False
 
     upstream = get_upstream_branch(repo)
