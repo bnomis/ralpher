@@ -6,6 +6,7 @@ from hypothesis import given, settings, strategies as st
 import ralphlib.options
 import ralphlib.verifier
 
+# auditme: accept[non-alphabetical-literal] status progression; the order is the meaning
 STATUSES = ['todo', 'in-progress', 'done']
 TASK_FILE = 'agents/tasks/feat/tasks-1.md'
 SLUG = 'feat-tasks-1'

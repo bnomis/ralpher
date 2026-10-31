@@ -14,6 +14,7 @@ import ralphlib.signals
 import ralphlib.types
 import tests.helpers
 
+# auditme: accept[non-alphabetical-literal] command line arguments; the order is the meaning
 CLAUDE_CMD = ('claude', '--verbose')
 TRUE_CMD = ('true',)
 

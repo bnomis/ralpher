@@ -231,7 +231,7 @@ number it prints.)
 
 ## Task 7: Accept the remaining by-design hits
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Spec Reference:** Implementation (`non-alphabetical-literal`, `filesystem-envelope-gap`, `stdlib-logging`)
@@ -240,19 +240,19 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] `src/tests/test_verifier.py` status list: `# auditme: accept[non-alphabetical-literal] status progression; the order is the meaning`
-- [ ] `src/ralphlib/verifier.py` `except LookupError` in `check_stop`: `# auditme: accept[filesystem-envelope-gap] the next handler catches READ_ERRORS, which holds OSError`
-- [ ] `bin/install-claude.py` `import logging`: `# auditme: accept[stdlib-logging] runs under the system Python before the project environment, and loguru, exist`
+- [x] `src/tests/test_verifier.py` status list: `# auditme: accept[non-alphabetical-literal] status progression; the order is the meaning`
+- [x] `src/ralphlib/verifier.py` `except LookupError` in `check_stop`: `# auditme: accept[filesystem-envelope-gap] the next handler catches READ_ERRORS, which holds OSError`
+- [x] `bin/install-claude.py` `import logging`: `# auditme: accept[stdlib-logging] runs under the system Python before the project environment, and loguru, exist`
 
 **Acceptance Criteria:**
 
-- [ ] Each of the three hits shows `accepted: true` with its reason
+- [x] Each of the three hits shows `accepted: true` with its reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_verifier.py` passes
-- [ ] The per-rule audit check for `non-alphabetical-literal|filesystem-envelope-gap|stdlib-logging` prints `0`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_verifier.py` passes
+- [x] The per-rule audit check for `non-alphabetical-literal|filesystem-envelope-gap|stdlib-logging` prints `0`
 
 **Notes:**
 

@@ -4,6 +4,8 @@ install-claude: symlinks files in to ~/.claude/
 """
 
 import argparse
+
+# auditme: accept[stdlib-logging] runs under the system Python before the project environment, and loguru, exist
 import logging
 import pathlib
 import sys
