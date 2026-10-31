@@ -43,6 +43,8 @@ below gives the fix-or-accept rule), then adopt the hooks with the
 lists as not to be modified without explicit instruction, so ask before that
 step.
 
+Spec: agents/specs/auditme-adoption/spec.md; tasks: not yet written.
+
 ### The auditme checker's 2026-10-31 rules report hits here
 
 Found on 2026-10-31 by running the shared auditme checker at agents `108559d`
