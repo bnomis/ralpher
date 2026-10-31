@@ -25,7 +25,7 @@ number it prints.)
 
 ## Task 1: Treat an explicit null in the agent stream as empty
 
-**Status:** done
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (`get-container-default-then-method-call`); Error handling (behaviour changes)
@@ -93,7 +93,7 @@ number it prints.)
 
 ## Task 3: Freeze the read-only module maps and accept the runtime caches
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** API (`default_settings()`, type maps); Implementation (`mutable-module-level-exported`); Error handling (`load_settings` theme not shared)
@@ -102,23 +102,23 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] In `src/tests/test_settings.py`, add a test that two `load_settings` calls return `theme` dicts that are not the same object, and that changing one leaves the other unchanged. Run it and see it fail
-- [ ] In `src/ralphlib/settings.py`, replace the `default_settings` dict with `def default_settings() -> dict[str, typing.Any]` returning a fresh dict each call (nested `theme` included), with the docstring in the spec's API section; `load_settings` calls it
-- [ ] Update `src/tests/test_settings.py` (patch the function, for example with `return_value`) and `src/tests/test_looper.py` (`ralphlib.settings.default_settings()`)
-- [ ] In `src/ralphlib/types.py`, wrap `message_type_to_str` and `ralpher_event_type_to_str` in `types.MappingProxyType`
-- [ ] Add `# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it` on `processed_hooks` and `seen_task_ids` in `src/ralphlib/hooks.py` and `log_file_cache` in `src/ralphlib/logger.py`
+- [x] In `src/tests/test_settings.py`, add a test that two `load_settings` calls return `theme` dicts that are not the same object, and that changing one leaves the other unchanged. Run it and see it fail
+- [x] In `src/ralphlib/settings.py`, replace the `default_settings` dict with `def default_settings() -> dict[str, typing.Any]` returning a fresh dict each call (nested `theme` included), with the docstring in the spec's API section; `load_settings` calls it
+- [x] Update `src/tests/test_settings.py` (patch the function, for example with `return_value`) and `src/tests/test_looper.py` (`ralphlib.settings.default_settings()`)
+- [x] In `src/ralphlib/types.py`, wrap `message_type_to_str` and `ralpher_event_type_to_str` in `types.MappingProxyType`
+- [x] Add `# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it` on `processed_hooks` and `seen_task_ids` in `src/ralphlib/hooks.py` and `log_file_cache` in `src/ralphlib/logger.py`
 
 **Acceptance Criteria:**
 
-- [ ] The new theme test passes
-- [ ] Printer and hook tests that read the type maps pass unchanged
-- [ ] The three caches show `accepted: true` in the checker output, with the marker's reason
+- [x] The new theme test passes
+- [x] Printer and hook tests that read the type maps pass unchanged
+- [x] The three caches show `accepted: true` in the checker output, with the marker's reason
 
 **Definition of Done:**
 
 - [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_logger.py` passes
-- [ ] The per-rule audit check for `mutable-module-level-exported` prints `0`
+- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_logger.py` passes (blocked: five `test_looper.py` tests fail on the baseline, see Task 14)
+- [x] The per-rule audit check for `mutable-module-level-exported` prints `0`
 
 **Notes:**
 
@@ -466,7 +466,7 @@ number it prints.)
 **Complexity:** small
 **Spec Reference:** Acceptance (the full suite passes)
 
-**Technical Goal:** Make `test_process_task_progress_suppresses_start_already_announced`, `test_announce_started_tasks_skips_task_the_agent_announced` and `test_announce_started_tasks_prints_start_when_task_goes_in_progress` in `src/tests/test_iteration.py` pass.
+**Technical Goal:** Also make the five `src/tests/test_looper.py` tests that raise the same `ValueError` pass (`test_loop_stops_when_all_tasks_done`, `test_loop_rejects_stop_while_tasks_unfinished`, `test_loop_no_verify_stop_trusts_the_marker`, `test_loop_rejected_stop_on_last_iteration_completes_all_iterations`, `test_loop_stops_and_warns_when_tasks_file_unreadable`; found on 2026-10-31 failing on `6fa5bbe`). Make `test_process_task_progress_suppresses_start_already_announced`, `test_announce_started_tasks_skips_task_the_agent_announced` and `test_announce_started_tasks_prints_start_when_task_goes_in_progress` in `src/tests/test_iteration.py` pass.
 
 **Background:** Found while doing Task 1 on 2026-10-31. All three fail on an unmodified checkout of `8849c60`. Each passes an absolute `tmp_path` task file to `announce_started_tasks` or `process_task_progress`; `ralphlib.verifier.worktree_task_file` then calls `relative_to` against the repository root and raises `ValueError` because the file is outside the repository. The behaviour came in with `fix(iteration): announce task start from tasks file` (`ffa497c`) and `fix(verifier): resolve repo root before relative_to` (`099717c`).
 

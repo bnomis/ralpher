@@ -131,7 +131,7 @@ def run_loop(
         state='state.json',
         logdir=str(tmp_path / 'logs'),
     )
-    options.settings = ralphlib.settings.default_settings.copy()
+    options.settings = ralphlib.settings.default_settings()
     ralphlib.looper.loop(options)
     state = json.loads((tmp_path / 'logs' / 'state.json').read_text())
     return LoopRun(calls, capsys.readouterr().out, state)

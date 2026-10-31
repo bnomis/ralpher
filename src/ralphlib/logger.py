@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ralphlib.options import RalpherOptions
 
 log_file_cache_lock = threading.Lock()
+# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 log_file_cache: dict[tuple[str | None, str, int], pathlib.Path] = {}
 
 

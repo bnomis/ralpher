@@ -53,7 +53,7 @@ class TestLoadSettings:
             patch.object(
                 ralphlib.settings,
                 'default_settings',
-                {'source': 'default', 'default_only': True},
+                return_value={'source': 'default', 'default_only': True},
             ),
             patch.object(
                 ralphlib.settings,
@@ -104,3 +104,14 @@ class TestLoadSettings:
         assert result.settings['key'] == 'custom'
         assert result.settings['home_only'] is True
         assert result.settings['custom_only'] is True
+
+
+def test_load_settings_theme_is_not_shared(tmp_path: Any) -> None:
+    first = make_options(cwd=str(tmp_path))
+    second = make_options(cwd=str(tmp_path))
+    with patch.object(ralphlib.settings, 'load_settings_from_file', side_effect=lambda opts, _paths: opts):
+        ralphlib.settings.load_settings(first)
+        ralphlib.settings.load_settings(second)
+    assert first.settings['theme'] is not second.settings['theme']
+    first.settings['theme']['alert'] = 'changed'
+    assert second.settings['theme']['alert'] != 'changed'

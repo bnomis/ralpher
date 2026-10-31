@@ -24,7 +24,9 @@ if TYPE_CHECKING:
 HOOK_VALUE_SENTINEL = '\x00'
 HOOK_VALUE_RE = re.compile(f'{HOOK_VALUE_SENTINEL}(\\d+){HOOK_VALUE_SENTINEL}')
 
+# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 processed_hooks: set[str] = set()
+# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 seen_task_ids = {}
 
 
