@@ -19,6 +19,7 @@ import ralphlib.logger
 import ralphlib.printer
 import ralphlib.signals
 import ralphlib.state
+import ralphlib.templater
 import ralphlib.types
 import ralphlib.verifier
 
@@ -173,23 +174,6 @@ def run(options: RalpherOptions, prompt: str, iteration: int) -> tuple[bool, boo
     return get_complete(context), get_error(context)
 
 
-def slugify(value: str) -> str:
-    value = value.lower()
-    value = re.sub(r'[^a-z0-9]+', '-', value)
-    value = value.strip().strip('-')
-    return value
-
-
-def task_file_slug(task_file: str) -> str:
-    path = pathlib.Path(task_file)
-    parts = path.parts
-    if len(parts) >= 2:
-        slug = parts[-2] + '-' + path.stem
-    else:
-        slug = path.stem
-    return slugify(slug)
-
-
 def add_settings(options: RalpherOptions, cmd: list[str]) -> list[str]:
     if '--settings' in cmd:
         return cmd
@@ -208,7 +192,7 @@ def add_worktree_arg(options: RalpherOptions, cmd: list[str]) -> list[str]:
     if options.worktree:
         cmd.append('--worktree')
         if options.task_file:
-            cmd.append(task_file_slug(options.task_file))
+            cmd.append(ralphlib.templater.task_file_slug(options.task_file))
     return cmd
 
 

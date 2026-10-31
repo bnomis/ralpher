@@ -85,10 +85,10 @@ class TestIsCleanStrict:
         repo.index.add(['README.md'])
         repo.index.commit('initial')
         # Clean repo should be clean strict
-        assert ralphlib.giter.is_clean_strict(repo) is True
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=True) is True
         # Untracked file makes it dirty
         (tmp_path / 'untracked.txt').write_text('new')
-        assert ralphlib.giter.is_clean_strict(repo) is False
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=True) is False
 
 
 class TestIsCleanNoUntracked:
@@ -100,10 +100,10 @@ class TestIsCleanNoUntracked:
         repo.index.commit('initial')
         # Untracked file should NOT make it dirty
         (tmp_path / 'untracked.txt').write_text('new')
-        assert ralphlib.giter.is_clean_no_untracked(repo) is True
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=False) is True
         # Modified tracked file should make it dirty
         readme.write_text('modified')
-        assert ralphlib.giter.is_clean_no_untracked(repo) is False
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=False) is False
 
 
 class TestGetUpstreamBranch:

@@ -89,7 +89,7 @@ def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
     else:
         wts = 'Git worktrees will be created from the origin repo.'
-    if not is_clean_strict(repo):
+    if not is_working_tree_clean(repo, include_untracked=True):
         lines = ['Warning: the git working tree is not clean.']
         if options.worktree:
             lines.append(wts)
@@ -106,16 +106,6 @@ def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
         decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unpushed commits.')
-
-
-def is_clean_strict(repo: git.Repo) -> bool:
-    """Clean including untracked files (default git status behavior)"""
-    return is_working_tree_clean(repo, include_untracked=True)
-
-
-def is_clean_no_untracked(repo: git.Repo) -> bool:
-    """Clean ignoring untracked files (like git diff --quiet)"""
-    return is_working_tree_clean(repo, include_untracked=False)
 
 
 def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> bool:

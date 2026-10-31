@@ -129,7 +129,7 @@ number it prints.)
 
 ## Task 4: Remove the duplicate slug helpers and the clean-check shims
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** API (Removed); Implementation (`paired-sibling-helpers` source part, `passthrough-shim`)
@@ -138,21 +138,21 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Delete `slugify` and `task_file_slug` from `src/ralphlib/iteration.py`; its callers use `ralphlib.templater.task_file_slug`
-- [ ] Move the `slugify` and `task_file_slug` tests from `src/tests/test_iteration.py` to `src/tests/test_templater.py`, targeting `ralphlib.templater`
-- [ ] Delete `is_clean_strict` and `is_clean_no_untracked` from `src/ralphlib/giter.py`; `giter.py` calls `is_working_tree_clean(repo, include_untracked=True)`
-- [ ] Change `src/tests/test_giter.py` to call `is_working_tree_clean` with `include_untracked=True` and `False` where it called the shims
+- [x] Delete `slugify` and `task_file_slug` from `src/ralphlib/iteration.py`; its callers use `ralphlib.templater.task_file_slug`
+- [x] Move the `slugify` and `task_file_slug` tests from `src/tests/test_iteration.py` to `src/tests/test_templater.py`, targeting `ralphlib.templater`
+- [x] Delete `is_clean_strict` and `is_clean_no_untracked` from `src/ralphlib/giter.py`; `giter.py` calls `is_working_tree_clean(repo, include_untracked=True)`
+- [x] Change `src/tests/test_giter.py` to call `is_working_tree_clean` with `include_untracked=True` and `False` where it called the shims
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn -E 'iteration\.(slugify|task_file_slug)|is_clean_strict|is_clean_no_untracked' src` prints nothing
-- [ ] The moved tests pass against `ralphlib.templater`
+- [x] `grep -rn -E 'iteration\.(slugify|task_file_slug)|is_clean_strict|is_clean_no_untracked' src` prints nothing
+- [x] The moved tests pass against `ralphlib.templater`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_templater.py src/tests/test_giter.py` passes
-- [ ] The per-rule audit check for `passthrough-shim` prints `0`, and the checker reports no `paired-sibling-helpers` hit in `src/ralphlib/`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_templater.py src/tests/test_giter.py` passes (blocked: three `test_iteration.py` tests fail on the baseline, see Task 14)
+- [x] The per-rule audit check for `passthrough-shim` prints `0`, and the checker reports no `paired-sibling-helpers` hit in `src/ralphlib/`
 
 **Notes:**
 
