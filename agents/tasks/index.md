@@ -6,3 +6,4 @@
 | [Test Plan 1](../test-plans/plan-1.md) | [tasks-1.md](test-plans/tasks-1.md) | 1 | 2026-03-21 |
 | [Audit Review 1](../audit-reviews/review-1.md) | [tasks-1.md](audit-reviews/tasks-1.md) | 1 | 2026-03-30 |
 | [Verified stop](../specs/verified-stop/spec.md) | [tasks-1.md](verified-stop/tasks-1.md) | 1 | 2026-10-08 |
+| [Auditme adoption](../specs/auditme-adoption/spec.md) | [tasks-1.md](auditme-adoption/tasks-1.md) | 1 | 2026-10-31 |
