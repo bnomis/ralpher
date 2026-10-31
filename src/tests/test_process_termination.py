@@ -21,21 +21,17 @@ import ralphlib.iteration
 import ralphlib.options
 import ralphlib.settings
 import ralphlib.signals
+import tests.helpers
 from ralphlib.signals import GracefulTerminator
 
 SLEEP_SCRIPT = 'import time; time.sleep(60)'
 
 
 @pytest.fixture
-def _fast_poll():
+def fast_poll():
     """Reduce poll interval so tests don't wait 3 seconds per cycle."""
     with patch.object(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05):
         yield
-
-
-def make_options(**kwargs):
-    options = ralphlib.options.RalpherOptions(**kwargs)
-    return ralphlib.settings.load_settings(options)
 
 
 def make_context(cmd):
@@ -69,12 +65,12 @@ def capturing_popen(holder):
     return wrapper
 
 
-@pytest.mark.usefixtures('_fast_poll')
+@pytest.mark.usefixtures('fast_poll')
 class TestProcessTerminatesOnShouldExit:
     """process() should terminate the child when should_exit is set."""
 
     def test_process_returns_after_should_exit_set(self):
-        options = make_options(quiet=True)
+        options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
@@ -93,7 +89,7 @@ class TestProcessTerminatesOnShouldExit:
         assert ralphlib.signals.get_should_exit() is True
 
     def test_child_process_is_dead_after_termination(self):
-        options = make_options(quiet=True)
+        options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
@@ -117,12 +113,12 @@ class TestProcessTerminatesOnShouldExit:
         assert not child_is_alive(holder['pid']), f'Child process {holder["pid"]} still alive after termination'
 
 
-@pytest.mark.usefixtures('_fast_poll')
+@pytest.mark.usefixtures('fast_poll')
 class TestGracefulTerminatorTerminatesSubprocess:
     """Full integration: GracefulTerminator handler -> should_exit -> child killed."""
 
     def test_double_sigint_terminates_subprocess(self):
-        options = make_options(quiet=True)
+        options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
@@ -144,7 +140,7 @@ class TestGracefulTerminatorTerminatesSubprocess:
         assert ralphlib.signals.get_should_exit() is True
 
 
-@pytest.mark.usefixtures('_fast_poll')
+@pytest.mark.usefixtures('fast_poll')
 class TestChildSessionIsolation:
     """With start_new_session=True, the child is in a different session/process group."""
 
@@ -152,13 +148,13 @@ class TestChildSessionIsolation:
         # The child script prints its process group ID to stdout, then sleeps.
         child_script = 'import os, sys; sys.stdout.write(str(os.getpgrp()) + "\\n"); sys.stdout.flush(); import time; time.sleep(60)'
 
-        options = make_options(quiet=True)
+        options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', child_script]
         context = make_context(cmd)
 
         child_pgid_lines: list[str] = []
 
-        def capturing_process_stdout(_options, _context, pipe):
+        def capturing_process_stdout(options, context, pipe):
             for line in iter(pipe.readline, ''):
                 line = line.strip()
                 if line:

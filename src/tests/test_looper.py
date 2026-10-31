@@ -96,9 +96,9 @@ TASKS_DONE = '## Task 1: A\n**Status:** done\n'
 
 class LoopRun:
     def __init__(self, calls: list[int], out: str, state: dict) -> None:
-        self.calls = calls
+        self.calls = list(calls)
         self.out = out
-        self.state = state
+        self.state = dict(state)
 
 
 def run_loop(

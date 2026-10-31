@@ -163,7 +163,7 @@ number it prints.)
 
 ## Task 5: Tidy the test modules
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** API (`tests.helpers.make_options`); Implementation (`paired-sibling-helpers` test part, `literal-duplication`, `mutable-store-without-copy`, `leading-underscore-binding`, `leading-underscore-def-class`)
@@ -172,23 +172,23 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Create `src/tests/helpers.py` with one function per group of identical `make_options` bodies (as of 2026-10-31): `make_options(**kwargs)` loading settings (`test_giter.py`, `test_printer.py`, `test_process_termination.py`, `test_signals.py`); `make_plain_options(**kwargs)` without settings (`test_iteration.py`, `test_logger.py`, `test_state.py`); `make_options_with_settings(**kwargs)` popping `settings` (`test_hooks.py`, `test_settings.py`). Each fully annotated
-- [ ] Replace each module's copy with `import tests.helpers` and calls to the shared function; `test_verifier.py` keeps its own, different `make_options`
-- [ ] Name each repeated tuple once as a module constant: `('README.md',)` in `test_giter.py`, `('claude', '--verbose')` and `('true',)` in `test_iteration.py`, `('echo hi',)` in `test_settings.py`
-- [ ] In `src/tests/test_looper.py`, `LoopRun.__init__` stores `list(calls)` and `dict(state)`
-- [ ] In `src/tests/test_process_termination.py`, rename `_fast_poll` to `fast_poll` (and its `usefixtures` uses) and the `_options` / `_context` parameters to `options` / `context`
-- [ ] In `src/ralphlib/looper.py`, call `ralphlib.signals.GracefulTerminator(options)` without binding it
+- [x] Create `src/tests/helpers.py` with one function per group of identical `make_options` bodies (as of 2026-10-31): `make_options(**kwargs)` loading settings (`test_giter.py`, `test_printer.py`, `test_process_termination.py`, `test_signals.py`); `make_plain_options(**kwargs)` without settings (`test_iteration.py`, `test_logger.py`, `test_state.py`); `make_options_with_settings(**kwargs)` popping `settings` (`test_hooks.py`, `test_settings.py`). Each fully annotated
+- [x] Replace each module's copy with `import tests.helpers` and calls to the shared function; `test_verifier.py` keeps its own, different `make_options`
+- [x] Name each repeated tuple once as a module constant: `('README.md',)` in `test_giter.py`, `('claude', '--verbose')` and `('true',)` in `test_iteration.py`, `('echo hi',)` in `test_settings.py`
+- [x] In `src/tests/test_looper.py`, `LoopRun.__init__` stores `list(calls)` and `dict(state)`
+- [x] In `src/tests/test_process_termination.py`, rename `_fast_poll` to `fast_poll` (and its `usefixtures` uses) and the `_options` / `_context` parameters to `options` / `context`
+- [x] In `src/ralphlib/looper.py`, call `ralphlib.signals.GracefulTerminator(options)` without binding it
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn 'def make_options' src/tests` lists only `helpers.py` and `test_verifier.py`
-- [ ] The signal tests still show Ctrl-C handled during a loop
+- [x] `grep -rn 'def make_options' src/tests` lists only `helpers.py` and `test_verifier.py`
+- [x] The signal tests still show Ctrl-C handled during a loop
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_printer.py src/tests/test_process_termination.py src/tests/test_signals.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_state.py src/tests/test_hooks.py src/tests/test_settings.py src/tests/test_looper.py` passes
-- [ ] The per-rule audit check for `paired-sibling-helpers|literal-duplication|mutable-store-without-copy|leading-underscore-binding|leading-underscore-def-class` prints `0`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_printer.py src/tests/test_process_termination.py src/tests/test_signals.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_state.py src/tests/test_hooks.py src/tests/test_settings.py src/tests/test_looper.py` passes
+- [x] The per-rule audit check for `paired-sibling-helpers|literal-duplication|mutable-store-without-copy|leading-underscore-binding|leading-underscore-def-class` prints `0`
 
 **Notes:**
 

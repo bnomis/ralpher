@@ -1,4 +1,3 @@
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,6 +5,7 @@ import pytest
 import ralphlib.hooks
 import ralphlib.options
 import ralphlib.types
+import tests.helpers
 
 
 @pytest.fixture(autouse=True)
@@ -14,28 +14,21 @@ def reset_hook_state() -> None:
     ralphlib.hooks.seen_task_ids.clear()
 
 
-def make_options(**kwargs: Any) -> ralphlib.options.RalpherOptions:
-    settings = kwargs.pop('settings', {})
-    options = ralphlib.options.RalpherOptions(**kwargs)
-    options.settings = settings
-    return options
-
-
 class TestEvent:
     def test_returns_early_when_no_hooks_configured(self) -> None:
-        options = make_options(settings={})
+        options = tests.helpers.make_options_with_settings(settings={})
         with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_returns_early_when_event_type_not_in_hooks(self) -> None:
-        options = make_options(settings={'hooks': {'end': ['echo done']}})
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'end': ['echo done']}})
         with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_passes_context_to_run_hook_for_matching_event(self) -> None:
-        options = make_options(settings={'hooks': {'start': ['echo hello']}})
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo hello']}})
         with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_called_once()
@@ -44,7 +37,7 @@ class TestEvent:
             assert context['event_type'] == 'start'
 
     def test_passes_no_context_when_hook_templates_false(self) -> None:
-        options = make_options(
+        options = tests.helpers.make_options_with_settings(
             settings={
                 'hooks': {'start': ['echo raw']},
                 'hook_templates': False,
@@ -55,7 +48,7 @@ class TestEvent:
             mock_run.assert_called_once_with('echo raw', None)
 
     def test_calls_run_hook_for_each_command_in_list(self) -> None:
-        options = make_options(
+        options = tests.helpers.make_options_with_settings(
             settings={
                 'hooks': {'start': ['echo one', 'echo two', 'echo three']},
                 'hook_templates': False,
@@ -87,7 +80,7 @@ class TestPreprocessHook:
 
 class TestMakeContext:
     def test_includes_expected_fields(self) -> None:
-        options = make_options(iterations=5)
+        options = tests.helpers.make_options_with_settings(iterations=5)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['event_type'] == 'start'
         assert context['iterations'] == '5'
@@ -97,7 +90,7 @@ class TestMakeContext:
         assert isinstance(context['time_epoch'], str)
 
     def test_resolves_task_file_when_set(self) -> None:
-        options = make_options(iterations=1, task_file='tasks/my-task.md')
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task.md')
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'].endswith('/tasks/my-task.md')
         assert context['task_file_basename'] == 'my-task.md'
@@ -106,18 +99,18 @@ class TestMakeContext:
         assert context['task_file_suffix'] == '.md'
 
     def test_non_numeric_task_file_suffix_gives_empty_number(self) -> None:
-        options = make_options(iterations=1, task_file='tasks/my-task-abc.md')
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task-abc.md')
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == ''
 
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
-        options = make_options(iterations=1)
+        options = tests.helpers.make_options_with_settings(iterations=1)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'] == ''
         assert context['task_file_basename'] == ''
 
     def test_merges_event_context(self) -> None:
-        options = make_options(iterations=1)
+        options = tests.helpers.make_options_with_settings(iterations=1)
         context = ralphlib.hooks.make_context(
             options,
             ralphlib.types.RalpherEventType.ERROR,

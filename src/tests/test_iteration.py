@@ -12,6 +12,10 @@ import ralphlib.iteration
 import ralphlib.options
 import ralphlib.signals
 import ralphlib.types
+import tests.helpers
+
+CLAUDE_CMD = ('claude', '--verbose')
+TRUE_CMD = ('true',)
 
 
 def make_context() -> ralphlib.iteration.IterationContext:
@@ -22,12 +26,8 @@ def make_context() -> ralphlib.iteration.IterationContext:
     )
 
 
-def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
-    return ralphlib.options.RalpherOptions(**kwargs)
-
-
 def test_process_line_system_type() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     line = orjson.dumps({'type': 'system', 'subtype': 'unknown'}).decode()
     message_type, message = ralphlib.iteration.process_line(options, context, line)
@@ -36,7 +36,7 @@ def test_process_line_system_type() -> None:
 
 
 def test_process_line_assistant_dispatches() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'assistant', 'message': {'content': []}}
     line = orjson.dumps(payload).decode()
@@ -49,7 +49,7 @@ def test_process_line_assistant_dispatches() -> None:
 
 
 def test_process_line_result_dispatches() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'result', 'subtype': 'success', 'result': 'ok'}
     line = orjson.dumps(payload).decode()
@@ -62,7 +62,7 @@ def test_process_line_result_dispatches() -> None:
 
 
 def test_process_line_user_dispatches() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'user', 'message': {}}
     line = orjson.dumps(payload).decode()
@@ -75,7 +75,7 @@ def test_process_line_user_dispatches() -> None:
 
 
 def test_process_line_stream_event_dispatches() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'stream_event', 'event': {'type': 'message_start'}}
     line = orjson.dumps(payload).decode()
@@ -88,7 +88,7 @@ def test_process_line_stream_event_dispatches() -> None:
 
 
 def test_process_line_unknown_ptype_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'unknown_type'}
     line = orjson.dumps(payload).decode()
@@ -101,7 +101,7 @@ def test_process_line_unknown_ptype_returns_none() -> None:
 
 
 def test_process_line_invalid_json_returns_error() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     line = 'this is not json'
     message_type, message = ralphlib.iteration.process_line(options, context, line)
@@ -110,7 +110,7 @@ def test_process_line_invalid_json_returns_error() -> None:
 
 
 def test_process_line_exception_returns_error() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'assistant'}
     line = orjson.dumps(payload).decode()
@@ -126,7 +126,7 @@ def test_process_line_exception_returns_error() -> None:
 
 
 def test_process_result_success_with_is_error_sets_error_flag() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'result', 'subtype': 'success', 'is_error': True, 'result': 'something failed'}
     line = orjson.dumps(payload).decode()
@@ -139,7 +139,7 @@ def test_process_result_success_with_is_error_sets_error_flag() -> None:
 
 
 def test_process_result_with_stop_marker_sets_complete() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     result_text = 'output\n<promise>COMPLETE</promise>\n'
     payload = {'type': 'result', 'subtype': 'success', 'result': result_text}
@@ -153,7 +153,7 @@ def test_process_result_with_stop_marker_sets_complete() -> None:
 
 
 def test_process_result_with_stop_marker_in_longer_line_not_complete() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     result_text = 'output with <promise>COMPLETE</promise> marker'
     payload = {'type': 'result', 'subtype': 'success', 'result': result_text}
@@ -166,7 +166,7 @@ def test_process_result_with_stop_marker_in_longer_line_not_complete() -> None:
 
 
 def test_process_result_no_stop_marker_no_error_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'result', 'subtype': 'success', 'result': 'normal output'}
     line = orjson.dumps(payload).decode()
@@ -180,7 +180,7 @@ def test_process_result_no_stop_marker_no_error_returns_none() -> None:
 
 
 def test_process_result_custom_stop_markers_respected() -> None:
-    options = make_options(quiet=True, stops=['DONE', 'FINISHED'])
+    options = tests.helpers.make_plain_options(quiet=True, stops=['DONE', 'FINISHED'])
     context = make_context()
     payload = {'type': 'result', 'subtype': 'success', 'result': 'task done\nFINISHED'}
     line = orjson.dumps(payload).decode()
@@ -193,7 +193,7 @@ def test_process_result_custom_stop_markers_respected() -> None:
 
 
 def test_process_result_empty_result_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'result', 'subtype': 'success', 'result': ''}
     line = orjson.dumps(payload).decode()
@@ -208,7 +208,7 @@ def test_process_result_empty_result_returns_none() -> None:
 
 
 def test_process_assistant_text_with_stop_marker_sets_complete() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -228,7 +228,7 @@ def test_process_assistant_text_with_stop_marker_sets_complete() -> None:
 
 
 def test_process_assistant_text_without_stop_marker_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -248,7 +248,7 @@ def test_process_assistant_text_without_stop_marker_returns_none() -> None:
 
 
 def test_process_assistant_tool_use_adds_to_tools_used_set() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -271,7 +271,7 @@ def test_process_assistant_tool_use_adds_to_tools_used_set() -> None:
 
 
 def test_process_assistant_tool_use_returns_tool_use_with_formatted_output() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -296,7 +296,7 @@ def test_process_assistant_tool_use_returns_tool_use_with_formatted_output() -> 
 
 
 def test_process_assistant_tool_run_in_background_known_tool_tracked() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -321,7 +321,7 @@ def test_process_assistant_tool_run_in_background_known_tool_tracked() -> None:
 
 
 def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -349,7 +349,7 @@ def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() ->
 
 
 def test_process_assistant_task_output_resolves_background_tool() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
 
     # get_tool_input indents task_id via indent_lines, so the lookup key is indented
@@ -382,7 +382,7 @@ def test_process_assistant_task_output_resolves_background_tool() -> None:
 
 @pytest.mark.parametrize('tool_name_cls', ['TaskOutput', 'TaskStop'])
 def test_process_assistant_task_tools_resolve_background(tool_name_cls: str) -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
 
     indented_id = '  bg_456'
@@ -412,7 +412,7 @@ def test_process_assistant_task_tools_resolve_background(tool_name_cls: str) -> 
 
 
 def test_process_assistant_tool_use_without_name_logs_warning() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'assistant',
@@ -438,7 +438,7 @@ def test_process_assistant_tool_use_without_name_logs_warning() -> None:
 
 
 def test_process_assistant_empty_message_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'assistant', 'message': {}}
     line = orjson.dumps(payload).decode()
@@ -450,7 +450,7 @@ def test_process_assistant_empty_message_returns_none() -> None:
 
 
 def test_process_assistant_empty_content_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'assistant', 'message': {'content': []}}
     line = orjson.dumps(payload).decode()
@@ -466,7 +466,7 @@ def test_process_assistant_empty_content_returns_none() -> None:
 
 @pytest.mark.parametrize('event_type', ['message_start', 'message_stop', 'message_delta'])
 def test_process_stream_event_message_types_return_none(event_type: str) -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'stream_event', 'event': {'type': event_type}}
     line = orjson.dumps(payload).decode()
@@ -478,7 +478,7 @@ def test_process_stream_event_message_types_return_none(event_type: str) -> None
 
 
 def test_process_stream_event_content_block_start_text_returns_content_start() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -496,7 +496,7 @@ def test_process_stream_event_content_block_start_text_returns_content_start() -
 
 
 def test_process_stream_event_content_block_start_tool_use_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -514,7 +514,7 @@ def test_process_stream_event_content_block_start_tool_use_returns_none() -> Non
 
 
 def test_process_stream_event_content_block_stop_returns_content_stop() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -529,7 +529,7 @@ def test_process_stream_event_content_block_stop_returns_content_stop() -> None:
 
 
 def test_process_stream_event_content_block_delta_text_returns_content_delta() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -547,7 +547,7 @@ def test_process_stream_event_content_block_delta_text_returns_content_delta() -
 
 
 def test_process_stream_event_content_block_delta_input_json_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -565,7 +565,7 @@ def test_process_stream_event_content_block_delta_input_json_returns_none() -> N
 
 
 def test_process_stream_event_unknown_event_type_returns_none_with_line() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'stream_event',
@@ -726,9 +726,9 @@ def test_process_passes_stdin_devnull_to_popen() -> None:
     """Verify subprocess is spawned with stdin=DEVNULL so it cannot inherit
     the parent's stdin. This ensures Ctrl-C (SIGINT) is delivered to the
     parent process rather than being consumed by the child."""
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    context.cmd = ['true']
+    context.cmd = list(TRUE_CMD)
 
     mock_proc = MagicMock()
     mock_proc.pid = 12345
@@ -751,7 +751,7 @@ def test_process_passes_stdin_devnull_to_popen() -> None:
 def test_process_terminates_subprocess_on_should_exit() -> None:
     """Verify that when should_exit is set (simulating Ctrl-C handling),
     the process loop sends SIGTERM to the subprocess group."""
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     context.cmd = ['sleep', '60']
 
@@ -783,7 +783,7 @@ def test_process_child_stdin_is_devnull_integration() -> None:
 
     The child runs a Python one-liner that exits 0 if stdin is not a TTY
     (meaning stdin=DEVNULL worked) or exits 1 if stdin IS a TTY."""
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = ralphlib.iteration.IterationContext(
         cmd=[
             sys.executable,
@@ -812,46 +812,46 @@ def test_process_child_stdin_is_devnull_integration() -> None:
 
 
 def test_add_worktree_arg_appends_worktree_when_enabled() -> None:
-    options = make_options(worktree=True)
-    cmd = ['claude', '--verbose']
+    options = tests.helpers.make_plain_options(worktree=True)
+    cmd = list(CLAUDE_CMD)
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert '--worktree' in result
 
 
 def test_add_worktree_arg_appends_task_file_slug_when_task_file_set() -> None:
-    options = make_options(worktree=True, task_file='agents/tasks/my_task.md')
-    cmd = ['claude', '--verbose']
+    options = tests.helpers.make_plain_options(worktree=True, task_file='agents/tasks/my_task.md')
+    cmd = list(CLAUDE_CMD)
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert '--worktree' in result
     assert 'tasks-my-task' in result
 
 
 def test_add_worktree_arg_does_not_add_if_worktree_already_present() -> None:
-    options = make_options(worktree=True)
+    options = tests.helpers.make_plain_options(worktree=True)
     cmd = ['claude', '--worktree']
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert result.count('--worktree') == 1
 
 
 def test_add_worktree_arg_does_not_add_if_short_flag_already_present() -> None:
-    options = make_options(worktree=True)
+    options = tests.helpers.make_plain_options(worktree=True)
     cmd = ['claude', '-w']
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert '--worktree' not in result
 
 
 def test_add_worktree_arg_noop_when_worktree_false() -> None:
-    options = make_options(worktree=False)
-    cmd = ['claude', '--verbose']
+    options = tests.helpers.make_plain_options(worktree=False)
+    cmd = list(CLAUDE_CMD)
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
-    assert result == ['claude', '--verbose']
+    assert result == list(CLAUDE_CMD)
 
 
 # --- Task 3: Test process_user ---
 
 
 def test_process_user_matching_tool_use_id_extracts_background_task_id() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     tool_use_id = 'tool_abc'
     context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
@@ -876,7 +876,7 @@ def test_process_user_matching_tool_use_id_extracts_background_task_id() -> None
 
 
 def test_process_user_tool_use_id_not_in_background_tools_is_noop() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'user',
@@ -899,7 +899,7 @@ def test_process_user_tool_use_id_not_in_background_tools_is_noop() -> None:
 
 
 def test_process_user_empty_message_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'user', 'message': {}}
     line = orjson.dumps(payload).decode()
@@ -911,7 +911,7 @@ def test_process_user_empty_message_returns_none() -> None:
 
 
 def test_process_user_non_user_role_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {
         'type': 'user',
@@ -936,7 +936,7 @@ def test_process_user_non_user_role_returns_none() -> None:
 
 
 def test_process_user_tool_result_no_regex_match_is_noop() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     tool_use_id = 'tool_abc'
     context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
@@ -961,7 +961,7 @@ def test_process_user_tool_result_no_regex_match_is_noop() -> None:
 
 
 def test_process_user_always_returns_none_and_line() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     tool_use_id = 'tool_abc'
     context.background_tools[tool_use_id] = {'name': 'Bash', 'input': '  sleep 10'}
@@ -1013,7 +1013,7 @@ def start_block(tid: str) -> str:
 def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'todo')
-    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1029,7 +1029,7 @@ def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path
 def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
     context.in_progress_tasks = {'2'}
@@ -1039,7 +1039,7 @@ def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_
 
 
 def test_announce_started_tasks_unreadable_task_file_is_silent(tmp_path: pathlib.Path) -> None:
-    options = make_options(quiet=True, task_file=str(tmp_path / 'missing.md'))
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(tmp_path / 'missing.md'))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1050,7 +1050,7 @@ def test_announce_started_tasks_unreadable_task_file_is_silent(tmp_path: pathlib
 def test_announce_started_tasks_skips_task_the_agent_announced(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1064,7 +1064,7 @@ def test_announce_started_tasks_skips_task_the_agent_announced(tmp_path: pathlib
 def test_process_task_progress_suppresses_start_already_announced(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1122,9 +1122,9 @@ def test_agent_environment_leaves_environ_unchanged() -> None:
 
 def test_process_starts_agent_without_ralphers_python(tmp_path: pathlib.Path) -> None:
     """The agent's `python` must not be ralpher's: bin/activate.sh put ralpher's venv first on PATH."""
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    context.cmd = ['true']
+    context.cmd = list(TRUE_CMD)
 
     mock_proc = MagicMock()
     mock_proc.pid = 12345
@@ -1151,7 +1151,7 @@ def test_process_starts_agent_without_ralphers_python(tmp_path: pathlib.Path) ->
 
 
 def test_process_user_null_content_returns_none() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'user', 'message': {'role': 'user', 'content': None}}
     line = orjson.dumps(payload).decode()
@@ -1163,7 +1163,7 @@ def test_process_user_null_content_returns_none() -> None:
 
 
 def test_process_stream_event_null_event_returns_line() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'stream_event', 'event': None}
     line = orjson.dumps(payload).decode()
@@ -1175,7 +1175,7 @@ def test_process_stream_event_null_event_returns_line() -> None:
 
 
 def test_process_stream_event_null_content_block_returns_line() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'stream_event', 'event': {'type': 'content_block_start', 'content_block': None}}
     line = orjson.dumps(payload).decode()
@@ -1187,7 +1187,7 @@ def test_process_stream_event_null_content_block_returns_line() -> None:
 
 
 def test_process_stream_event_null_delta_returns_line() -> None:
-    options = make_options(quiet=True)
+    options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
     payload = {'type': 'stream_event', 'event': {'type': 'content_block_delta', 'delta': None}}
     line = orjson.dumps(payload).decode()

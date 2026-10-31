@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def loop(options: RalpherOptions) -> bool:
-    _terminator = ralphlib.signals.GracefulTerminator(options)
+    ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
         cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
