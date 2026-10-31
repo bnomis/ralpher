@@ -362,7 +362,7 @@ number it prints.)
 
 ## Task 11: Add the CI workflow
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation (hook adoption step 3); External dependencies
@@ -371,19 +371,19 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Write `.github/workflows/ci.yml` from `~/.claude/skills/project-setup/templates/ci.yml`, with `{{TEST_COMMAND}}` as `uv run pytest`
-- [ ] Pin `actions/checkout`, `actions/setup-python` and `astral-sh/setup-uv` to the full commit SHA of the template's tag (`gh api repos/<owner>/<action>/git/ref/tags/<tag>`, dereferencing an annotated tag), with the tag in a trailing comment
-- [ ] Check no placeholder remains: `grep -nE '\{\{[A-Z_]+\}\}' .github/workflows/ci.yml` prints nothing
+- [x] Write `.github/workflows/ci.yml` from `~/.claude/skills/project-setup/templates/ci.yml`, with `{{TEST_COMMAND}}` as `uv run pytest`
+- [x] Pin `actions/checkout`, `actions/setup-python` and `astral-sh/setup-uv` to the full commit SHA of the template's tag (`gh api repos/<owner>/<action>/git/ref/tags/<tag>`, dereferencing an annotated tag), with the tag in a trailing comment
+- [x] Check no placeholder remains: `grep -nE '\{\{[A-Z_]+\}\}' .github/workflows/ci.yml` prints nothing
 
 **Acceptance Criteria:**
 
-- [ ] Every `uses:` line names a 40-character SHA
-- [ ] The workflow parses: `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/ci.yml'))"` (or `uv run --with pyyaml ...`) exits 0
+- [x] Every `uses:` line names a 40-character SHA
+- [x] The workflow parses: `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/ci.yml'))"` (or `uv run --with pyyaml ...`) exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The YAML parse check above exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The YAML parse check above exits 0
 
 **Notes:**
 
