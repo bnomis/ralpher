@@ -130,8 +130,11 @@ The operator follows progress only through `<task>` blocks. Without the start bl
    a check you do not name is a check that does not run:
    - `.pre-commit-config.yaml`: run `pre-commit run --all-files`, and run it
      again with `--hook-stage pre-push` if any hook declares
-     `stages: [pre-push]`. Those hooks do not fire on a commit, so nothing in
-     this loop reaches them otherwise.
+     `stages: [pre-push]`. Run the pre-push stage once, after the plain run
+     passes and the task's other checks are done, not after each fix: a
+     pre-push stage can take minutes, and repeating it per fix multiplies that.
+     If it reports hits, fix them and run it again. Those hooks do not fire
+     on a commit, so nothing in this loop reaches them otherwise.
    - any verification script under `bin/`, `scripts/` or `tools/`, especially a
      whole-tree audit or duplication check - the hits it finds are cross-file,
      so this task is the first point at which they can be seen at all.
