@@ -1013,7 +1013,7 @@ def start_block(tid: str) -> str:
 def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'todo')
-    options = make_options(quiet=True, task_file=str(path))
+    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1029,7 +1029,7 @@ def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path
 def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path))
+    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
     context.in_progress_tasks = {'2'}
@@ -1050,7 +1050,7 @@ def test_announce_started_tasks_unreadable_task_file_is_silent(tmp_path: pathlib
 def test_announce_started_tasks_skips_task_the_agent_announced(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path))
+    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 
@@ -1064,7 +1064,7 @@ def test_announce_started_tasks_skips_task_the_agent_announced(tmp_path: pathlib
 def test_process_task_progress_suppresses_start_already_announced(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')
-    options = make_options(quiet=True, task_file=str(path))
+    options = make_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
     context = make_context()
     context.progressfd = io.StringIO()
 

@@ -25,7 +25,7 @@ number it prints.)
 
 ## Task 1: Treat an explicit null in the agent stream as empty
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (`get-container-default-then-method-call`); Error handling (behaviour changes)
@@ -46,7 +46,7 @@ number it prints.)
 **Definition of Done:**
 
 - [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes (blocked: three tests fail on the baseline, see Task 14)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 - [x] The per-rule audit check for `get-container-default-then-method-call` prints `0`
 
 **Notes:**
@@ -93,7 +93,7 @@ number it prints.)
 
 ## Task 3: Freeze the read-only module maps and accept the runtime caches
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** API (`default_settings()`, type maps); Implementation (`mutable-module-level-exported`); Error handling (`load_settings` theme not shared)
@@ -116,8 +116,8 @@ number it prints.)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_logger.py` passes (blocked: five `test_looper.py` tests fail on the baseline, see Task 14)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_settings.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_logger.py` passes
 - [x] The per-rule audit check for `mutable-module-level-exported` prints `0`
 
 **Notes:**
@@ -129,7 +129,7 @@ number it prints.)
 
 ## Task 4: Remove the duplicate slug helpers and the clean-check shims
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** API (Removed); Implementation (`paired-sibling-helpers` source part, `passthrough-shim`)
@@ -151,7 +151,7 @@ number it prints.)
 **Definition of Done:**
 
 - [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_templater.py src/tests/test_giter.py` passes (blocked: three `test_iteration.py` tests fail on the baseline, see Task 14)
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_templater.py src/tests/test_giter.py` passes
 - [x] The per-rule audit check for `passthrough-shim` prints `0`, and the checker reports no `paired-sibling-helpers` hit in `src/ralphlib/`
 
 **Notes:**
@@ -461,7 +461,7 @@ number it prints.)
 
 ## Task 14: Fix three failing tests that predate this task list
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Acceptance (the full suite passes)
@@ -472,17 +472,17 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Decide whether the tests or `worktree_task_file` is wrong: the docstring says `ValueError` propagates when the tasks file is outside the repository, so the likely fix is for the tests to run with `options.cwd` set to a repository that holds the tasks file, or to patch `ralphlib.verifier.worktree_task_file`
-- [ ] Fix it and run `uv run pytest src/tests/test_iteration.py`
+- [x] Decide whether the tests or `worktree_task_file` is wrong: the docstring says `ValueError` propagates when the tasks file is outside the repository, so the likely fix is for the tests to run with `options.cwd` set to a repository that holds the tasks file, or to patch `ralphlib.verifier.worktree_task_file`
+- [x] Fix it and run `uv run pytest src/tests/test_iteration.py`
 
 **Acceptance Criteria:**
 
-- [ ] The three tests pass, and no other test in `src/tests/test_iteration.py` fails
+- [x] The three tests pass, and no other test in `src/tests/test_iteration.py` fails
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 
 **Notes:**
 

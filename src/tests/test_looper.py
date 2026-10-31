@@ -130,6 +130,7 @@ def run_loop(
         no_verify_stop=no_verify_stop,
         state='state.json',
         logdir=str(tmp_path / 'logs'),
+        cwd=str(tmp_path),
     )
     options.settings = ralphlib.settings.default_settings()
     ralphlib.looper.loop(options)
