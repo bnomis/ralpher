@@ -1,7 +1,7 @@
 # Verified stop
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-10-08
 
 ralpher stops the loop when the agent writes a stop marker

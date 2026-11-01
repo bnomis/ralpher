@@ -4,22 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The verified-stop spec still says `proposed` though its task list is done
-
-Found on 2026-11-01 in a TODO review: `agents/specs/verified-stop/spec.md`
-has `**Status:** proposed`, while every task in
-`agents/tasks/verified-stop/tasks-1.md` has `**Status:** done`. The
-auditme-adoption spec's "Out of scope" section and item 18 of
-`agents/specs/auditme-adoption/review-1.md` (both 2026-10-31) say this stale
-status "is fixed separately"; nothing recorded that work.
-
-Cause: no task in `agents/tasks/verified-stop/tasks-1.md` sets the spec's
-status, so nothing moved it on (suspected to predate the `taskdev` rule that a
-list's last task sets its spec to `implemented`; not checked).
-
-Fix direction: check that the code still matches the spec (`/specdev` drift
-detection on `src/ralphlib/verifier.py`), then set `**Status:** implemented`.
-
 ## The auditme checker misses an `OSError` held in a named exception tuple
 
 Found on 2026-11-01 in a TODO review. On 2026-10-31 the checker's

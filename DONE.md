@@ -92,3 +92,21 @@ also print `git push origin --delete {branch}` when the branch has a remote
 copy, or a note saying so. Add tests on `cleanup_cmds`'s output.
 
 Done: 2026-11-01 - `cleanup_cmds` in `src/ralphlib/looper.py` prints `git branch -D` and then a guarded `(git push origin --delete <branch> 2>/dev/null || true)` after `git push`; `TestCleanupCmds` in `src/tests/test_looper.py` covers it.
+
+## The verified-stop spec still says `proposed` though its task list is done
+
+Found on 2026-11-01 in a TODO review: `agents/specs/verified-stop/spec.md`
+has `**Status:** proposed`, while every task in
+`agents/tasks/verified-stop/tasks-1.md` has `**Status:** done`. The
+auditme-adoption spec's "Out of scope" section and item 18 of
+`agents/specs/auditme-adoption/review-1.md` (both 2026-10-31) say this stale
+status "is fixed separately"; nothing recorded that work.
+
+Cause: no task in `agents/tasks/verified-stop/tasks-1.md` sets the spec's
+status, so nothing moved it on (suspected to predate the `taskdev` rule that a
+list's last task sets its spec to `implemented`; not checked).
+
+Fix direction: check that the code still matches the spec (`/specdev` drift
+detection on `src/ralphlib/verifier.py`), then set `**Status:** implemented`.
+
+Done: 2026-11-01 - drift check found the code matching the spec (API, `--no-verify-stop`, rejection line, `stop_rejected` state, `rrq.md` relay, README; `test_verifier.py` and `test_looper.py` pass); `agents/specs/verified-stop/spec.md` set to `**Status:** implemented`.
