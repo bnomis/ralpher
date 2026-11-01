@@ -2,9 +2,10 @@ import contextlib
 import json
 import pathlib
 import sys
-from typing import TYPE_CHECKING
+import typing
 
 import git
+import loguru
 import rich.console
 import rich.prompt
 import rich.text
@@ -12,8 +13,8 @@ import rich.text
 import ralphlib.printer
 import ralphlib.types
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
 console_stderr = rich.console.Console(stderr=True, highlight=False)
@@ -28,7 +29,7 @@ class YNConfirm(rich.prompt.Confirm):
         return prompt
 
 
-def lines_to_text(options: RalpherOptions, lines: list[str]) -> rich.text.Text:
+def lines_to_text(options: ralphlib.options.RalpherOptions, lines: list[str]) -> rich.text.Text:
     return rich.text.Text(
         '\n'.join(lines),
         style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ALERT),
@@ -46,7 +47,7 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     return last_commit_summary
 
 
-def check_git(options: RalpherOptions, path: pathlib.Path | str | None = None) -> None:
+def check_git(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
 
@@ -82,13 +83,13 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
+def check_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     from_head = options.worktree and claude_worktree_base_ref(repo) == 'head'
     if from_head:
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
     else:
         wts = 'Git worktrees will be created from the origin repo.'
-    if not is_clean_strict(repo):
+    if not is_working_tree_clean(repo, include_untracked=True):
         lines = ['Warning: the git working tree is not clean.']
         if options.worktree:
             lines.append(wts)
@@ -105,16 +106,6 @@ def check_repo_clean(options: RalpherOptions, repo: git.Repo) -> None:
         decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
             sys.exit('Aborting due to unpushed commits.')
-
-
-def is_clean_strict(repo: git.Repo) -> bool:
-    """Clean including untracked files (default git status behavior)"""
-    return is_working_tree_clean(repo, include_untracked=True)
-
-
-def is_clean_no_untracked(repo: git.Repo) -> bool:
-    """Clean ignoring untracked files (like git diff --quiet)"""
-    return is_working_tree_clean(repo, include_untracked=False)
 
 
 def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> bool:
@@ -139,8 +130,11 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
 
     try:
         origin.fetch()
-    except Exception as e:
-        console_stderr.print(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
+    except git.GitCommandError as e:
+        # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
+        message = f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}'
+        console_stderr.print(message)
+        loguru.logger.warning(message)
         return False
 
     upstream = get_upstream_branch(repo)
@@ -165,7 +159,7 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
     return tracking
 
 
-def check_divergence(options: RalpherOptions, repo: git.Repo) -> None:
+def check_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     if claude_worktree_base_ref(repo) != 'fresh':
         return
 

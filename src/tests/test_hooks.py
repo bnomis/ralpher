@@ -1,11 +1,11 @@
-from typing import Any
-from unittest.mock import MagicMock, patch
+import unittest.mock
 
 import pytest
 
 import ralphlib.hooks
 import ralphlib.options
 import ralphlib.types
+import tests.helpers
 
 
 @pytest.fixture(autouse=True)
@@ -14,29 +14,22 @@ def reset_hook_state() -> None:
     ralphlib.hooks.seen_task_ids.clear()
 
 
-def make_options(**kwargs: Any) -> ralphlib.options.RalpherOptions:
-    settings = kwargs.pop('settings', {})
-    options = ralphlib.options.RalpherOptions(**kwargs)
-    options.settings = settings
-    return options
-
-
 class TestEvent:
     def test_returns_early_when_no_hooks_configured(self) -> None:
-        options = make_options(settings={})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        options = tests.helpers.make_options_with_settings(settings={})
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_returns_early_when_event_type_not_in_hooks(self) -> None:
-        options = make_options(settings={'hooks': {'end': ['echo done']}})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'end': ['echo done']}})
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_not_called()
 
     def test_passes_context_to_run_hook_for_matching_event(self) -> None:
-        options = make_options(settings={'hooks': {'start': ['echo hello']}})
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo hello']}})
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_called_once()
             cmd, context = mock_run.call_args[0]
@@ -44,24 +37,24 @@ class TestEvent:
             assert context['event_type'] == 'start'
 
     def test_passes_no_context_when_hook_templates_false(self) -> None:
-        options = make_options(
+        options = tests.helpers.make_options_with_settings(
             settings={
                 'hooks': {'start': ['echo raw']},
                 'hook_templates': False,
             }
         )
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             mock_run.assert_called_once_with('echo raw', None)
 
     def test_calls_run_hook_for_each_command_in_list(self) -> None:
-        options = make_options(
+        options = tests.helpers.make_options_with_settings(
             settings={
                 'hooks': {'start': ['echo one', 'echo two', 'echo three']},
                 'hook_templates': False,
             }
         )
-        with patch.object(ralphlib.hooks, 'run_hook') as mock_run:
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook') as mock_run:
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             assert mock_run.call_count == 3
             mock_run.assert_any_call('echo one', None)
@@ -87,7 +80,7 @@ class TestPreprocessHook:
 
 class TestMakeContext:
     def test_includes_expected_fields(self) -> None:
-        options = make_options(iterations=5)
+        options = tests.helpers.make_options_with_settings(iterations=5)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['event_type'] == 'start'
         assert context['iterations'] == '5'
@@ -97,7 +90,7 @@ class TestMakeContext:
         assert isinstance(context['time_epoch'], str)
 
     def test_resolves_task_file_when_set(self) -> None:
-        options = make_options(iterations=1, task_file='tasks/my-task.md')
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task.md')
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'].endswith('/tasks/my-task.md')
         assert context['task_file_basename'] == 'my-task.md'
@@ -105,14 +98,19 @@ class TestMakeContext:
         assert context['task_file_stem'] == 'my-task'
         assert context['task_file_suffix'] == '.md'
 
+    def test_non_numeric_task_file_suffix_gives_empty_number(self) -> None:
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task-abc.md')
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == ''
+
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
-        options = make_options(iterations=1)
+        options = tests.helpers.make_options_with_settings(iterations=1)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'] == ''
         assert context['task_file_basename'] == ''
 
     def test_merges_event_context(self) -> None:
-        options = make_options(iterations=1)
+        options = tests.helpers.make_options_with_settings(iterations=1)
         context = ralphlib.hooks.make_context(
             options,
             ralphlib.types.RalpherEventType.ERROR,
@@ -173,28 +171,28 @@ class TestRenderHookArgs:
 
 
 class TestRunHook:
-    @patch('subprocess.Popen')
-    def test_calls_popen_with_correct_args(self, mock_popen: MagicMock) -> None:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_calls_popen_with_correct_args(self, mock_popen: unittest.mock.MagicMock) -> None:
         ralphlib.hooks.run_hook('echo hello world')
         mock_popen.assert_called_once()
         args, kwargs = mock_popen.call_args
         assert args[0] == ['echo', 'hello', 'world']
 
-    @patch('subprocess.Popen')
-    def test_renders_context_when_given(self, mock_popen: MagicMock) -> None:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_renders_context_when_given(self, mock_popen: unittest.mock.MagicMock) -> None:
         ralphlib.hooks.run_hook('echo {{ msg }}', {'msg': "it's here"})
         assert mock_popen.call_args[0][0] == ['echo', "it's here"]
 
-    @patch('subprocess.Popen')
-    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: MagicMock) -> None:
-        with patch('loguru.logger.exception') as mock_log:
+    @unittest.mock.patch('subprocess.Popen')
+    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.exception') as mock_log:
             ralphlib.hooks.run_hook("echo 'unclosed", {})
             mock_popen.assert_not_called()
             mock_log.assert_called_once()
 
-    @patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
-    def test_logs_exception_on_subprocess_failure(self, mock_popen: MagicMock) -> None:
-        with patch('loguru.logger.exception') as mock_log:
+    @unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
+    def test_logs_exception_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.exception') as mock_log:
             ralphlib.hooks.run_hook('nonexistent_cmd')
             mock_log.assert_called_once()
             log_msg = mock_log.call_args[0][0]

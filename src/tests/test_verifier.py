@@ -1,11 +1,13 @@
 import pathlib
 
 import git
-from hypothesis import given, settings, strategies as st
+import hypothesis
+import hypothesis.strategies
 
 import ralphlib.options
 import ralphlib.verifier
 
+# auditme: accept[non-alphabetical-literal] status progression; the order is the meaning
 STATUSES = ['todo', 'in-progress', 'done']
 TASK_FILE = 'agents/tasks/feat/tasks-1.md'
 SLUG = 'feat-tasks-1'
@@ -46,13 +48,13 @@ def test_no_headings() -> None:
     assert ralphlib.verifier.parse_tasks('') == []
 
 
-@settings(max_examples=20, deadline=10000)
-@given(
-    st.lists(
-        st.tuples(
-            st.integers(min_value=1, max_value=999),
-            st.from_regex(r'[A-Za-z][A-Za-z0-9 ]{0,20}', fullmatch=True),
-            st.sampled_from(STATUSES),
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    hypothesis.strategies.lists(
+        hypothesis.strategies.tuples(
+            hypothesis.strategies.integers(min_value=1, max_value=999),
+            hypothesis.strategies.from_regex(r'[A-Za-z][A-Za-z0-9 ]{0,20}', fullmatch=True),
+            hypothesis.strategies.sampled_from(STATUSES),
         ),
         max_size=10,
     )

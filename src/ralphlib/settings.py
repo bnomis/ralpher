@@ -1,26 +1,33 @@
 import json
 import pathlib
-from typing import TYPE_CHECKING
+import typing
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
-
-default_settings = {
-    'theme': {
-        'alert': 'bold red',
-        'content_delta': 'cyan',
-        'default': 'grey30',
-        'error': 'red',
-        'progress': 'yellow',
-        'regular': 'grey30',
-        'system': 'yellow',
-        'tool_use': 'magenta',
-    },
-}
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
-def load_settings(options: RalpherOptions) -> RalpherOptions:
-    options.settings = default_settings.copy()
+def default_settings() -> dict[str, typing.Any]:
+    """Return a fresh copy of the built-in settings, nested dicts included.
+
+    Replaces the module-level dict `default_settings`, whose shallow `.copy()`
+    shared the nested `theme` dict between every caller.
+    """
+    return {
+        'theme': {
+            'alert': 'bold red',
+            'content_delta': 'cyan',
+            'default': 'grey30',
+            'error': 'red',
+            'progress': 'yellow',
+            'regular': 'grey30',
+            'system': 'yellow',
+            'tool_use': 'magenta',
+        },
+    }
+
+
+def load_settings(options: ralphlib.options.RalpherOptions) -> ralphlib.options.RalpherOptions:
+    options.settings = default_settings()
     # home
     options = load_settings_from_file(options, '~/.ralpher/settings.json')
     # cwd
@@ -33,7 +40,7 @@ def load_settings(options: RalpherOptions) -> RalpherOptions:
     return options
 
 
-def load_settings_from_file(options: RalpherOptions, paths: str | pathlib.Path) -> RalpherOptions:
+def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str | pathlib.Path) -> ralphlib.options.RalpherOptions:
     path = pathlib.Path(paths).expanduser().resolve()
     if path.is_file():
         with path.open('r', encoding='utf-8') as f:

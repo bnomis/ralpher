@@ -4,10 +4,12 @@ install-claude: symlinks files in to ~/.claude/
 """
 
 import argparse
+
+# auditme: accept[stdlib-logging] runs under the system Python before the project environment, and loguru, exist
 import logging
 import pathlib
 import sys
-from typing import NoReturn
+import typing
 
 
 def symlink_file(options, src: pathlib.Path, dst: pathlib.Path) -> None:
@@ -104,7 +106,7 @@ def parse_args(argv) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv) -> NoReturn:
+def main(argv) -> typing.NoReturn:
     options = parse_args(argv)
     logging.basicConfig(level=logging.DEBUG)
     options.logger = logging.getLogger('install-claude')
@@ -112,6 +114,7 @@ def main(argv) -> NoReturn:
     try:
         install_claude(options)
     except Exception as e:
+        # auditme: accept[except-interpolation] the message is the exit message, which shows no traceback
         m = f'Exception: {e}'
         options.logger.exception(m)
     sys.exit(m)

@@ -3,7 +3,7 @@ import functools
 import os
 import pathlib
 import sys
-from typing import TYPE_CHECKING
+import typing
 
 import loguru
 
@@ -19,12 +19,12 @@ import ralphlib.templater
 import ralphlib.types
 import ralphlib.verifier
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 
-def loop(options: RalpherOptions) -> bool:
-    _terminator = ralphlib.signals.GracefulTerminator(options)
+def loop(options: ralphlib.options.RalpherOptions) -> bool:
+    ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
         cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
@@ -131,8 +131,8 @@ def loop(options: RalpherOptions) -> bool:
         # run the iteration
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
-        except Exception as e:
-            loguru.logger.exception(f'Exception during iteration {i}: {e}')
+        except Exception:
+            loguru.logger.exception(f'Exception during iteration {i}')
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)
@@ -278,7 +278,7 @@ def loop(options: RalpherOptions) -> bool:
     return bool(error) or termination
 
 
-def reject_unverified_stop(options: RalpherOptions, iteration: int, iterations_key: str) -> bool:
+def reject_unverified_stop(options: ralphlib.options.RalpherOptions, iteration: int, iterations_key: str) -> bool:
     """Check a stop signal against the tasks file; return whether the loop should still stop."""
     check = ralphlib.verifier.check_stop(options)
     if not check.verified:
@@ -296,7 +296,7 @@ def reject_unverified_stop(options: RalpherOptions, iteration: int, iterations_k
     return False
 
 
-def print_stopping_prompt(options: RalpherOptions) -> None:
+def print_stopping_prompt(options: ralphlib.options.RalpherOptions) -> None:
     stopping_prompt = ralphlib.signals.get_should_exit_prompt()
     if stopping_prompt:
         lines = ['Probable next prompt...']
@@ -304,7 +304,7 @@ def print_stopping_prompt(options: RalpherOptions) -> None:
         ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
 
-def print_cleanup_cmds(options: RalpherOptions) -> None:
+def print_cleanup_cmds(options: ralphlib.options.RalpherOptions) -> None:
     cmds = cleanup_cmds(options)
     if cmds:
         lines = ['Probable cleanup commands...']
@@ -312,7 +312,7 @@ def print_cleanup_cmds(options: RalpherOptions) -> None:
         ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
 
-def cleanup_cmds(options: RalpherOptions) -> list[str]:
+def cleanup_cmds(options: ralphlib.options.RalpherOptions) -> list[str]:
     cmds = []
     if options.worktree and options.task_file:
         worktree = ralphlib.templater.task_file_slug(options.task_file)
@@ -326,7 +326,7 @@ def cleanup_cmds(options: RalpherOptions) -> list[str]:
 
 
 def print_both(
-    options: RalpherOptions,
+    options: ralphlib.options.RalpherOptions,
     s: str,
     iteration: int,
     message_type: ralphlib.types.MessageType = ralphlib.types.MessageType.REGULAR,

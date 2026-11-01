@@ -4,34 +4,35 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, Any
+import typing
 
+import jinja2.sandbox
 import loguru
 import tzlocal
-from jinja2.sandbox import SandboxedEnvironment
 
 import ralphlib.giter
 import ralphlib.signals
 import ralphlib.types
 import ralphlib.verifier
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+if typing.TYPE_CHECKING:
+    import collections.abc
 
-    from ralphlib.options import RalpherOptions
-    from ralphlib.types import RalpherEventType
+    import ralphlib.options
 
 HOOK_VALUE_SENTINEL = '\x00'
 HOOK_VALUE_RE = re.compile(f'{HOOK_VALUE_SENTINEL}(\\d+){HOOK_VALUE_SENTINEL}')
 
+# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 processed_hooks: set[str] = set()
+# auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
 seen_task_ids = {}
 
 
 def event(
-    options: RalpherOptions,
-    event_type: RalpherEventType,
-    event_context: dict[str, Any],
+    options: ralphlib.options.RalpherOptions,
+    event_type: ralphlib.types.RalpherEventType,
+    event_context: dict[str, typing.Any],
 ) -> None:
     task_id = event_context.get('task_id')
     task_status = event_context.get('task_status')
@@ -95,10 +96,10 @@ def ralpher_root() -> pathlib.Path:
 
 
 def make_context(
-    options: RalpherOptions,
-    event_type: RalpherEventType,
-    event_context: dict[str, Any],
-) -> dict[str, Any]:
+    options: ralphlib.options.RalpherOptions,
+    event_type: ralphlib.types.RalpherEventType,
+    event_context: dict[str, typing.Any],
+) -> dict[str, typing.Any]:
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     local_tz = tzlocal.get_localzone()
     now_local = datetime.datetime.now(local_tz)
@@ -123,7 +124,7 @@ def make_context(
                 if len(name_parts) > 1:
                     try:
                         task_file_number = int(name_parts[-1])
-                    except:
+                    except ValueError:
                         task_file_number = 0
                     if task_file_number:
                         task_file_number_str = str(task_file_number)
@@ -176,8 +177,8 @@ def make_context(
     return context
 
 
-def hook_environment(finalize: Callable[[Any], str] | None = None) -> SandboxedEnvironment:
-    env = SandboxedEnvironment(finalize=finalize)
+def hook_environment(finalize: collections.abc.Callable[[typing.Any], str] | None = None) -> jinja2.sandbox.SandboxedEnvironment:
+    env = jinja2.sandbox.SandboxedEnvironment(finalize=finalize)
 
     env.filters['basename'] = lambda p: pathlib.PurePosixPath(p).name
     env.filters['dirname'] = lambda p: str(pathlib.PurePosixPath(p).parent)
@@ -187,12 +188,12 @@ def hook_environment(finalize: Callable[[Any], str] | None = None) -> SandboxedE
     return env
 
 
-def preprocess_hook(cmd: str, context: dict[str, Any]) -> str:
+def preprocess_hook(cmd: str, context: dict[str, typing.Any]) -> str:
     """Render a template to a plain string. For values used as paths, not as commands."""
     return hook_environment().from_string(cmd).render(**context)
 
 
-def render_hook_args(cmd: str, context: dict[str, Any]) -> list[str]:
+def render_hook_args(cmd: str, context: dict[str, typing.Any]) -> list[str]:
     """Render a hook command template into an argument list.
 
     Context values render as sentinels and are spliced back in after the
@@ -201,7 +202,7 @@ def render_hook_args(cmd: str, context: dict[str, Any]) -> list[str]:
     """
     values: list[str] = []
 
-    def stash(value: Any) -> str:
+    def stash(value: typing.Any) -> str:
         values.append(str(value).replace(HOOK_VALUE_SENTINEL, ''))
         return f'{HOOK_VALUE_SENTINEL}{len(values) - 1}{HOOK_VALUE_SENTINEL}'
 
@@ -209,7 +210,7 @@ def render_hook_args(cmd: str, context: dict[str, Any]) -> list[str]:
     return [HOOK_VALUE_RE.sub(lambda m: values[int(m.group(1))], arg) for arg in shlex.split(rendered)]
 
 
-def run_hook(cmd: str, context: dict[str, Any] | None = None) -> None:
+def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
     try:
         args = shlex.split(cmd) if context is None else render_hook_args(cmd, context)
         subprocess.Popen(  # noqa: S603
@@ -218,5 +219,5 @@ def run_hook(cmd: str, context: dict[str, Any] | None = None) -> None:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except Exception as e:
-        loguru.logger.exception(f'Exception running hook: "{cmd}": {e}')
+    except Exception:
+        loguru.logger.exception(f'Exception running hook: "{cmd}"')

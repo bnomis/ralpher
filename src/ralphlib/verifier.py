@@ -1,15 +1,15 @@
 import dataclasses
 import pathlib
 import re
-from typing import TYPE_CHECKING
+import typing
 
 import git
 
 import ralphlib.giter
 import ralphlib.templater
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 HEADING = re.compile(r'^## Task (\d+):\s*(.*)$')
 STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
@@ -80,7 +80,7 @@ def parse_worktrees(porcelain: str) -> list[tuple[pathlib.Path, str]]:
     return worktrees
 
 
-def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
+def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path | None:
     """Return the path of the tasks file inside the agent's worktree.
 
     The worktree is the entry whose branch is `refs/heads/worktree-<slug>`.
@@ -102,7 +102,7 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
     return None
 
 
-def agent_task_file(options: RalpherOptions) -> pathlib.Path:
+def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
     """Return the tasks file the agent edits: the worktree copy when `options.worktree` is set, otherwise `options.task_file`.
 
     Raises `LookupError` when the worktree does not exist, `git.GitCommandError`
@@ -116,19 +116,21 @@ def agent_task_file(options: RalpherOptions) -> pathlib.Path:
     return path
 
 
-def read_tasks(options: RalpherOptions) -> list[TaskStatus]:
+def read_tasks(options: ralphlib.options.RalpherOptions) -> list[TaskStatus]:
     """Parse the tasks file the agent edits. Raises the errors in `READ_ERRORS`."""
     return parse_tasks(agent_task_file(options).read_text())
 
 
-def check_stop(options: RalpherOptions) -> StopCheck:
+def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     """Check a stop signal against the tasks file the agent edits."""
     try:
         path = agent_task_file(options)
         tasks = parse_tasks(path.read_text())
+    # auditme: accept[filesystem-envelope-gap] the next handler catches READ_ERRORS, which holds OSError
     except LookupError as e:
         return unverified(str(e))
     except READ_ERRORS as e:
+        # auditme: accept[except-interpolation] the text is the stop-check reason, which shows no traceback
         return unverified(f'cannot read {options.task_file}: {e!r}')
 
     if not tasks:

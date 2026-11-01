@@ -3,13 +3,13 @@ import signal
 import sys
 import threading
 import types
-from typing import TYPE_CHECKING
+import typing
 
 import ralphlib.printer
 import ralphlib.types
 
-if TYPE_CHECKING:
-    from ralphlib.options import RalpherOptions
+if typing.TYPE_CHECKING:
+    import ralphlib.options
 
 should_exit: bool = False
 should_exit_lock: threading.Lock = threading.Lock()
@@ -48,7 +48,7 @@ class GracefulTerminator:
     SECOND_MESSAGE = '→ Exiting now!'
     EXIT_CODE = 130
 
-    def __init__(self, options: RalpherOptions) -> None:
+    def __init__(self, options: ralphlib.options.RalpherOptions) -> None:
         self.options = options
         self.first_press = None
         self.is_shutting_down = False

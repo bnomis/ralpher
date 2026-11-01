@@ -1,7 +1,9 @@
 import json
 import pathlib
+import unittest.mock
 
 import git
+import loguru
 import pytest
 import rich.text
 
@@ -10,11 +12,9 @@ import ralphlib.options
 import ralphlib.printer
 import ralphlib.settings
 import ralphlib.types
+import tests.helpers
 
-
-def make_options(**kwargs) -> ralphlib.options.RalpherOptions:
-    options = ralphlib.options.RalpherOptions(**kwargs)
-    return ralphlib.settings.load_settings(options)
+README_FILES = ('README.md',)
 
 
 class TestDiscoverRepoPath:
@@ -43,7 +43,7 @@ class TestIsWorkingTreeClean:
         # Create an initial commit so the repo has a HEAD
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         assert ralphlib.giter.is_working_tree_clean(repo) is True
 
@@ -51,7 +51,7 @@ class TestIsWorkingTreeClean:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         readme.write_text('modified')
         assert ralphlib.giter.is_working_tree_clean(repo) is False
@@ -60,7 +60,7 @@ class TestIsWorkingTreeClean:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         (tmp_path / 'untracked.txt').write_text('new file')
         assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=False) is True
@@ -69,7 +69,7 @@ class TestIsWorkingTreeClean:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         (tmp_path / 'untracked.txt').write_text('new file')
         assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=True) is False
@@ -80,13 +80,13 @@ class TestIsCleanStrict:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         # Clean repo should be clean strict
-        assert ralphlib.giter.is_clean_strict(repo) is True
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=True) is True
         # Untracked file makes it dirty
         (tmp_path / 'untracked.txt').write_text('new')
-        assert ralphlib.giter.is_clean_strict(repo) is False
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=True) is False
 
 
 class TestIsCleanNoUntracked:
@@ -94,14 +94,14 @@ class TestIsCleanNoUntracked:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         # Untracked file should NOT make it dirty
         (tmp_path / 'untracked.txt').write_text('new')
-        assert ralphlib.giter.is_clean_no_untracked(repo) is True
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=False) is True
         # Modified tracked file should make it dirty
         readme.write_text('modified')
-        assert ralphlib.giter.is_clean_no_untracked(repo) is False
+        assert ralphlib.giter.is_working_tree_clean(repo, include_untracked=False) is False
 
 
 class TestGetUpstreamBranch:
@@ -109,7 +109,7 @@ class TestGetUpstreamBranch:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         commit = repo.index.commit('initial')
         repo.head.reference = commit  # type: ignore[assignment]
         assert ralphlib.giter.get_upstream_branch(repo) is None
@@ -118,7 +118,7 @@ class TestGetUpstreamBranch:
         repo = git.Repo.init(str(tmp_path))
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
-        repo.index.add(['README.md'])
+        repo.index.add(list(README_FILES))
         repo.index.commit('initial')
         # No remote set up, so no tracking branch
         assert ralphlib.giter.get_upstream_branch(repo) is None
@@ -126,7 +126,7 @@ class TestGetUpstreamBranch:
 
 class TestLinesToText:
     def test_returns_rich_text_with_joined_lines(self) -> None:
-        options = make_options()
+        options = tests.helpers.make_options()
         lines = ['line one', 'line two', 'line three']
         result = ralphlib.giter.lines_to_text(options, lines)
         assert isinstance(result, rich.text.Text)
@@ -196,7 +196,7 @@ class TestCheckDivergence:
     def test_skipped_when_base_ref_is_head(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
         monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: pytest.fail('origin checked'))
-        ralphlib.giter.check_divergence(make_options(), git.Repo.init(str(tmp_path)))
+        ralphlib.giter.check_divergence(tests.helpers.make_options(), git.Repo.init(str(tmp_path)))
 
     def test_checks_origin_when_base_ref_is_fresh(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'fresh')
@@ -204,7 +204,7 @@ class TestCheckDivergence:
         monkeypatch.setattr(ralphlib.giter, 'get_current_branch', lambda repo: 'feature')
         monkeypatch.setattr(ralphlib.giter.YNConfirm, 'ask', lambda *args, **kwargs: True)
         with pytest.raises(SystemExit):
-            ralphlib.giter.check_divergence(make_options(), git.Repo.init(str(tmp_path)))
+            ralphlib.giter.check_divergence(tests.helpers.make_options(), git.Repo.init(str(tmp_path)))
 
 
 class TestCheckRepoClean:
@@ -223,7 +223,7 @@ class TestCheckRepoClean:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
         monkeypatch.setattr(ralphlib.giter, 'has_unpushed_commits', lambda repo: pytest.fail('unpushed checked'))
         prompts = self.capture_prompts(monkeypatch)
-        ralphlib.giter.check_repo_clean(make_options(worktree=True), dirty_repo)
+        ralphlib.giter.check_repo_clean(tests.helpers.make_options(worktree=True), dirty_repo)
         assert len(prompts) == 1
         assert 'local HEAD' in prompts[0]
 
@@ -231,7 +231,7 @@ class TestCheckRepoClean:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'fresh')
         monkeypatch.setattr(ralphlib.giter, 'has_unpushed_commits', lambda repo: True)
         prompts = self.capture_prompts(monkeypatch)
-        ralphlib.giter.check_repo_clean(make_options(worktree=True), dirty_repo)
+        ralphlib.giter.check_repo_clean(tests.helpers.make_options(worktree=True), dirty_repo)
         assert len(prompts) == 2
         assert all('origin repo' in prompt for prompt in prompts)
 
@@ -239,6 +239,28 @@ class TestCheckRepoClean:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
         monkeypatch.setattr(ralphlib.giter, 'has_unpushed_commits', lambda repo: True)
         prompts = self.capture_prompts(monkeypatch)
-        ralphlib.giter.check_repo_clean(make_options(worktree=False), dirty_repo)
+        ralphlib.giter.check_repo_clean(tests.helpers.make_options(worktree=False), dirty_repo)
         assert len(prompts) == 2
         assert not any('worktree' in prompt for prompt in prompts)
+
+
+class TestHasUnpushedCommitsFetch:
+    def make_repo(self, error: Exception) -> unittest.mock.MagicMock:
+        repo = unittest.mock.MagicMock()
+        repo.remotes.origin.fetch.side_effect = error
+        return repo
+
+    def test_fetch_git_error_warns_and_returns_false(self) -> None:
+        repo = self.make_repo(git.GitCommandError('fetch', 1))
+        messages: list[str] = []
+        sink_id = loguru.logger.add(messages.append, level='WARNING')
+        try:
+            assert ralphlib.giter.has_unpushed_commits(repo) is False
+        finally:
+            loguru.logger.remove(sink_id)
+        assert any('Fetch failed' in message for message in messages)
+
+    def test_fetch_other_error_propagates(self) -> None:
+        repo = self.make_repo(RuntimeError('boom'))
+        with pytest.raises(RuntimeError):
+            ralphlib.giter.has_unpushed_commits(repo)
