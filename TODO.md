@@ -33,6 +33,9 @@ should resolve a module-level exception tuple" under "Open" in that
 repository's `claude/skills/auditme/requests.md` (agents `c170c8c`, not yet
 pushed). Waiting on that change; then the step above.
 
+Note 2026-11-01: as of 06:56 UTC, agents `c170c8c` is on that repository's
+`origin/main`, so the request is visible to other sessions.
+
 ## The locked ruff is older than the pre-commit ruff hook
 
 Found on 2026-11-01 while getting CI to pass (`agents/tasks/auditme-adoption/tasks-1.md`
