@@ -110,3 +110,37 @@ Fix direction: check that the code still matches the spec (`/specdev` drift
 detection on `src/ralphlib/verifier.py`), then set `**Status:** implemented`.
 
 Done: 2026-11-01 - drift check found the code matching the spec (API, `--no-verify-stop`, rejection line, `stop_rejected` state, `rrq.md` relay, README; `test_verifier.py` and `test_looper.py` pass); `agents/specs/verified-stop/spec.md` set to `**Status:** implemented`.
+
+## The auditme checker misses an `OSError` held in a named exception tuple
+
+Found on 2026-11-01 in a TODO review. On 2026-10-31 the checker's
+`filesystem-envelope-gap` rule flagged `src/ralphlib/verifier.py:129`,
+although the next handler catches `READ_ERRORS`
+(`src/ralphlib/verifier.py:17`), a tuple that holds `OSError`. The checker
+reads the handler's name, not the tuple's value. The hit is accepted with
+`# auditme: accept[filesystem-envelope-gap]` on line 129. The auditme-adoption
+spec's "Out of scope" section says the miss "is raised separately, in the
+shared repository's auditme `requests.md`", but on 2026-11-01 that file's
+"Open" section says "None".
+
+Cause: the rule resolves `except` clauses by name and does not follow a
+module-level tuple constant to its members (suspected from the hit; the
+checker code is not read here).
+
+Fix direction: file an entry in the agents repository's
+`claude/skills/auditme/requests.md`, where the change is made. Once the
+checker resolves module-level exception tuples, remove the accept marker at
+`src/ralphlib/verifier.py:129` and check that the rule reports no hit there.
+
+Note 2026-11-01: cause confirmed. `check_filesystem_envelope_gap` in the
+agents repository's `claude/skills/auditme/checks/auditme/rules/error_handling.py`
+unparses each handler's type and searches the text for `OSError` and its kin,
+so `except READ_ERRORS` shows only the name. Filed as "filesystem-envelope-gap
+should resolve a module-level exception tuple" under "Open" in that
+repository's `claude/skills/auditme/requests.md` (agents `c170c8c`, not yet
+pushed). Waiting on that change; then the step above.
+
+Note 2026-11-01: as of 06:56 UTC, agents `c170c8c` is on that repository's
+`origin/main`, so the request is visible to other sessions.
+
+Done: 2026-11-01 - agents `76ab65a` ("feat(auditme): resolve exception tuples in handlers") shipped the request; ralpher pins agents at `e7901e6`, and the accept marker in `src/ralphlib/verifier.py` is removed with the whole-tree audit still passing.

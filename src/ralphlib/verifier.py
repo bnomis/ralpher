@@ -126,7 +126,6 @@ def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     try:
         path = agent_task_file(options)
         tasks = parse_tasks(path.read_text())
-    # auditme: accept[filesystem-envelope-gap] the next handler catches READ_ERRORS, which holds OSError
     except LookupError as e:
         return unverified(str(e))
     except READ_ERRORS as e:

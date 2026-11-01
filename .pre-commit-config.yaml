@@ -1,7 +1,7 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.17.3
+    rev: v0.17.1
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -17,8 +17,11 @@ repos:
   # The shared audit hooks, pinned to one commit of the checker.
   # Upgrade with: pre-commit autoupdate --repo git@github.com:bnomis/agents.git
   - repo: git@github.com:bnomis/agents.git
-    rev: a98cb19de5abd1651d08c5ba2b7ce8edda91428b
+    rev: e7901e6f41ad1860b56f951d70866cd5d313d046
     hooks:
       - id: auditme-changed
       - id: auditme-all
         stages: [manual, pre-push]
+      # ralpher serves every project, so nothing here names one (AGENTS.md).
+      - id: no-project-names
+        args: ["--allow=ralpher", "--allow=ralphlib"]
