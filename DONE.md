@@ -191,3 +191,19 @@ the options and the settings, use it in both checks, build the
 line from `docs/limits.md`.
 
 Done: 2026-11-01 - `worktree_base_ref` in `src/ralphlib/giter.py` gives both pre-run checks the base ref the agent gets, through `RalpherOptions.passed_worktree_base_ref`, which `add_settings` now also uses and which builds its JSON with `orjson`; `TestWorktreeBaseRef`, `TestCheckDivergence` and `TestCheckRepoClean` in `src/tests/test_giter.py` and the `add_settings` tests in `src/tests/test_iteration.py` cover it; `docs/guide/worktrees.md` and `docs/limits.md` updated.
+
+## CI's actions are pinned by tag, not commit
+
+Found 2026-11-01 at `631f6b1`: `.github/workflows/ci.yml:16`, `:22` and
+`:25` use `actions/checkout`, `actions/setup-python` and
+`astral-sh/setup-uv` by tag. `.github/workflows/docs.yml` pins the same
+kind of actions to full commit SHAs, after that day's security review
+flagged tags there: a moved tag runs new code in the job without a change
+here.
+
+Cause: `ci.yml` predates the pinning in `docs.yml`.
+
+Fix direction: pin each action in `ci.yml` to its commit SHA with the tag
+in a trailing comment, as `docs.yml` does.
+
+Done: 2026-11-01 - closed by the operator's decision: workflows pin actions to exact release tags, not commit SHAs. `docs.yml` went back to tags, and the `ci.yml` comment that asked for SHAs now asks for release tags.

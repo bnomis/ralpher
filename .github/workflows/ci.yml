@@ -13,16 +13,16 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       # Fetch the project so the hooks have files to check.
-      - uses: actions/checkout@v7.0.1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
-      # Python and uv run the project's tools and tests. Pin third-party
-      # actions to a full commit SHA, and let Dependabot update them.
+      # Python and uv run the project's tools and tests. Pin each
+      # third-party action to an exact release tag; Dependabot updates them.
       - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.14"
-      - uses: astral-sh/setup-uv@v10.3.3 # v10.3.3
+      - uses: astral-sh/setup-uv@v10.3.3
 
       # The hooks need pre-commit; install it as a uv tool, as on a
       # developer machine.
