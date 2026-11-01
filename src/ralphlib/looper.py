@@ -320,8 +320,11 @@ def cleanup_cmds(options: ralphlib.options.RalpherOptions) -> list[str]:
         cmds = [f'git merge --no-ff --no-edit {branch}']
         cmds.append(f'(git worktree unlock {worktree} 2>/dev/null || true)')
         cmds.append(f'git worktree remove --force {worktree}')
-        cmds.append(f'git branch -d {branch}')
+        # -D, not -d: a branch pushed for CI whose upstream is behind it is refused
+        # by -d even when merged, and the chain would stop before the push.
+        cmds.append(f'git branch -D {branch}')
         cmds.append('git push')
+        cmds.append(f'(git push origin --delete {branch} 2>/dev/null || true)')
     return cmds
 
 

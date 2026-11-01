@@ -179,3 +179,36 @@ def test_loop_stops_and_warns_when_tasks_file_unreadable(tmp_path: pathlib.Path,
         loguru.logger.remove(sink)
     assert result.calls == [1]
     assert any('Cannot verify stop signal' in m for m in messages)
+
+
+TASK_FILE = 'agents/tasks/auditme-adoption/tasks-1.md'
+BRANCH = 'worktree-auditme-adoption-tasks-1'
+
+
+class TestCleanupCmds:
+    def test_no_commands_without_worktree(self) -> None:
+        options = ralphlib.options.RalpherOptions(task_file=TASK_FILE, worktree=False)
+        assert ralphlib.looper.cleanup_cmds(options) == []
+
+    def test_no_commands_without_task_file(self) -> None:
+        options = ralphlib.options.RalpherOptions(worktree=True)
+        assert ralphlib.looper.cleanup_cmds(options) == []
+
+    def test_force_deletes_the_merged_branch(self) -> None:
+        # A branch pushed with an upstream that is behind it fails `git branch -d`
+        # even though it is merged to HEAD, and stops the chain before `git push`.
+        options = ralphlib.options.RalpherOptions(task_file=TASK_FILE, worktree=True)
+        cmds = ralphlib.looper.cleanup_cmds(options)
+        assert f'git branch -D {BRANCH}' in cmds
+        assert f'git branch -d {BRANCH}' not in cmds
+
+    def test_commands_in_order(self) -> None:
+        options = ralphlib.options.RalpherOptions(task_file=TASK_FILE, worktree=True)
+        assert ralphlib.looper.cleanup_cmds(options) == [
+            f'git merge --no-ff --no-edit {BRANCH}',
+            '(git worktree unlock auditme-adoption-tasks-1 2>/dev/null || true)',
+            'git worktree remove --force auditme-adoption-tasks-1',
+            f'git branch -D {BRANCH}',
+            'git push',
+            f'(git push origin --delete {BRANCH} 2>/dev/null || true)',
+        ]
