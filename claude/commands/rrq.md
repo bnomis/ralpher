@@ -3,9 +3,16 @@ and report in full only when it has finished.
 
 Before any /rrq, check pwd; if it is a worktree, prefix the command with cd to the main checkout.
 
-Run this command with `run_in_background` set to true:
+Invoke as `/rrq [--decide] <spec> <index>`. `--decide` is this command's
+own option, not the script's: take it out of the arguments, and run the
+script with the rest. Without it, a stop for the operator ends the run and
+waits for the user, as below; with it, you decide the stop yourself (see
+Deciding operator stops, at the end).
 
-    $RALPHER_PATH/bin/rrq.sh $ARGUMENTS
+Run this command with `run_in_background` set to true, where `<spec>` and
+`<index>` are the arguments left once `--decide` is taken out:
+
+    $RALPHER_PATH/bin/rrq.sh <spec> <index>
 
 Note the output file path the background task reports, then start a
 `Monitor` on it with `timeout_ms` set to 1800000, the description
@@ -53,8 +60,46 @@ When the background command completes, stop the monitor with `TaskStop`
 if it is still running, then show the last 100 lines of the output file
 and nothing else. If it exited non-zero, say so alongside those lines
 rather than investigating - the tail is what was asked for, and the next
-instruction is the user's to give.
+instruction is the user's to give. With `--decide`, an operator stop is the
+exception: see below.
 
 Show means paste: read the lines with a tool, then copy them verbatim into
 your reply inside a code block. The user does not see tool output, so a
 reply that only points at it ("the lines are above") shows them nothing.
+
+## Deciding operator stops (`--decide`)
+
+Only when the user passed `--decide`, and only when the tail's stopping
+reason is a task stopped for the operator ("Operator input required for task
+<N>"); any other exit is reported as above. Paste the tail first, then:
+
+1. Read the stop: the task's subtasks, the stop condition it met, and the
+   evidence the queue's agent recorded in the queue's worktree. Check that
+   evidence against the code or the committed files, not only the agent's
+   summary.
+2. Decide. Take the option the spec, review or task list recommends where
+   it names one; otherwise make the call yourself and give the reason. A
+   decision covers only the case the stop named.
+3. Record it in the worktree where the stop's own record lives (the spec
+   section, the review document's Answers section, the task's Notes), dated
+   and marked "decided by Claude, not yet reviewed". Tick the subtasks it
+   completes and set the task's status.
+4. Commit it in the worktree with the trailer
+   `Queue-decision: <task list path> Task <N>`, so the user can find every
+   such decision later with `git log --grep '^Queue-decision:'`.
+5. Tell the user in two or three lines what you decided and why, naming the
+   task in plain words, then run this command again with the same arguments,
+   `--decide` included.
+
+Do not decide, and wait for the user instead, when the stop:
+
+- asks for work only the user can do (labelling data, a step the task says
+  the operator does by hand);
+- would spend money, change a licence or commercial-use position, delete
+  data, or edit `.envrc` or another file holding secrets;
+- has evidence that contradicts every option offered, so any choice would
+  stretch a decision past the cases it named.
+
+The project's own rules may add to these exceptions, and say when and where
+the user reviews the decisions; follow them.
+
