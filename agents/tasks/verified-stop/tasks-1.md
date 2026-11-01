@@ -86,7 +86,7 @@ file that imports a changed module directly. Every test file imports
 
 - Depends on Task 1
 - Key files: `src/ralphlib/verifier.py`, `src/ralphlib/giter.py` (`discover_repo_path`), `src/ralphlib/templater.py` (`task_file_slug`)
-- Confirmed on 2026-10-08 from litrev logs: Claude Code places the worktree at `<repo>/.claude/worktrees/<slug>` on branch `worktree-<slug>`. Match on the branch, not the path
+- Confirmed on 2026-10-08 from another project's logs: Claude Code places the worktree at `<repo>/.claude/worktrees/<slug>` on branch `worktree-<slug>`. Match on the branch, not the path
 - `iteration.py` has its own copy of `task_file_slug`; use the `templater` one, as `looper.cleanup_cmds` does
 
 ---

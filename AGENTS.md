@@ -104,6 +104,17 @@ Do not use interactive flags such as `-i` or commands that require user input (e
 
 Always follow good security practices. Think about the security implications of every decision. All secret information such as API keys should be encrypted if stored or read from environment variable at run time.
 
+## No external project names
+
+ralpher is a generic tool that runs queues for any project, so nothing in
+this repository names another project: not code, tests, fixtures, specs, task
+lists, reviews, `TODO.md`, `DONE.md`, docs or commit messages. Write "another
+project" or "one project", and use neutral names in fixtures (`probe`, `pkg`,
+`/src/probe`). A measurement taken from another project's run keeps its date
+and figures but not the project's name. The shared tooling repository the
+hooks and CI install from (`git@github.com:bnomis/agents.git`) is a
+dependency, not a project, and may be named where configuration needs it.
+
 ## Do not modify
 
 The following files should not be modified without explicit instruction:

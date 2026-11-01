@@ -5,7 +5,7 @@ import jinja2.sandbox
 
 def test_quote_the_value() -> None:
     var = "Give each project's config.py a module name mypy can distinguish"
-    s = f'/opt/homebrew/bin/alerter --title {shlex.quote("litrev audit-reviews 57/7")} --message {shlex.quote(var)}'
+    s = f'/opt/homebrew/bin/alerter --title {shlex.quote("probe audit-reviews 57/7")} --message {shlex.quote(var)}'
     print(s)
     args = shlex.split(s)
     print(args)
@@ -22,7 +22,7 @@ def test_jinja_finalize_quotes_every_substitution() -> None:
     env = jinja2.sandbox.SandboxedEnvironment(finalize=lambda v: shlex.quote(str(v)))
     template = env.from_string('/opt/homebrew/bin/alerter --title {{ title }} --message {{ message }}')
     cmd = template.render(
-        title='litrev audit-reviews 57/7',
+        title='probe audit-reviews 57/7',
         message="Give each project's config.py a module name mypy can distinguish",
     )
     args = shlex.split(cmd)

@@ -129,8 +129,8 @@ class TestRenderHookArgs:
     def render(self, **context: str) -> list[str]:
         base = {
             'ralpher_root': '/src/ralpher',
-            'cwd': '/src/litrev',
-            'task_file': '/src/litrev/agents/tasks/audit-reviews/tasks-1.md',
+            'cwd': '/src/probe',
+            'task_file': '/src/probe/agents/tasks/audit-reviews/tasks-1.md',
             'task_title': 'plain title',
         }
         return ralphlib.hooks.render_hook_args(self.ALERTER, base | context)
@@ -150,7 +150,7 @@ class TestRenderHookArgs:
             '--app-icon',
             '/src/ralpher/img/ralpher.jpg',
             '--title',
-            'litrev audit-reviews done',
+            'probe audit-reviews done',
             '--message',
             'two words',
         ]

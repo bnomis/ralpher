@@ -10,7 +10,7 @@ writes text one token at a time, so it sometimes writes the marker before it
 has checked that every task is done, then corrects itself on the next line.
 By then `is_stop` has matched and the loop ends early.
 
-Measured on 2026-10-07: in the litrev `report/tasks-9` run, iteration 3
+Measured on 2026-10-07: in another project's `report/tasks-9` run, iteration 3
 ended its summary with the marker followed by "Correction: eight tasks are
 still `todo`, so the line above must not stand." `progress-00.log` records
 "Loop complete signal received, stopping after 3 iterations", and the queue
