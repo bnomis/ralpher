@@ -175,12 +175,10 @@ def run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -
 
 
 def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
-    if '--settings' in cmd:
-        return cmd
-
-    if options.worktree_base_ref:
+    base_ref = options.passed_worktree_base_ref()
+    if base_ref:
         cmd.append('--settings')
-        cmd.append('{"worktree": {"baseRef": "%s"}}' % options.worktree_base_ref)
+        cmd.append(orjson.dumps({'worktree': {'baseRef': base_ref}}).decode())
     return cmd
 
 

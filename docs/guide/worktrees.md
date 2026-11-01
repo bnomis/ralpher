@@ -56,8 +56,10 @@ created from:
 contains `--settings`. See the
 [Claude Code settings reference](https://code.claude.com/docs/en/settings-reference#worktree-baseref).
 
-The pre-run checks read `worktree.baseRef` from Claude Code's settings files
-(user, project, local and managed), not from `--worktree-base-ref`.
+The pre-run checks use the same value the agent gets: `--worktree-base-ref`
+when ralpher passes it, otherwise `worktree.baseRef` from Claude Code's
+settings files (user, project, local and managed). A `--settings` of your
+own in `--args` is not read.
 
 ## After the queue
 

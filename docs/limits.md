@@ -32,8 +32,9 @@ Ways to narrow that:
   stop.
 - The pre-run checks prompt on the terminal, so they wait in an unattended
   run. Commit and push first, or pass `--skip-git-check`.
-- The pre-run checks read `worktree.baseRef` from Claude Code's settings
-  files, not from `--worktree-base-ref`.
+- The pre-run checks do not read a `--settings` you pass in `--args`; they
+  take the base ref from `--worktree-base-ref` or Claude Code's settings
+  files.
 - The cleanup commands are printed for you to run; ralpher never merges,
   deletes or pushes.
 

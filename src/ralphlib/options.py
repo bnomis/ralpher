@@ -1,4 +1,5 @@
 import dataclasses
+import shlex
 import typing
 
 import cappa
@@ -129,6 +130,12 @@ class RalpherOptions:
     settings: dict[str, typing.Any] = dataclasses.field(init=False, default_factory=dict)
     current_iteration: int = dataclasses.field(init=False, default=0)
     iteration_count: int = dataclasses.field(init=False, default=0)
+
+    def passed_worktree_base_ref(self) -> str | None:
+        """`--worktree-base-ref`, unless `--args` holds its own `--settings`, which then wins."""
+        if '--settings' in shlex.split(self.args):
+            return None
+        return self.worktree_base_ref
 
 
 def parse_options() -> RalpherOptions:

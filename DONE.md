@@ -166,3 +166,28 @@ two match now. Remaining work: from 2026-11-10, raise both together - the
 hook's `rev` to `v0.17.3` and `uv add --dev ruff==0.17.3` - in one commit.
 
 Done: 2026-11-01 - `2717f66` pinned the ruff-pre-commit hook to `v0.17.1`, the locked version, and agents' `ruff-version-drift` rule (pinned at `e7901e6`) now fails any commit where the two differ. Raising both to 0.17.3 after the cooldown is routine upkeep.
+
+## The pre-run git checks ignore `--worktree-base-ref`
+
+Found 2026-11-01 while writing the user guide, at `631f6b1`:
+`check_repo_clean` (`src/ralphlib/giter.py:87`) and `check_divergence`
+(`src/ralphlib/giter.py:163`) take the worktree base ref from
+`claude_worktree_base_ref`, which reads only Claude Code's settings files.
+`--worktree-base-ref` reaches the agent through `add_settings`
+(`src/ralphlib/iteration.py:183`) but never the checks. With
+`--worktree-base-ref fresh` and `"baseRef": "head"` in the settings, the
+divergence check is skipped and the worktree starts from an `origin` that
+lacks the local commits; with the opposite pair, the checks warn about a
+divergence that does not matter. `docs/limits.md` records it as a limit.
+`add_settings` also builds the `--settings` JSON with `%` formatting,
+against the project's f-string rule.
+
+Cause: no single place holds the effective base ref (option first, then
+settings); each consumer reads one source.
+
+Fix direction: add one function that returns the effective base ref from
+the options and the settings, use it in both checks, build the
+`--settings` JSON with `json.dumps`, test both combinations, and drop the
+line from `docs/limits.md`.
+
+Done: 2026-11-01 - `worktree_base_ref` in `src/ralphlib/giter.py` gives both pre-run checks the base ref the agent gets, through `RalpherOptions.passed_worktree_base_ref`, which `add_settings` now also uses and which builds its JSON with `orjson`; `TestWorktreeBaseRef`, `TestCheckDivergence` and `TestCheckRepoClean` in `src/tests/test_giter.py` and the `add_settings` tests in `src/tests/test_iteration.py` cover it; `docs/guide/worktrees.md` and `docs/limits.md` updated.

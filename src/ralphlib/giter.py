@@ -84,7 +84,7 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
 
 
 def check_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
-    from_head = options.worktree and claude_worktree_base_ref(repo) == 'head'
+    from_head = options.worktree and worktree_base_ref(options, repo) == 'head'
     if from_head:
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
     else:
@@ -160,7 +160,7 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
 
 
 def check_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
-    if claude_worktree_base_ref(repo) != 'fresh':
+    if worktree_base_ref(options, repo) != 'fresh':
         return
 
     base, base_short = get_origin(repo)
@@ -197,6 +197,11 @@ def get_current_branch(repo: git.Repo) -> str | None:
     if repo.head.is_detached:
         return None
     return repo.active_branch.name
+
+
+def worktree_base_ref(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> str:
+    """The ref the agent's worktrees branch from: `--worktree-base-ref` if passed, else Claude Code's settings."""
+    return options.passed_worktree_base_ref() or claude_worktree_base_ref(repo)
 
 
 def claude_worktree_base_ref(repo: git.Repo) -> str:

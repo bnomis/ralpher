@@ -809,6 +809,23 @@ def test_process_child_stdin_is_devnull_integration() -> None:
     assert proc.returncode == 0, 'Child should see stdin as non-TTY when stdin=DEVNULL'
 
 
+def test_add_settings_passes_base_ref_as_json() -> None:
+    options = tests.helpers.make_options(worktree_base_ref='head')
+    result = ralphlib.iteration.add_settings(options, list(CLAUDE_CMD))
+    assert result[-2] == '--settings'
+    assert orjson.loads(result[-1]) == {'worktree': {'baseRef': 'head'}}
+
+
+def test_add_settings_noop_without_base_ref() -> None:
+    assert ralphlib.iteration.add_settings(tests.helpers.make_options(), list(CLAUDE_CMD)) == list(CLAUDE_CMD)
+
+
+def test_add_settings_keeps_existing_settings_arg() -> None:
+    options = tests.helpers.make_options(worktree_base_ref='head', args='--print --settings {}')
+    cmd = ['claude', '--print', '--settings', '{}']
+    assert ralphlib.iteration.add_settings(options, list(cmd)) == cmd
+
+
 # --- Task 2: Test add_worktree_arg ---
 
 

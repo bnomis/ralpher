@@ -192,7 +192,30 @@ class TestClaudeWorktreeBaseRef:
         assert ralphlib.giter.claude_worktree_base_ref(repo) == 'head'
 
 
+class TestWorktreeBaseRef:
+    def test_option_overrides_settings(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
+        options = tests.helpers.make_options(worktree_base_ref='fresh')
+        assert ralphlib.giter.worktree_base_ref(options, git.Repo.init(str(tmp_path))) == 'fresh'
+
+    def test_option_ignored_when_args_hold_settings(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
+        options = tests.helpers.make_options(worktree_base_ref='fresh', args='--print --settings {}')
+        assert ralphlib.giter.worktree_base_ref(options, git.Repo.init(str(tmp_path))) == 'head'
+
+    def test_settings_used_without_option(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
+        options = tests.helpers.make_options()
+        assert ralphlib.giter.worktree_base_ref(options, git.Repo.init(str(tmp_path))) == 'head'
+
+
 class TestCheckDivergence:
+    def diverge(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """origin/HEAD points at main while a feature branch is checked out, and the prompt answers yes."""
+        monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: ('origin/main', 'main'))
+        monkeypatch.setattr(ralphlib.giter, 'get_current_branch', lambda repo: 'feature')
+        monkeypatch.setattr(ralphlib.giter.YNConfirm, 'ask', lambda *args, **kwargs: True)
+
     def test_skipped_when_base_ref_is_head(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
         monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: pytest.fail('origin checked'))
@@ -200,11 +223,20 @@ class TestCheckDivergence:
 
     def test_checks_origin_when_base_ref_is_fresh(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'fresh')
-        monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: ('origin/main', 'main'))
-        monkeypatch.setattr(ralphlib.giter, 'get_current_branch', lambda repo: 'feature')
-        monkeypatch.setattr(ralphlib.giter.YNConfirm, 'ask', lambda *args, **kwargs: True)
+        self.diverge(monkeypatch)
         with pytest.raises(SystemExit):
             ralphlib.giter.check_divergence(tests.helpers.make_options(), git.Repo.init(str(tmp_path)))
+
+    def test_option_fresh_checks_origin_despite_head_setting(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
+        self.diverge(monkeypatch)
+        with pytest.raises(SystemExit):
+            ralphlib.giter.check_divergence(tests.helpers.make_options(worktree_base_ref='fresh'), git.Repo.init(str(tmp_path)))
+
+    def test_option_head_skips_origin_despite_fresh_setting(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'fresh')
+        monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: pytest.fail('origin checked'))
+        ralphlib.giter.check_divergence(tests.helpers.make_options(worktree_base_ref='head'), git.Repo.init(str(tmp_path)))
 
 
 class TestCheckRepoClean:
@@ -242,6 +274,14 @@ class TestCheckRepoClean:
         ralphlib.giter.check_repo_clean(tests.helpers.make_options(worktree=False), dirty_repo)
         assert len(prompts) == 2
         assert not any('worktree' in prompt for prompt in prompts)
+
+    def test_option_fresh_checks_unpushed_despite_head_setting(self, dirty_repo: git.Repo, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
+        monkeypatch.setattr(ralphlib.giter, 'has_unpushed_commits', lambda repo: True)
+        prompts = self.capture_prompts(monkeypatch)
+        ralphlib.giter.check_repo_clean(tests.helpers.make_options(worktree=True, worktree_base_ref='fresh'), dirty_repo)
+        assert len(prompts) == 2
+        assert all('origin repo' in prompt for prompt in prompts)
 
 
 class TestHasUnpushedCommitsFetch:
