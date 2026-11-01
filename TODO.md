@@ -25,6 +25,14 @@ Fix direction: file an entry in the agents repository's
 checker resolves module-level exception tuples, remove the accept marker at
 `src/ralphlib/verifier.py:129` and check that the rule reports no hit there.
 
+Note 2026-11-01: cause confirmed. `check_filesystem_envelope_gap` in the
+agents repository's `claude/skills/auditme/checks/auditme/rules/error_handling.py`
+unparses each handler's type and searches the text for `OSError` and its kin,
+so `except READ_ERRORS` shows only the name. Filed as "filesystem-envelope-gap
+should resolve a module-level exception tuple" under "Open" in that
+repository's `claude/skills/auditme/requests.md` (agents `c170c8c`, not yet
+pushed). Waiting on that change; then the step above.
+
 ## The locked ruff is older than the pre-commit ruff hook
 
 Found on 2026-11-01 while getting CI to pass (`agents/tasks/auditme-adoption/tasks-1.md`
