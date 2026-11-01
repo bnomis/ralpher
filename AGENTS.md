@@ -53,8 +53,18 @@ bin/                       # Entry point scripts
 ├── ralpher.sh
 ├── ralpherun.sh
 └── rrq.sh
+docs/                      # User documentation (MkDocs site)
+mkdocs.yml                 # Site configuration
 logs/                      # Application log output
 ```
+
+## User documentation
+
+The user guide is the MkDocs site under `docs/`, published to GitHub Pages by
+`.github/workflows/docs.yml`. Its readers are experienced programmers. A
+change to user-visible behaviour (an option, a setting, a hook variable, a
+printed line, a wrapper script) updates the matching page in the same commit.
+Check the site with `uv run --group docs mkdocs build --strict`.
 
 ## Development tools and libraries
 

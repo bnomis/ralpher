@@ -1,0 +1,69 @@
+site_name: ralpher
+site_description: Run a coding agent in a loop until its work is done
+site_url: https://bnomis.github.io/ralpher/
+repo_url: https://github.com/bnomis/ralpher
+theme:
+  name: material
+  logo: assets/ralpher-mark.svg
+  favicon: assets/favicon-animated.svg
+  # Mona Sans for text, Source Code Pro for code; both served by Google Fonts.
+  # https://squidfunk.github.io/mkdocs-material/setup/changing-the-fonts/
+  font:
+    text: Mona Sans
+    code: Source Code Pro
+  # https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#color-palette-toggle
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+extra_css:
+  - assets/theme.css
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        # https://squidfunk.github.io/mkdocs-material/reference/diagrams/
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+plugins:
+  - search
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Getting started: getting-started.md
+  - How ralpher works: concepts.md
+  - User guide:
+      - Prompts: guide/prompts.md
+      - Task files and queues: guide/tasks.md
+      - Worktrees and git: guide/worktrees.md
+      - Hooks: guide/hooks.md
+      - Logs and state: guide/logs.md
+      - Terminal output: guide/terminal.md
+      - Stopping a run: guide/stopping.md
+      - Driving ralpher from Claude Code: guide/claude-code.md
+  - Reference:
+      - Command line: reference/cli.md
+      - Settings: reference/settings.md
+      - Template variables: reference/variables.md
+      - Wrapper scripts: reference/scripts.md
+      - Exit statuses: reference/exit-statuses.md
+  - Limits: limits.md
