@@ -498,6 +498,14 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     stderr_thread.join()
 
     log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
+    ralphlib.hooks.event(
+        options,
+        ralphlib.types.RalpherEventType.AGENT_PROCESS_END,
+        {
+            'agent_exit_code': proc.returncode,
+            'agent_process_id': proc.pid,
+        },
+    )
 
 
 def kill_agent(proc: subprocess.Popen) -> None:

@@ -53,6 +53,7 @@ Rendered when the hook runs, in a sandbox. Values are strings. See
 | `start` | `iteration` (`0`), `prompt` |
 | `iteration_start` | `iteration`, `prompt` (rendered) |
 | `agent_process_start` | `agent_process_id` |
+| `agent_process_end` | `agent_process_id`, `agent_exit_code` |
 | `llm_task_progress` | `task_id`, `task_title`, `task_index`, `task_count`, `task_status` |
 | `iteration_end` | `iteration`, `iteration_time_readable`, `iteration_time_seconds` |
 | `end`, `error` | `iteration` (`0`), `exit_reason`, `iterations_completed`, `total_time_readable`, `total_time_seconds` |

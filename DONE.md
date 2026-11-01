@@ -207,3 +207,25 @@ Fix direction: pin each action in `ci.yml` to its commit SHA with the tag
 in a trailing comment, as `docs.yml` does.
 
 Done: 2026-11-01 - closed by the operator's decision: workflows pin actions to exact release tags, not commit SHAs. `docs.yml` went back to tags, and the `ci.yml` comment that asked for SHAs now asks for release tags.
+
+## The `agent_process_end` hook event is never fired
+
+Found 2026-11-01 while writing the user guide, at `631f6b1`:
+`RalpherEventType.AGENT_PROCESS_END` and its name `agent_process_end` are
+defined in `src/ralphlib/types.py:45` and `:58`, but only
+`AGENT_PROCESS_START` is sent (`src/ralphlib/iteration.py:452`). A hook set
+on `agent_process_end` is accepted and never runs. `docs/guide/hooks.md`
+and `docs/reference/variables.md` leave the event out.
+
+Cause: the event was declared alongside `agent_process_start` and its call
+was never added.
+
+Fix direction: fire it when the agent process exits, with
+`agent_process_id` and the exit status in the context, test it in
+`src/tests/test_hooks.py` or `test_iteration.py`, and add it to both docs
+pages.
+
+Note 2026-11-01: since the `--worktree-base-ref` fix, `AGENT_PROCESS_START` is
+sent at `src/ralphlib/iteration.py:450`.
+
+Done: 2026-11-01 - `process` in `src/ralphlib/iteration.py` fires `agent_process_end` after the agent exits, with `agent_process_id` and `agent_exit_code`; `test_process_fires_agent_process_end_with_exit_code` in `src/tests/test_iteration.py` covers it; `docs/guide/hooks.md` and `docs/reference/variables.md` list the event.

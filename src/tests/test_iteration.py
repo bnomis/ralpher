@@ -8,6 +8,7 @@ import unittest.mock
 import orjson
 import pytest
 
+import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.options
 import ralphlib.signals
@@ -1214,3 +1215,15 @@ def test_process_stream_event_null_delta_returns_line() -> None:
 
     assert message_type == ralphlib.types.MessageType.NONE
     assert message == line
+
+
+def test_process_fires_agent_process_end_with_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list[tuple[ralphlib.types.RalpherEventType, dict]] = []
+    monkeypatch.setattr(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05)
+    monkeypatch.setattr(ralphlib.hooks, 'event', lambda options, event, extra: events.append((event, extra)))
+    context = ralphlib.iteration.IterationContext(cmd=[sys.executable, '-c', 'raise SystemExit(3)'], iteration=1, prompt='test')
+    ralphlib.iteration.process(tests.helpers.make_options(quiet=True), context)
+    names = [event for event, _ in events]
+    assert names == [ralphlib.types.RalpherEventType.AGENT_PROCESS_START, ralphlib.types.RalpherEventType.AGENT_PROCESS_END]
+    start, end = (extra for _, extra in events)
+    assert end == {'agent_process_id': start['agent_process_id'], 'agent_exit_code': 3}

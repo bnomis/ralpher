@@ -25,6 +25,7 @@ as a list of commands per event:
 | `start` | after the pre-run checks, before the first iteration | `iteration` (0), `prompt` (unrendered) |
 | `iteration_start` | before an iteration's agent starts | `iteration`, `prompt` (rendered) |
 | `agent_process_start` | the agent process has started | `agent_process_id` |
+| `agent_process_end` | the agent process has exited, or ralpher has stopped it | `agent_process_id`, `agent_exit_code` (negative when a signal ended it; `None` if it was still running after ralpher tried to stop it) |
 | `llm_task_progress` | a task progress line: a `<task>` block, or a task newly marked `in-progress` | `task_id`, `task_title`, `task_index`, `task_count`, `task_status` |
 | `iteration_end` | after an iteration's agent has exited | `iteration`, `iteration_time_readable`, `iteration_time_seconds` |
 | `error` | the run ended with an error, before `end` | as `end` |
