@@ -394,7 +394,7 @@ number it prints.)
 
 ## Task 12: Operator: deploy key, secret and a passing CI run
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation (hook adoption step 4); Acceptance (CI passes)
@@ -403,23 +403,24 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] Run `gh secret list` and look for `AGENTS_DEPLOY_KEY`. If it is missing, set this task `blocked` with the note "operator: run the project-setup deploy-key steps, then push the branch", and stop
-- [ ] Operator session (not the unattended run): run the `project-setup` skill's deploy-key steps, each confirmed before it runs - generate the key in a `mktemp -d` scratch directory, `gh repo deploy-key add ... --repo bnomis/agents --title ralpher`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/ralpher < <key>`, then delete both key files and the directory. The private key is never printed
-- [ ] Operator: push the branch, then set this task back to `todo` and restart the list
-- [ ] Run `gh run list --workflow ci.yml --limit 1 --json conclusion,headSha`. If the run for the pushed head is not `success`, set `blocked` naming the failing step and stop
+- [x] Run `gh secret list` and look for `AGENTS_DEPLOY_KEY`. If it is missing, set this task `blocked` with the note "operator: run the project-setup deploy-key steps, then push the branch", and stop
+- [x] Operator session (not the unattended run): run the `project-setup` skill's deploy-key steps, each confirmed before it runs - generate the key in a `mktemp -d` scratch directory, `gh repo deploy-key add ... --repo bnomis/agents --title ralpher`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/ralpher < <key>`, then delete both key files and the directory. The private key is never printed
+- [x] Operator: push the branch, then set this task back to `todo` and restart the list
+- [x] Run `gh run list --workflow ci.yml --limit 1 --json conclusion,headSha`. If the run for the pushed head is not `success`, set `blocked` naming the failing step and stop
 
 **Acceptance Criteria:**
 
-- [ ] `gh secret list` shows `AGENTS_DEPLOY_KEY`
-- [ ] The latest `ci.yml` run on the pushed head concluded `success`
+- [x] `gh secret list` shows `AGENTS_DEPLOY_KEY`
+- [x] The latest `ci.yml` run on the pushed head concluded `success`
 
 **Definition of Done:**
 
-- [ ] `gh run list --workflow ci.yml --limit 1 --json conclusion` shows `success`
+- [x] `gh run list --workflow ci.yml --limit 1 --json conclusion` shows `success`
 
 **Notes:**
 
 - Depends on Task 11
+- Done 2026-11-01 by an operator session: deploy key "ralpher ci" on bnomis/agents, secret `AGENTS_DEPLOY_KEY` set, branch pushed. The first CI run failed at the audit (ruff not installed); `3150d67` locks ruff 0.17.1 and CI run 41277393434 on `3150d67` concluded `success`
 - The deploy key and secret commands come from the shared `project-setup` skill; they need the operator's GitHub credentials
 
 ---
