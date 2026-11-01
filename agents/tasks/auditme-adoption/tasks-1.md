@@ -427,7 +427,7 @@ number it prints.)
 
 ## Task 13: Document the gates and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation (hook adoption step 5); Acceptance
@@ -436,23 +436,23 @@ number it prints.)
 
 **Subtasks:**
 
-- [ ] In `AGENTS.md` under "Coding standards", add that `ruff check`, `ruff format` and the auditme hooks run on every commit, the whole-tree audit on every push and in CI, and that a hit is fixed or accepted with `# auditme: accept[<rule>] <reason>`; leave `.pre-commit-config.yaml` under "Do not modify"
-- [ ] Add `src/tests/helpers.py` to the project structure tree in `AGENTS.md`
-- [ ] Set the spec's `**Status:**` to `implemented`
-- [ ] Create `DONE.md` with a `# Done` title and one line saying it holds finished `TODO.md` items, oldest first. Move the `TODO.md` item "The auditme checker is not adopted here, so its hits accumulate unrecorded" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <YYYY-MM-DD> - agents/specs/auditme-adoption/spec.md, agents/tasks/auditme-adoption/tasks-1.md.` Remove it from `TODO.md`
-- [ ] Take the baseline `TODO.md` from the commit that added this task list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-adoption/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] In `AGENTS.md` under "Coding standards", add that `ruff check`, `ruff format` and the auditme hooks run on every commit, the whole-tree audit on every push and in CI, and that a hit is fixed or accepted with `# auditme: accept[<rule>] <reason>`; leave `.pre-commit-config.yaml` under "Do not modify"
+- [x] Add `src/tests/helpers.py` to the project structure tree in `AGENTS.md`
+- [x] Set the spec's `**Status:**` to `implemented`
+- [x] Create `DONE.md` with a `# Done` title and one line saying it holds finished `TODO.md` items, oldest first. Move the `TODO.md` item "The auditme checker is not adopted here, so its hits accumulate unrecorded" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <YYYY-MM-DD> - agents/specs/auditme-adoption/spec.md, agents/tasks/auditme-adoption/tasks-1.md.` Remove it from `TODO.md`
+- [x] Take the baseline `TODO.md` from the commit that added this task list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-adoption/tasks-1.md):TODO.md > <scratch>/todo-before.md`
 
 **Acceptance Criteria:**
 
-- [ ] `python3 ~/.claude/skills/auditme/checks/audit.py . | grep -c '"accepted": false'` prints `0`
-- [ ] `TODO.md` holds no item for this work, and `DONE.md` ends with it and its `Done:` line
+- [x] `python3 ~/.claude/skills/auditme/checks/audit.py . | grep -c '"accepted": false'` prints `0`
+- [x] `TODO.md` holds no item for this work, and `DONE.md` ends with it and its `Done:` line
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `uv run pytest` passes (the spec's Acceptance names the full suite, and this list touches every library module)
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `uv run pytest` passes (the spec's Acceptance names the full suite, and this list touches every library module)
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
 

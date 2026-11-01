@@ -1,7 +1,7 @@
 # Auditme adoption
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-10-31
 
 Clear every unaccepted hit the shared auditme checker reports on ralpher, then

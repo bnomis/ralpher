@@ -34,6 +34,7 @@ src/
 │   └── verifier.py
 └── tests/                 # Tests mirror source structure
     ├── __init__.py
+    ├── helpers.py
     ├── test_giter.py
     ├── test_hooks.py
     ├── test_iteration.py
@@ -118,6 +119,10 @@ Follow the ruff rules defined in `pyproject.toml`.
 Check that source code meets our standard with the `ruff check` command line tool.
 
 **IMPORTANT**: make sure the source code is cleanly formatted with `ruff format`
+
+### Gates
+
+`ruff check`, `ruff format` and the auditme hooks run on every commit. The whole-tree auditme audit runs on every push and in CI. A hit is fixed, or accepted with `# auditme: accept[<rule>] <reason>` on the line it names. `.pre-commit-config.yaml` stays under "Do not modify".
 
 ### Imports
 
