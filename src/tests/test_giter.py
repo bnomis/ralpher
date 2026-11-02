@@ -384,6 +384,33 @@ class TestDomainErrors:
         with pytest.raises(ralphlib.exceptions.GitError):
             ralphlib.giter.has_unpushed_commits(repo)
 
+    def test_discover_repo_path_translates_missing_cwd(self) -> None:
+        with unittest.mock.patch('pathlib.Path.cwd', side_effect=FileNotFoundError('gone')), pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.discover_repo_path()
+
+    def test_is_working_tree_clean_translates_command_not_found(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.is_dirty.side_effect = git.GitCommandNotFound('git', 'missing')
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.is_working_tree_clean(repo)
+
+    def test_has_unpushed_commits_reports_fetch_command_not_found(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.remotes.origin.url = 'https://example.com/org/repo.git'
+        repo.remotes.origin.fetch.side_effect = git.GitCommandNotFound('git', 'missing')
+        assert ralphlib.giter.has_unpushed_commits(repo) is None
+
+    def test_has_unpushed_commits_translates_iter_commits_command_not_found(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.head.is_detached = False
+        repo.iter_commits.side_effect = git.GitCommandNotFound('git', 'missing')
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.has_unpushed_commits(repo)
+
+    def test_has_unpushed_commits_without_origin_returns_none(self, tmp_path: pathlib.Path) -> None:
+        repo = git.Repo.init(str(tmp_path))
+        assert ralphlib.giter.has_unpushed_commits(repo) is None
+
     def test_has_unpushed_commits_reports_fetch_os_error(self) -> None:
         repo = unittest.mock.MagicMock()
         repo.remotes.origin.url = 'https://example.com/org/repo.git'

@@ -141,6 +141,46 @@ def test_process_line_unexpected_exception_propagates() -> None:
         ralphlib.iteration.process_line(options, context, line)
 
 
+@pytest.mark.parametrize(
+    'writer',
+    [
+        lambda c: ralphlib.iteration.write_progress(c, 'x'),
+        lambda c: ralphlib.iteration.write_progress_lines(c, ['x']),
+        lambda c: ralphlib.iteration.write_progress_eol(c),
+        lambda c: ralphlib.iteration.write_error(c, 'x'),
+        lambda c: ralphlib.iteration.write_error_eol(c),
+        lambda c: ralphlib.iteration.write_stdout(c, 'x'),
+        lambda c: ralphlib.iteration.write_stderr(c, 'x'),
+    ],
+)
+def test_log_writers_raise_log_file_error_on_write_failure(writer: collections.abc.Callable[[ralphlib.iteration.IterationContext], None]) -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.write.side_effect = OSError('disk full')
+    context.progressfd = context.errorsfd = context.stdoutfd = context.stderrfd = fd
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        writer(context)
+
+
+def test_log_writer_raises_log_file_error_on_flush_failure() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = OSError('disk full')
+    context.progressfd = fd
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        ralphlib.iteration.write_progress_eol(context)
+
+
+def test_stdout_reader_log_failure_sets_error_instead_of_dying() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.write.side_effect = OSError('disk full')
+    context.stdoutfd = fd
+    pipe = io.StringIO('{"type": "system"}\n')
+    ralphlib.iteration.process_stdout(tests.helpers.make_plain_options(quiet=True), context, pipe)  # type: ignore[arg-type]
+    assert ralphlib.iteration.get_error(context)
+
+
 def test_flush_and_close_fd_carries_on_after_os_error() -> None:
     fd = unittest.mock.MagicMock()
     fd.flush.side_effect = OSError('disk')

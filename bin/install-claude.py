@@ -114,6 +114,7 @@ def main(argv: list[str]) -> typing.NoReturn:
     try:
         install_claude(options)
     except Exception as e:
+        # auditme: accept[broad-except] runs under the system Python before the project environment and has no domain errors
         # auditme: accept[except-interpolation] the message is the exit message, which shows no traceback
         m = f'Exception: {e}'
         options.logger.exception(m)

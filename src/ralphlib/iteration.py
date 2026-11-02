@@ -375,49 +375,49 @@ def log_error(options: ralphlib.options.RalpherOptions, context: IterationContex
     print_error_eol(options, context)
 
 
+def write_log(context: IterationContext, fd: io.TextIOWrapper | None, text: str, flush: bool = False) -> None:
+    """Write `text` to the log file `fd` under the context lock.
+
+    Raises:
+        LogFileError: the write or flush fails.
+    """
+    if not fd:
+        return
+    with context.gil:
+        try:
+            fd.write(text)
+            if flush:
+                fd.flush()
+        except OSError as e:
+            raise ralphlib.exceptions.LogFileError(f'Cannot write to the iteration log file {fd.name}') from e
+
+
 def write_progress(context: IterationContext, message: str) -> None:
-    if context.progressfd:
-        with context.gil:
-            context.progressfd.write(message)
+    write_log(context, context.progressfd, message)
 
 
 def write_progress_lines(context: IterationContext, lines: list[str]) -> None:
-    if context.progressfd:
-        with context.gil:
-            for line in lines:
-                context.progressfd.write(line)
+    write_log(context, context.progressfd, ''.join(lines))
 
 
 def write_progress_eol(context: IterationContext) -> None:
-    if context.progressfd:
-        with context.gil:
-            context.progressfd.write('\n')
-            context.progressfd.flush()
+    write_log(context, context.progressfd, '\n', flush=True)
 
 
 def write_error(context: IterationContext, message: str) -> None:
-    if context.errorsfd:
-        with context.gil:
-            context.errorsfd.write(message)
+    write_log(context, context.errorsfd, message)
 
 
 def write_error_eol(context: IterationContext) -> None:
-    if context.errorsfd:
-        with context.gil:
-            context.errorsfd.write('\n')
-            context.errorsfd.flush()
+    write_log(context, context.errorsfd, '\n', flush=True)
 
 
 def write_stdout(context: IterationContext, message: str) -> None:
-    if context.stdoutfd:
-        with context.gil:
-            context.stdoutfd.write(message)
+    write_log(context, context.stdoutfd, message)
 
 
 def write_stderr(context: IterationContext, message: str) -> None:
-    if context.stderrfd:
-        with context.gil:
-            context.stderrfd.write(message)
+    write_log(context, context.stderrfd, message)
 
 
 def newline_required(context: IterationContext, message_type: ralphlib.types.MessageType) -> bool:
@@ -576,8 +576,9 @@ def process_stdout(
 ) -> None:
     try:
         read_stdout(options, context, pipe)
-    except OSError:
+    except OSError, ralphlib.exceptions.LogFileError:
         loguru.logger.exception('I/O error on the agent stdout reader thread')
+        set_error(context, True)
 
 
 def read_stdout(
@@ -620,8 +621,9 @@ def process_stderr(
 
             write_stderr(context, line + '\n')
             print_error(options, context, line)
-    except OSError:
+    except OSError, ralphlib.exceptions.LogFileError:
         loguru.logger.exception('I/O error on the agent stderr reader thread')
+        set_error(context, True)
 
 
 def process_line(

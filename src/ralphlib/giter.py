@@ -70,17 +70,13 @@ def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | Non
     Raises:
         GitError: the path cannot be opened.
     """
-    if path is None:
-        path = pathlib.Path.cwd()
-    else:
-        path = pathlib.Path(path)
-
     try:
+        path = pathlib.Path.cwd() if path is None else pathlib.Path(path)
         return git.Repo(str(path), search_parent_directories=True)
     except git.InvalidGitRepositoryError:
         return None
     except OSError as e:
-        raise ralphlib.exceptions.GitError(f'Cannot open the git repository at {path}') from e
+        raise ralphlib.exceptions.GitError(f'Cannot open the git repository at {path or "the current directory"}') from e
 
 
 def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
@@ -131,7 +127,7 @@ def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> boo
     """
     try:
         return not repo.is_dirty(untracked_files=include_untracked)
-    except (git.GitCommandError, OSError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot read the git status of {repo.working_dir}') from e
 
 
@@ -151,13 +147,13 @@ def has_unpushed_commits(repo: git.Repo) -> bool | None:
     """
     try:
         origin = repo.remotes.origin
-    except ValueError, OSError:
+    except AttributeError, ValueError, OSError:
         ralphlib.printer.console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
         return None
 
     try:
         origin.fetch()
-    except (git.GitCommandError, OSError, UnicodeDecodeError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError, UnicodeDecodeError) as e:
         # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
         message = redact_url(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
         ralphlib.printer.console_stderr.print(message)
@@ -171,7 +167,7 @@ def has_unpushed_commits(repo: git.Repo) -> bool | None:
     # Count commits ahead of upstream
     try:
         ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
-    except (git.GitCommandError, OSError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot list the commits ahead of {upstream.name}') from e
     return ahead > 0
 

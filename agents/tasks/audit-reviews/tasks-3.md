@@ -161,7 +161,7 @@ files it names.
 
 ## Task 5: I/O errors are translated
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 5
@@ -170,22 +170,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Tests in `src/tests/test_giter.py`: `git.GitCommandNotFound` from `is_dirty`, `fetch` and `iter_commits`, and a repository with no `origin`, each give the handled outcome (a `GitError`, or `None` from `has_unpushed_commits`) rather than escaping; `Path.cwd()` raising `FileNotFoundError` gives `GitError`
-- [ ] Tests in `src/tests/test_iteration.py`: a log file object whose `write` raises `OSError` makes the write helpers raise `LogFileError`
-- [ ] In `src/ralphlib/giter.py`, add `git.GitCommandNotFound` to the handlers in `is_working_tree_clean`, `has_unpushed_commits` (fetch and `iter_commits`), handle the missing `origin` (`AttributeError` from `repo.remotes.origin`), and move `pathlib.Path.cwd()` in `discover_repo_path` inside its `try`
-- [ ] In `src/ralphlib/iteration.py`, route every log-file `write`/`flush` (`write_progress`, `write_progress_lines`, `write_progress_eol`, `write_error`, `write_error_eol`, `write_stdout`, `write_stderr`) through one helper that raises `LogFileError` naming the log; add `OSError` to the `process_line` handler's write path only if the helper does not already cover it
-- [ ] Add a scoped accept marker to the broad handler in `bin/install-claude.py` `main`, giving the reason (it runs under the system Python, before the project environment, and has no domain errors)
+- [x] Tests in `src/tests/test_giter.py`: `git.GitCommandNotFound` from `is_dirty`, `fetch` and `iter_commits`, and a repository with no `origin`, each give the handled outcome (a `GitError`, or `None` from `has_unpushed_commits`) rather than escaping; `Path.cwd()` raising `FileNotFoundError` gives `GitError`
+- [x] Tests in `src/tests/test_iteration.py`: a log file object whose `write` raises `OSError` makes the write helpers raise `LogFileError`
+- [x] In `src/ralphlib/giter.py`, add `git.GitCommandNotFound` to the handlers in `is_working_tree_clean`, `has_unpushed_commits` (fetch and `iter_commits`), handle the missing `origin` (`AttributeError` from `repo.remotes.origin`), and move `pathlib.Path.cwd()` in `discover_repo_path` inside its `try`
+- [x] In `src/ralphlib/iteration.py`, route every log-file `write`/`flush` (`write_progress`, `write_progress_lines`, `write_progress_eol`, `write_error`, `write_error_eol`, `write_stdout`, `write_stderr`) through one helper that raises `LogFileError` naming the log; add `OSError` to the `process_line` handler's write path only if the helper does not already cover it
+- [x] Add a scoped accept marker to the broad handler in `bin/install-claude.py` `main`, giving the reason (it runs under the system Python, before the project environment, and has no domain errors)
 
 **Acceptance Criteria:**
 
-- [ ] No call named in review-3 A1 under `giter.py` or `iteration.py` lets a third-party or `OSError` exception escape
-- [ ] The `verifier.py` cases review-3 A1 lists as documented stay as they are
+- [x] No call named in review-3 A1 under `giter.py` or `iteration.py` lets a third-party or `OSError` exception escape
+- [x] The `verifier.py` cases review-3 A1 lists as documented stay as they are
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_iteration.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_install_claude.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_iteration.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_install_claude.py` passes
 
 **Notes:**
 
