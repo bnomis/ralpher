@@ -93,7 +93,7 @@ files it names.
 
 ## Task 3: Hook settings of the wrong shape are refused
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 3
@@ -102,21 +102,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_settings.py`: `hooks` that is not an object, an event whose value is a string or a list holding a non-string, `hook_templates` that is not a bool and `theme` that is not an object each raise `SettingsError` naming the key and the file; confirm they fail first
-- [ ] Add one validation function in `src/ralphlib/settings.py`, called after each file is merged in `load_settings_from_file`, that checks those keys
-- [ ] State the accepted shapes in `docs/reference/settings.md`
+- [x] Add tests to `src/tests/test_settings.py`: `hooks` that is not an object, an event whose value is a string or a list holding a non-string, `hook_templates` that is not a bool and `theme` that is not an object each raise `SettingsError` naming the key and the file; confirm they fail first
+- [x] Add one validation function in `src/ralphlib/settings.py`, called after each file is merged in `load_settings_from_file`, that checks those keys
+- [x] State the accepted shapes in `docs/reference/settings.md`
 
 **Acceptance Criteria:**
 
-- [ ] `{"hooks": {"end": "notify"}}` stops ralpher with an error naming `hooks.end`
-- [ ] `{"hook_templates": "false"}` stops ralpher with an error naming `hook_templates`
+- [x] `{"hooks": {"end": "notify"}}` stops ralpher with an error naming `hooks.end`
+- [x] `{"hook_templates": "false"}` stops ralpher with an error naming `hook_templates`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py`
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_hooks.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py`
+- [x] `uv run pytest src/tests/test_settings.py src/tests/test_hooks.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

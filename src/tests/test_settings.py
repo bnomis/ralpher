@@ -10,6 +10,7 @@ import ralphlib.settings
 import tests.helpers
 
 ECHO_HI = ('echo hi',)
+NOTIFY = ('notify',)
 
 
 class TestLoadSettingsFromFile:
@@ -38,6 +39,32 @@ class TestLoadSettingsFromFile:
         options = tests.helpers.make_options_with_settings()
         with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
             ralphlib.settings.load_settings_from_file(options, str(settings_file))
+
+
+class TestHookShapes:
+    @pytest.mark.parametrize(
+        ('content', 'key'),
+        [
+            ({'hooks': list(NOTIFY)}, 'hooks'),
+            ({'hooks': {'end': 'notify'}}, 'hooks.end'),
+            ({'hooks': {'end': [*NOTIFY, 3]}}, 'hooks.end'),
+            ({'hook_templates': 'false'}, 'hook_templates'),
+            ({'theme': 'red'}, 'theme'),
+        ],
+    )
+    def test_wrong_shape_raises_settings_error(self, tmp_path: typing.Any, content: dict[str, typing.Any], key: str) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps(content))
+        options = tests.helpers.make_options_with_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError, match=rf'settings\.json.*{key}'):
+            ralphlib.settings.load_settings_from_file(options, str(settings_file))
+
+    def test_valid_shapes_are_accepted(self, tmp_path: typing.Any) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps({'hooks': {'end': list(NOTIFY)}, 'hook_templates': False, 'theme': {'alert': 'red'}}))
+        options = tests.helpers.make_options_with_settings()
+        result = ralphlib.settings.load_settings_from_file(options, str(settings_file))
+        assert result.settings['hooks'] == {'end': list(NOTIFY)}
 
 
 class TestLoadSettings:
