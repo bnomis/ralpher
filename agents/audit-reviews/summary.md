@@ -145,4 +145,4 @@ Each finding has its full location list in [review-2.md](review-2.md).
 ## Checker changes since the last review
 
 - review-1 predates the scripted checker. This review is the baseline, so the next audit on unchanged code should show zero mechanical delta.
-- A refinement to D2 (skip dependencies a host tool loads as a plugin or theme) is open in the skill's `requests.md`. When it ships, the four D2 hits in review-2 are expected to disappear.
+- The unused-dependency check (D2 in the auditme checklist) now skips a dependency a declared host tool loads as a plugin or theme, shown by its entry point (shipped in agents on 2026-11-02, Phase B text only). The four D2 hits in review-2 (`pytest-icdiff`, `pytest-instafail`, `pytest-randomly` and `mkdocs-material`) each register such an entry point, so the next audit should not raise them.
