@@ -85,27 +85,24 @@ def add_to_state_work(
 ) -> None:
     lock = filelock.FileLock(lock_path)
 
-    try:
-        with lock.acquire(timeout=STATE_LOCK_TIMEOUT):
-            state = load_state(options)
-            if state is None:
-                return
+    with lock.acquire(timeout=STATE_LOCK_TIMEOUT):
+        state = load_state(options)
+        if state is None:
+            return
 
-            if key1 is not None:
-                current_value = state.get(key1, {})
-                if not isinstance(current_value, dict):
-                    raise ralphlib.exceptions.ValueNotADict(f'{key1}')
-                if key2 is not None:
-                    current_value2 = current_value.get(key2, {})
-                    if not isinstance(current_value2, dict):
-                        raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
-                    current_value2.update(value)
-                    current_value[key2] = current_value2
-                else:
-                    current_value.update(value)
-                state[key1] = current_value
+        if key1 is not None:
+            current_value = state.get(key1, {})
+            if not isinstance(current_value, dict):
+                raise ralphlib.exceptions.ValueNotADict(f'{key1}')
+            if key2 is not None:
+                current_value2 = current_value.get(key2, {})
+                if not isinstance(current_value2, dict):
+                    raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
+                current_value2.update(value)
+                current_value[key2] = current_value2
             else:
-                state.update(value)
-            save_state(options, state)
-    except filelock.Timeout:
-        loguru.logger.exception(f'Could not acquire state lock after {STATE_LOCK_TIMEOUT} seconds')
+                current_value.update(value)
+            state[key1] = current_value
+        else:
+            state.update(value)
+        save_state(options, state)

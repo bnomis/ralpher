@@ -1,7 +1,9 @@
 import json
 import pathlib
 
+import filelock
 import pytest
+import tenacity
 
 import ralphlib.exceptions
 import ralphlib.options
@@ -102,6 +104,20 @@ class TestAddToState:
         with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json'):
             ralphlib.state.add_to_state(options, {'new': 'val'})
         assert state_path.read_bytes() == b'{not json\xff'
+
+    def test_lock_timeout_is_retried_then_raised(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        attempts: list[float] = []
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            attempts.append(timeout)
+            raise filelock.Timeout(str(self.lock_file))
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        monkeypatch.setattr(ralphlib.state.add_to_state_work.retry, 'wait', tenacity.wait_none())
+        with pytest.raises(filelock.Timeout):
+            ralphlib.state.add_to_state(options, {'new': 'val'})
+        assert len(attempts) == 3
 
     def test_noop_when_state_not_set(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state=None, logdir=str(tmp_path))

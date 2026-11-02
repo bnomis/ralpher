@@ -89,7 +89,7 @@ every test file that imports a module this list changed.
 
 ## Task 3: Let the state-lock retry actually retry
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Prior findings re-verified, review-1 Finding 10
@@ -98,20 +98,20 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Remove the `except filelock.Timeout` block from `add_to_state_work`
-- [ ] Check that `add_to_state` still logs once and re-raises after the last attempt
-- [ ] Add a test to `src/tests/test_state.py` that holds the lock (or patches `lock.acquire` to raise `filelock.Timeout`) and asserts three attempts are made and `add_to_state` raises; patch `tenacity`'s wait so the test does not sleep
-- [ ] Confirm the test fails against the current code
+- [x] Remove the `except filelock.Timeout` block from `add_to_state_work`
+- [x] Check that `add_to_state` still logs once and re-raises after the last attempt
+- [x] Add a test to `src/tests/test_state.py` that holds the lock (or patches `lock.acquire` to raise `filelock.Timeout`) and asserts three attempts are made and `add_to_state` raises; patch `tenacity`'s wait so the test does not sleep
+- [x] Confirm the test fails against the current code
 
 **Acceptance Criteria:**
 
-- [ ] A held lock gives three attempts, then an exception
-- [ ] No state update is silently dropped
+- [x] A held lock gives three attempts, then an exception
+- [x] No state update is silently dropped
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_state.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_state.py` passes
 
 **Notes:**
 
