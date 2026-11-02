@@ -122,7 +122,7 @@ every test file that imports a module this list changed.
 
 ## Task 4: Any `is_error` result is an error
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 3; review-2 Answers (2026-11-02)
@@ -131,18 +131,18 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] In `iteration.py` (the `result` handler near line 897), set the error flag for any payload with `is_error` true, not only `subtype == 'success'`
-- [ ] Add parametrised tests to `src/tests/test_iteration.py` for `success`, `error_max_turns` and `error_during_execution` with `is_error` true, and for `success` with `is_error` false
-- [ ] Check `docs/guide/stopping.md:35` and `docs/concepts.md:50` still describe the behaviour exactly
+- [x] In `iteration.py` (the `result` handler near line 897), set the error flag for any payload with `is_error` true, not only `subtype == 'success'`
+- [x] Add parametrised tests to `src/tests/test_iteration.py` for `success`, `error_max_turns` and `error_during_execution` with `is_error` true, and for `success` with `is_error` false
+- [x] Check `docs/guide/stopping.md:35` and `docs/concepts.md:50` still describe the behaviour exactly
 
 **Acceptance Criteria:**
 
-- [ ] Every subtype with `is_error: true` sets the error flag
+- [x] Every subtype with `is_error: true` sets the error flag
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 
 **Notes:**
 

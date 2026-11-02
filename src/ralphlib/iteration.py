@@ -889,12 +889,10 @@ def process_result(
     payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    subtype = payload.get('subtype', '')
     is_error = payload.get('is_error', False)
     result = payload.get('result', '')
 
-    # errors
-    if subtype == 'success' and is_error:
+    if is_error:
         set_error(context, True)
         return ralphlib.types.MessageType.ERROR, result
 

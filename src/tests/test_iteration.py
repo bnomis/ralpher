@@ -127,10 +127,11 @@ def test_process_line_exception_returns_error() -> None:
         assert message == line
 
 
-def test_process_result_success_with_is_error_sets_error_flag() -> None:
+@pytest.mark.parametrize('subtype', ['success', 'error_max_turns', 'error_during_execution'])
+def test_process_result_with_is_error_sets_error_flag(subtype: str) -> None:
     options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    payload = {'type': 'result', 'subtype': 'success', 'is_error': True, 'result': 'something failed'}
+    payload = {'type': 'result', 'subtype': subtype, 'is_error': True, 'result': 'something failed'}
     line = orjson.dumps(payload).decode()
 
     message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
@@ -138,6 +139,18 @@ def test_process_result_success_with_is_error_sets_error_flag() -> None:
     assert message_type == ralphlib.types.MessageType.ERROR
     assert message == 'something failed'
     assert ralphlib.iteration.get_error(context) is True
+
+
+def test_process_result_success_without_is_error_leaves_error_flag_clear() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': 'fine'}
+    line = orjson.dumps(payload).decode()
+
+    message_type, _ = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert ralphlib.iteration.get_error(context) is False
 
 
 def test_process_result_with_stop_marker_sets_complete() -> None:
