@@ -43,6 +43,9 @@ Every event also gets the variables in
 - The command is split into arguments as a POSIX shell would
   (`shlex.split`) and started directly, not through a shell: no pipes,
   redirection or `$VAR` expansion. For those, call `sh -c '...'`.
+- A value spliced into an `sh -c` string becomes shell code. That includes
+  the agent-supplied `task_title` and `prompt`, so do not put them inside
+  the quoted string; pass them as separate arguments instead.
 - It starts in its own session, with stdout and stderr discarded, and
   ralpher does not wait for it. A hook that fails to start is logged and
   ignored.

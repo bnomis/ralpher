@@ -196,7 +196,7 @@ files it names.
 
 ## Task 6: Prompts render in the sandbox
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 9
@@ -205,22 +205,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_templater.py` that a prompt using an attribute the sandbox blocks (for example `{{ ''.__class__.__mro__ }}`) raises a ralpher error rather than rendering; confirm it fails first
-- [ ] In `templater.render`, render with `jinja2.sandbox.SandboxedEnvironment` (the environment `hooks.py` uses), and translate `jinja2.exceptions.SecurityError` and `TemplateSyntaxError` to a new or existing `RalpherError` subclass naming the prompt file
-- [ ] Add a warning to `docs/guide/hooks.md` beside the `sh -c` advice: a value spliced into an `sh -c` string, including the agent-supplied `task_title` and `prompt`, becomes shell code
-- [ ] Add a line to `docs/guide/prompts.md` that prompts render in Jinja's sandbox
+- [x] Add a test to `src/tests/test_templater.py` that a prompt using an attribute the sandbox blocks (for example `{{ ''.__class__.__mro__ }}`) raises a ralpher error rather than rendering; confirm it fails first
+- [x] In `templater.render`, render with `jinja2.sandbox.SandboxedEnvironment` (the environment `hooks.py` uses), and translate `jinja2.exceptions.SecurityError` and `TemplateSyntaxError` to a new or existing `RalpherError` subclass naming the prompt file
+- [x] Add a warning to `docs/guide/hooks.md` beside the `sh -c` advice: a value spliced into an `sh -c` string, including the agent-supplied `task_title` and `prompt`, becomes shell code
+- [x] Add a line to `docs/guide/prompts.md` that prompts render in Jinja's sandbox
 
 **Acceptance Criteria:**
 
-- [ ] Every existing prompt test still passes
-- [ ] The sandbox test passes
+- [x] Every existing prompt test still passes
+- [x] The sandbox test passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

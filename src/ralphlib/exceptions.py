@@ -26,6 +26,10 @@ class NoStateLockFilePathError(RalpherError):
     pass
 
 
+class PromptTemplateError(RalpherError):
+    pass
+
+
 class SettingsError(RalpherError):
     pass
 

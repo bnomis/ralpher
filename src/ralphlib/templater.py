@@ -2,7 +2,8 @@ import pathlib
 import re
 import typing
 
-import jinja2
+import jinja2.exceptions
+import jinja2.sandbox
 
 import ralphlib.exceptions
 
@@ -82,6 +83,11 @@ def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int
 
     context.update(parse_vars(options))
 
-    template = jinja2.Template(prompt)
-    prompt = template.render(**context)
-    return prompt
+    try:
+        return jinja2.sandbox.SandboxedEnvironment().from_string(prompt).render(**context)
+    except jinja2.exceptions.SecurityError as e:
+        # auditme: accept[except-interpolation] the message is printed as an Error line, which shows no traceback
+        raise ralphlib.exceptions.PromptTemplateError(f'The prompt uses something the template sandbox blocked: {e.message}') from e
+    except jinja2.exceptions.TemplateSyntaxError as e:
+        # auditme: accept[except-interpolation] the message is printed as an Error line, which shows no traceback
+        raise ralphlib.exceptions.PromptTemplateError(f'The prompt has a template syntax error on line {e.lineno}: {e.message}') from e
