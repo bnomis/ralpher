@@ -144,3 +144,21 @@ def test_task_file_slug_joins_parent_and_stem(parent: str, stem: str) -> None:
 def test_task_file_slug_is_a_safe_name(path: str) -> None:
     slug = ralphlib.templater.task_file_slug(path)
     assert all(c.islower() or c.isdigit() or c == '-' for c in slug)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    variables=hypothesis.strategies.dictionaries(
+        hypothesis.strategies.from_regex(r'v_[a-z0-9_]{0,8}', fullmatch=True),
+        hypothesis.strategies.text(hypothesis.strategies.characters(exclude_characters='\x00'), max_size=20),
+        max_size=4,
+    ),
+    iterations=hypothesis.strategies.integers(min_value=1, max_value=1000),
+    data=hypothesis.strategies.data(),
+)
+def test_render_substitutes_every_var_and_the_iteration_unchanged(variables: dict[str, str], iterations: int, data: hypothesis.strategies.DataObject) -> None:
+    iteration = data.draw(hypothesis.strategies.integers(min_value=1, max_value=iterations))
+    options = ralphlib.options.RalpherOptions(iterations=iterations, vars=[f'{key}={value}' for key, value in variables.items()])
+    prompt = '\x00'.join(['{{ iteration }}/{{ iterations }}', *(f'{{{{ {key} }}}}' for key in variables)])
+    rendered = ralphlib.templater.render(options, prompt, iteration)
+    assert rendered.split('\x00', len(variables)) == [f'{iteration}/{iterations}', *variables.values()]

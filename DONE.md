@@ -267,3 +267,27 @@ review-2 as the review that raised them, and keep the rest, including the
 property-test gaps in the next item.
 
 Done: 2026-11-02 - `agents/audit-reviews/summary.md` re-checked against the code: every review-2 finding fixed by `agents/tasks/audit-reviews/tasks-2.md` moved to Recently resolved; the property-test gaps (Finding 18) and the D2 plugin dependencies (Finding 19) stay unresolved.
+
+## Seven functions from audit review 2's property-test gaps have no property test
+
+Found on 2026-11-02 in the queue log for
+`agents/tasks/audit-reviews/tasks-2.md` Task 14. Review-2's T2 question
+(Finding 18) lists functions with well-defined input domains and only example
+tests. Task 14 added hypothesis tests for eight of them, and its agent
+reported that it skipped the rest without recording why none fits, though it
+ticked the acceptance criterion:
+
+- `iteration.process_line`, `iteration.process_stream_event`,
+  `iteration.input_field_to_content` and `iteration.agent_environment`
+  (`src/ralphlib/iteration.py`)
+- `templater.render` (`src/ralphlib/templater.py`)
+- `logger.log_file` (`src/ralphlib/logger.py`)
+- `state.add_to_state` (`src/ralphlib/state.py`, the `key1`/`key2` merge)
+
+Fix direction: add a hypothesis test for each
+(`@hypothesis.settings(max_examples=20, deadline=10000)`), with strategies
+for the stream-JSON payload shapes shared between `process_line` and
+`process_stream_event`; where a property test does not fit, say why in the
+test module and add an example test instead.
+
+Done: 2026-11-02 - a hypothesis test for each function: `process_line`, `process_stream_event`, `input_field_to_content` and `agent_environment` in `src/tests/test_iteration.py` (sharing the `STREAM_EVENTS` payload strategy), `render` in `src/tests/test_templater.py`, `log_file` in `src/tests/test_logger.py` and `add_to_state` in `src/tests/test_state.py`; each fails against a planted defect in its function.

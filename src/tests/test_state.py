@@ -1,7 +1,12 @@
+import copy
 import json
 import pathlib
+import tempfile
+import typing
 
 import filelock
+import hypothesis
+import hypothesis.strategies
 import pytest
 import tenacity
 
@@ -153,3 +158,34 @@ class TestDomainErrors:
         monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
         with pytest.raises(ralphlib.exceptions.StateFileError):
             ralphlib.state.add_to_state(options, {'new': 'val'})
+
+
+KEYS = hypothesis.strategies.sampled_from(['a', 'b', 'c'])
+LEAVES = hypothesis.strategies.dictionaries(hypothesis.strategies.sampled_from(['x', 'y', 'z']), hypothesis.strategies.integers(), max_size=3)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    initial=hypothesis.strategies.dictionaries(KEYS, hypothesis.strategies.dictionaries(KEYS, LEAVES, max_size=3), max_size=3),
+    value=LEAVES,
+    key1=hypothesis.strategies.none() | KEYS,
+    key2=hypothesis.strategies.none() | KEYS,
+)
+def test_add_to_state_merges_value_at_its_keys_and_leaves_the_rest(
+    initial: dict[str, typing.Any], value: dict[str, int], key1: str | None, key2: str | None
+) -> None:
+    with tempfile.TemporaryDirectory() as logdir:
+        state_path = pathlib.Path(logdir) / 'state.json'
+        state_path.write_text(json.dumps(initial))
+        options = tests.helpers.make_plain_options(state='state.json', logdir=logdir)
+
+        ralphlib.state.add_to_state(options, value, key1, key2)
+
+        expected = copy.deepcopy(initial)
+        if key1 is None:
+            expected.update(value)
+        elif key2 is None:
+            expected.setdefault(key1, {}).update(value)
+        else:
+            expected.setdefault(key1, {}).setdefault(key2, {}).update(value)
+        assert json.loads(state_path.read_text()) == expected

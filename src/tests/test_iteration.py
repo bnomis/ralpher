@@ -1,10 +1,12 @@
 import collections.abc
 import io
+import os
 import pathlib
 import shlex
 import signal
 import subprocess
 import sys
+import typing
 import unittest.mock
 
 import hypothesis
@@ -1414,3 +1416,152 @@ def test_is_stop_is_false_when_no_line_is_a_stop(text: str) -> None:
 def test_indent_lines_prefixes_every_line(s: str, indent: str) -> None:
     result = ralphlib.iteration.indent_lines(s, indent)
     assert result.split('\n') == [f'{indent}{line}' for line in s.splitlines()] or not s.splitlines()
+
+
+def optional_text_field(types: list[str]) -> hypothesis.strategies.SearchStrategy[dict[str, typing.Any] | None]:
+    """A `content_block` or `delta` object: maybe null, maybe without a type or text."""
+    return hypothesis.strategies.one_of(
+        hypothesis.strategies.none(),
+        hypothesis.strategies.fixed_dictionaries(
+            {}, optional={'type': hypothesis.strategies.sampled_from(types), 'text': hypothesis.strategies.text(max_size=20)}
+        ),
+    )
+
+
+STREAM_EVENTS = hypothesis.strategies.fixed_dictionaries(
+    {'type': hypothesis.strategies.just('stream_event')},
+    optional={
+        'event': hypothesis.strategies.one_of(
+            hypothesis.strategies.none(),
+            hypothesis.strategies.fixed_dictionaries(
+                {},
+                optional={
+                    'type': hypothesis.strategies.sampled_from(
+                        [
+                            'content_block_delta',
+                            'content_block_start',
+                            'content_block_stop',
+                            'message_delta',
+                            'message_start',
+                            'message_stop',
+                            'other',
+                        ]
+                    ),
+                    'content_block': optional_text_field(['other', 'text', 'tool_use']),
+                    'delta': optional_text_field(['input_json_delta', 'other', 'text_delta']),
+                },
+            ),
+        )
+    },
+)
+
+JSON_VALUES = hypothesis.strategies.recursive(
+    hypothesis.strategies.none()
+    | hypothesis.strategies.booleans()
+    | hypothesis.strategies.integers(min_value=-(2**63), max_value=2**63 - 1)
+    | hypothesis.strategies.text(max_size=10),
+    lambda children: (
+        hypothesis.strategies.lists(children, max_size=3) | hypothesis.strategies.dictionaries(hypothesis.strategies.text(max_size=8), children, max_size=3)
+    ),
+    max_leaves=10,
+)
+
+PAYLOADS = hypothesis.strategies.one_of(
+    STREAM_EVENTS,
+    hypothesis.strategies.dictionaries(hypothesis.strategies.sampled_from(['message', 'result', 'subtype', 'type']), JSON_VALUES, max_size=4),
+    JSON_VALUES,
+)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(payload=STREAM_EVENTS)
+def test_process_line_hands_stream_events_to_process_stream_event(payload: dict[str, typing.Any]) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    line = orjson.dumps(payload).decode()
+    expected = ralphlib.iteration.process_stream_event(options, make_context(), payload, line)
+    assert ralphlib.iteration.process_line(options, make_context(), line) == expected
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(line=hypothesis.strategies.one_of(hypothesis.strategies.text(max_size=40), PAYLOADS.map(lambda p: orjson.dumps(p).decode())))
+def test_process_line_never_raises_on_any_line(line: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    message_type, message = ralphlib.iteration.process_line(options, make_context(), line)
+    assert isinstance(message_type, ralphlib.types.MessageType)
+    assert isinstance(message, str)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(payload=STREAM_EVENTS)
+def test_process_stream_event_returns_text_only_for_text_blocks(payload: dict[str, typing.Any]) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    line = orjson.dumps(payload).decode()
+    message_type, message = ralphlib.iteration.process_stream_event(options, make_context(), payload, line)
+    event = payload.get('event') or {}
+    block = event.get('content_block') or {}
+    delta = event.get('delta') or {}
+    if event.get('type') == 'content_block_start' and block.get('type') == 'text':
+        assert (message_type, message) == (ralphlib.types.MessageType.CONTENT_START, block.get('text', ''))
+    elif event.get('type') == 'content_block_delta' and delta.get('type') == 'text_delta':
+        assert (message_type, message) == (ralphlib.types.MessageType.CONTENT_DELTA, delta.get('text', ''))
+    elif event.get('type') == 'content_block_stop':
+        assert (message_type, message) == (ralphlib.types.MessageType.CONTENT_STOP, '')
+    else:
+        assert message_type == ralphlib.types.MessageType.NONE
+        assert message in ('', line)
+
+
+INPUT_FIELDS = ['command', 'description', 'pattern', 'url']
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    fields=hypothesis.strategies.fixed_dictionaries(
+        {},
+        optional={
+            name: hypothesis.strategies.one_of(hypothesis.strategies.none(), hypothesis.strategies.text(max_size=10), hypothesis.strategies.integers())
+            for name in INPUT_FIELDS
+        },
+    ),
+    todos=hypothesis.strategies.lists(hypothesis.strategies.fixed_dictionaries({}, optional={'content': hypothesis.strategies.text(max_size=10)}), max_size=3),
+)
+def test_input_field_to_content_prefers_the_first_set_field_then_todos(fields: dict[str, typing.Any], todos: list[dict[str, str]]) -> None:
+    result = ralphlib.iteration.input_field_to_content({**fields, 'todos': todos})
+    set_fields = sorted(name for name, value in fields.items() if value)
+    if set_fields:
+        assert result == str(fields[set_fields[0]])
+    else:
+        assert result == '\n'.join(f'- {td["content"]}' for td in todos if td.get('content'))
+
+
+PATH_ENTRIES = ['', f'{RALPHER_SRC}', f'{RALPHER_VENV}/bin', '/usr/bin', '/usr/local/bin', '/work/probe/src']
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    path=hypothesis.strategies.none() | hypothesis.strategies.lists(hypothesis.strategies.sampled_from(PATH_ENTRIES), max_size=5),
+    pythonpath=hypothesis.strategies.none() | hypothesis.strategies.lists(hypothesis.strategies.sampled_from(PATH_ENTRIES), max_size=5),
+    virtual_env=hypothesis.strategies.sampled_from([None, str(RALPHER_VENV), '/work/probe/.venv']),
+)
+def test_agent_environment_removes_only_ralphers_own_entries(path: list[str] | None, pythonpath: list[str] | None, virtual_env: str | None) -> None:
+    environ = {'HOME': '/home/someone', 'VIRTUAL_ENV_PROMPT': 'prompt'}
+    for name, value in (('PATH', path), ('PYTHONPATH', pythonpath), ('VIRTUAL_ENV', virtual_env)):
+        if value is not None:
+            environ[name] = value if isinstance(value, str) else os.pathsep.join(value)
+    before = dict(environ)
+
+    env = ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
+
+    assert environ == before
+    expected = dict(environ)
+    if virtual_env == str(RALPHER_VENV):
+        del expected['VIRTUAL_ENV'], expected['VIRTUAL_ENV_PROMPT']
+    for name, entries, own in (('PATH', path, f'{RALPHER_VENV}/bin'), ('PYTHONPATH', pythonpath, str(RALPHER_SRC))):
+        if entries is None:
+            continue
+        kept = [entry for entry in entries if entry != own]
+        if any(kept):
+            expected[name] = os.pathsep.join(kept)
+        else:
+            del expected[name]
+    assert env == expected

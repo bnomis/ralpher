@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 
 import hypothesis
 import hypothesis.strategies
@@ -133,3 +134,29 @@ def test_iteration_to_str_has_a_fixed_width_and_round_trips(iterations: int, dat
     result = ralphlib.logger.iteration_to_str(tests.helpers.make_plain_options(iterations=iterations), iteration)
     assert len(result) == len(str(iterations))
     assert int(result) == iteration
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    stem=hypothesis.strategies.from_regex(r'[a-z][a-z0-9_]{0,8}', fullmatch=True),
+    suffix=hypothesis.strategies.sampled_from(['', '.json', '.log']),
+    iterations=hypothesis.strategies.integers(min_value=1, max_value=1000),
+    taken=hypothesis.strategies.booleans(),
+    data=hypothesis.strategies.data(),
+)
+def test_log_file_names_each_iteration_once_and_never_reuses_a_file(
+    stem: str, suffix: str, iterations: int, taken: bool, data: hypothesis.strategies.DataObject
+) -> None:
+    iteration = data.draw(hypothesis.strategies.integers(min_value=1, max_value=iterations))
+    ralphlib.logger.log_file_cache.clear()
+    with tempfile.TemporaryDirectory() as logdir:
+        options = tests.helpers.make_plain_options(logdir=logdir, iterations=iterations)
+        name = f'{stem}-{ralphlib.logger.iteration_to_str(options, iteration)}'
+        if taken:
+            (pathlib.Path(logdir) / f'{name}{suffix}').touch()
+
+        path = ralphlib.logger.log_file(options, f'{stem}{suffix}', iteration)
+        path.touch()
+
+        assert path == pathlib.Path(logdir).absolute() / (f'{name}-1{suffix}' if taken else f'{name}{suffix}')
+        assert ralphlib.logger.log_file(options, f'{stem}{suffix}', iteration) == path

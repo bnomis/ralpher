@@ -11,16 +11,8 @@
 Each finding has its full location list in [review-2.md](review-2.md). The
 other review-2 findings were fixed by
 [tasks-2.md](../tasks/audit-reviews/tasks-2.md), merged on 2026-11-02 in
-`8d320ce`, and are listed under Recently resolved.
-
-### Property-test gaps
-
-- **Rule or category:** T2
-- **Severity:** low
-- **Location:** `iteration.py` (`process_line`, `process_stream_event`, `input_field_to_content`, `agent_environment`), `templater.py` (`render`), `logger.py` (`log_file`), `state.py` (`add_to_state`)
-- **First raised:** review-2 (2026-11-02), Finding 18
-- **Description:** tasks-2 Task 14 added hypothesis tests for some of the listed parsers and formatters; these functions still have example tests only.
-- **Recommendation:** add a hypothesis test for each, or say in the test module why one does not fit. Filed in `TODO.md`.
+`8d320ce`, and are listed under Recently resolved, with the property-test gaps
+closed on 2026-11-02 after it.
 
 ### Plugin dependencies flagged by D2
 
@@ -53,6 +45,7 @@ other review-2 findings were fixed by
 | Late dataclass mutation (`RalpherOptions.current_iteration` stays, by the review-2 answer of 2026-11-02) | low | review-2 | tasks-2 Task 13 |
 | Duplicated console construction and other A13/A15 hits | low | review-2 | tasks-2 Task 13 |
 | Standards (S1, S4) | low | review-2 | tasks-2 Task 13 |
+| Property-test gaps | low | review-2 | tasks-2 Task 14, then property tests in `src/tests/` on 2026-11-02 |
 | `signals.py` calls `console_print` without `options` | high | review-1 | review-2 |
 | `check_repo_clean` calls `lines_to_text` without `options` | high | review-1 | review-2 |
 | `check_repo_clean` `options` annotation | medium | review-1 | review-2 |
