@@ -16,7 +16,7 @@ class MessageType(enum.IntEnum):
     PROGRESS = 10
 
 
-message_type_to_str = types.MappingProxyType(
+MESSAGE_TYPE_TO_STR = types.MappingProxyType(
     {
         MessageType.NONE: 'none',
         MessageType.ERROR: 'error',
@@ -45,7 +45,7 @@ class RalpherEventType(enum.IntEnum):
     AGENT_PROCESS_END = 8
 
 
-ralpher_event_type_to_str = types.MappingProxyType(
+RALPHER_EVENT_TYPE_TO_STR = types.MappingProxyType(
     {
         RalpherEventType.NONE: 'none',
         RalpherEventType.START: 'start',

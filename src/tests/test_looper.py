@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import json
 import pathlib
@@ -102,13 +103,13 @@ TASKS_UNFINISHED = '## Task 1: A\n**Status:** done\n## Task 2: Second thing\n**S
 TASKS_DONE = '## Task 1: A\n**Status:** done\n'
 
 
+@dataclasses.dataclass
 class LoopRun:
-    def __init__(self, calls: list[int], out: str, state: dict[str, typing.Any], result: bool = False, events: list[str] | None = None) -> None:
-        self.result = result
-        self.events = list(events or [])
-        self.calls = list(calls)
-        self.out = out
-        self.state = dict(state)
+    calls: list[int]
+    out: str
+    state: dict[str, typing.Any]
+    result: bool = False
+    events: list[str] = dataclasses.field(default_factory=list)
 
 
 def run_loop(

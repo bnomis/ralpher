@@ -18,7 +18,7 @@ STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
 # auditme: accept[mutable-module-level-exported] guards the worktree lookup cache on options
 worktree_lock = threading.Lock()
 FENCES = ('```', '~~~')
-READ_ERRORS = (ralphlib.exceptions.TasksFileError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
+READ_ERRORS = (OSError, UnicodeDecodeError, ValueError, git.GitCommandError, ralphlib.exceptions.TasksFileError)
 
 
 @dataclasses.dataclass

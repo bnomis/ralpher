@@ -29,7 +29,7 @@ if typing.TYPE_CHECKING:
     import ralphlib.options
 
 
-task_progress_re = re.compile(
+TASK_PROGRESS_RE = re.compile(
     r'<task>\s*<id>(?P<id>\d+)</id>\s*<title>(?P<title>.*?)</title>\s*<index>(?P<index>\d+)</index>\s*<count>(?P<count>\d+)</count>\s*<status>(?P<status>(start|done|blocked|operator))</status>\s*</task>'
 )
 
@@ -79,13 +79,13 @@ SUBPROCESS_POLL_INTERVAL = 3
 MAX_KILL_ATTEMPTS = 3
 
 # regex to extract tool IDs from tool results that indicate a background tool has started, e.g. "Command running in background with ID: abc123."
-tool_id_regex = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
+TOOL_ID_REGEX = re.compile(r'Command running in background with ID: (?P<id>\w+)\.')
 # list of tools that are known to run in the background, and thus should be tracked for their IDs
-background_tools_list = frozenset(['Agent', 'Bash'])
+BACKGROUND_TOOLS = frozenset(['Agent', 'Bash'])
 # list tool names used to track background tasks
-background_task_tool_name = frozenset(['TaskOutput', 'TaskStop'])
+BACKGROUND_TASK_TOOL_NAMES = frozenset(['TaskOutput', 'TaskStop'])
 # message types that should trigger a newline before the next message
-newline_types = frozenset(
+NEWLINE_TYPES = frozenset(
     [
         ralphlib.types.MessageType.ALERT,
         ralphlib.types.MessageType.COMPLETE,
@@ -421,11 +421,11 @@ def write_stderr(context: IterationContext, message: str) -> None:
 
 
 def newline_required(context: IterationContext, message_type: ralphlib.types.MessageType) -> bool:
-    if message_type in newline_types:
+    if message_type in NEWLINE_TYPES:
         return True
     if message_type == ralphlib.types.MessageType.CONTENT_STOP:
         last_type = last_message_type(context)
-        if last_type and last_type in [ralphlib.types.MessageType.CONTENT_START, ralphlib.types.MessageType.CONTENT_DELTA]:
+        if last_type and last_type in [ralphlib.types.MessageType.CONTENT_DELTA, ralphlib.types.MessageType.CONTENT_START]:
             return True
     return False
 
@@ -461,21 +461,20 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
         GitError: `hooks.event` could not open the repository.
     """
     kwargs = {
-        'stdin': subprocess.DEVNULL,
-        'stdout': subprocess.PIPE,
-        'stderr': subprocess.PIPE,
         'bufsize': 1,  # line-buffered
-        'text': True,
+        'env': agent_environment(dict(os.environ), pathlib.Path(sys.prefix), pathlib.Path(__file__).resolve().parents[1]),
         'errors': 'replace',
         'start_new_session': True,
-        'env': agent_environment(dict(os.environ), pathlib.Path(sys.prefix), pathlib.Path(__file__).resolve().parents[1]),
+        'stderr': subprocess.PIPE,
+        'stdin': subprocess.DEVNULL,
+        'stdout': subprocess.PIPE,
+        'text': True,
     }
     if options.cwd:
         kwargs['cwd'] = options.cwd
 
     context.in_progress_tasks = {t.id for t in read_task_statuses(options) if t.status == 'in-progress'}
 
-    # log_msg(options, context, f'Forking subprocess {context.cmd}')
     try:
         proc = subprocess.Popen(  # noqa: S603
             context.cmd,
@@ -492,7 +491,6 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
         },
     )
 
-    # Threads to read and print from each pipe concurrently
     stdout_thread = threading.Thread(
         target=process_stdout,
         args=(
@@ -513,7 +511,6 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     stdout_thread.start()
     stderr_thread.start()
 
-    # Wait for the process to complete
     while True:
         time.sleep(SUBPROCESS_POLL_INTERVAL)
 
@@ -532,7 +529,6 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
             kill_agent(proc)
             break
 
-    # Join threads to ensure all output is read
     stdout_thread.join()
     stderr_thread.join()
 
@@ -680,8 +676,8 @@ def process_system(
         'commands_changed',
         'compat_boundary',
         'hook_progress',
-        'hook_started',
         'hook_response',
+        'hook_started',
         'init',
         'notification',
         'status',
@@ -716,7 +712,7 @@ def process_user(
                 if tool_use_id and tool_use_id in context.background_tools:
                     if tool_type == 'tool_result':
                         if cs:
-                            m = tool_id_regex.match(cs)
+                            m = TOOL_ID_REGEX.match(cs)
                             if m:
                                 tool_id = m.group('id')
                                 if tool_id:
@@ -783,7 +779,7 @@ def process_assistant(
                     tool_input = get_tool_input(c)
                     if tool_input:
                         with context.gil:
-                            if tool_name in background_task_tool_name and tool_input in context.background_id_to_tool:
+                            if tool_name in BACKGROUND_TASK_TOOL_NAMES and tool_input in context.background_id_to_tool:
                                 tool_id = context.background_id_to_tool[tool_input]
                                 vals.append(context.background_tools[tool_id]['name'])
                                 vals.append(context.background_tools[tool_id]['input'])
@@ -798,7 +794,7 @@ def process_assistant(
 
                     # catch starting background tool uses
                     if run_in_background:
-                        if tool_name in background_tools_list:
+                        if tool_name in BACKGROUND_TOOLS:
                             add_background_tool(context, tool_name, tool_input, c.get('id', ''))
                         else:
                             loguru.logger.warning(f'Tool {tool_name} not in known background tools list')
@@ -815,7 +811,7 @@ def process_task_progress(
     payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    task = task_progress_re.search(line)
+    task = TASK_PROGRESS_RE.search(line)
     if task:
         tid = task.group('id')
         status = task.group('status')
@@ -831,11 +827,11 @@ def task_progress(options: ralphlib.options.RalpherOptions, tid: str, title: str
         options,
         ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS,
         {
-            'task_id': tid,
-            'task_title': title,
-            'task_index': index,
             'task_count': count,
+            'task_id': tid,
+            'task_index': index,
             'task_status': status,
+            'task_title': title,
         },
     )
     return f'\ntask {tid}: {title} {index}/{count} {status}\n'
@@ -960,7 +956,6 @@ def process_result(
         return ralphlib.types.MessageType.ERROR, result
 
     if result:
-        # stopping
         if is_stop(options, result):
             set_complete(context, True)
             return ralphlib.types.MessageType.COMPLETE, ''
@@ -977,7 +972,7 @@ def process_stream_event(
     event = payload.get('event') or {}
     etype = event.get('type', '')
 
-    if etype in ['message_start', 'message_stop', 'message_delta']:
+    if etype in ['message_delta', 'message_start', 'message_stop']:
         return ralphlib.types.MessageType.NONE, ''
 
     if etype == 'content_block_start':

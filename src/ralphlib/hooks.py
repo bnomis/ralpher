@@ -41,9 +41,8 @@ def event(
 ) -> None:
     task_id = event_context.get('task_id')
     task_status = event_context.get('task_status')
-    event_type_string = ralphlib.types.ralpher_event_type_to_str.get(event_type, 'unknown')
+    event_type_string = ralphlib.types.RALPHER_EVENT_TYPE_TO_STR.get(event_type, 'unknown')
 
-    # don't process the same hook twice
     ev_str = event_type_string + str(event_context)
     ev_str_hash = str(hash(ev_str))
 
@@ -62,23 +61,18 @@ def event(
                 seen_task_ids[task_id] = task_status
         return
 
-    # record the hooks we've seen
     processed_hooks.add(ev_str_hash)
 
-    # check if there are any hooks defined for this event type
     hooks = options.settings.get('hooks', {})
     if hooks and event_type_string in hooks:
-        # prepare the context for the hook templates
         hook_templates = options.settings.get('hook_templates', True)
         context = {}
         if hook_templates:
             context = make_context(options, event_type, event_context, hooks[event_type_string])
 
-        # run each hook command with the prepared context
         for cmd in hooks[event_type_string]:
             run_hook(cmd, context if hook_templates else None)
 
-    # handle operator input required status
     if task_status == 'operator':
         ralphlib.signals.set_should_exit(
             True,
@@ -120,7 +114,7 @@ def make_context(
         'current_iteration': str(options.current_iteration),
         'datetime_local': now_local.isoformat(),
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
-        'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
+        'event_type': ralphlib.types.RALPHER_EVENT_TYPE_TO_STR[event_type],
         'iteration_count': str(options.iteration_count),
         'iterations': str(options.iterations),
         'last_commit_summary': last_commit_summary(options, commands),

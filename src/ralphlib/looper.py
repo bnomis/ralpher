@@ -93,11 +93,11 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     )
 
     new_state = {
-        'start': now,
         'agent': options.agent,
         'args': options.args,
-        'prompt': content,
         'max_iterations': options.iterations,
+        'prompt': content,
+        'start': now,
     }
     ralphlib.state.add_to_state(options, new_state)
 
@@ -234,19 +234,19 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         'end': now,
         'exit_reason': exit_reason,
         'iterations_completed': num_loops,
-        'total_time_readable': readable,
-        'total_time_seconds': td.total_seconds(),
         'loop_time_readable': readable_loop_time,
         'loop_time_seconds': total_loop_time_td.total_seconds(),
         'overhead_time_readable': readable_overhead_time,
         'overhead_time_seconds': ralpher_overhead_td.total_seconds(),
         'stopping_reason': stopping_reason,
+        'total_time_readable': readable,
+        'total_time_seconds': td.total_seconds(),
     }
     ralphlib.state.add_to_state(options, new_state)
 
     end_context = {
-        'iteration': 0,
         'exit_reason': exit_reason,
+        'iteration': 0,
         'iterations_completed': num_loops,
         'total_time_readable': readable,
         'total_time_seconds': td.total_seconds(),
@@ -331,7 +331,6 @@ def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> 
     if total_seconds == 0:
         return '0'
 
-    # Handle negative durations
     sign = '-' if total_seconds < 0 else ''
     total_seconds = abs(total_seconds)
 

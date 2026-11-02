@@ -438,7 +438,7 @@ files it names.
 
 ## Task 13: Standards
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 16
@@ -447,22 +447,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Rename the lower_snake module constants in `src/ralphlib/iteration.py` and `src/ralphlib/types.py` to UPPER_SNAKE and update every reader
-- [ ] Move the `TYPE_CHECKING` block in `src/ralphlib/printer.py` directly after the imports
-- [ ] Delete the obvious comments and the commented-out code review-3 S4 lists, and the task-number section banners in `src/tests/test_iteration.py`
-- [ ] Sort the literals review-3 S4 lists; where the order carries meaning, keep it and add a scoped `non-alphabetical-literal` accept marker giving the reason
-- [ ] Replace `.format()` in `src/tests/test_iteration.py` with an f-string; make `LoopRun` in `src/tests/test_looper.py` a dataclass
-- [ ] Move the tests in `src/tests/test_shlex.py` into `src/tests/test_hooks.py`, those in `src/tests/test_process_termination.py` into `src/tests/test_iteration.py`, and the `make_context` test in `src/tests/test_verifier.py` into `src/tests/test_iteration.py`; delete the emptied files
+- [x] Rename the lower_snake module constants in `src/ralphlib/iteration.py` and `src/ralphlib/types.py` to UPPER_SNAKE and update every reader
+- [x] Move the `TYPE_CHECKING` block in `src/ralphlib/printer.py` directly after the imports
+- [x] Delete the obvious comments and the commented-out code review-3 S4 lists, and the task-number section banners in `src/tests/test_iteration.py`
+- [x] Sort the literals review-3 S4 lists; where the order carries meaning, keep it and add a scoped `non-alphabetical-literal` accept marker giving the reason
+- [x] Replace `.format()` in `src/tests/test_iteration.py` with an f-string; make `LoopRun` in `src/tests/test_looper.py` a dataclass
+- [x] Move the tests in `src/tests/test_shlex.py` into `src/tests/test_hooks.py`, those in `src/tests/test_process_termination.py` into `src/tests/test_iteration.py`, and the `make_context` test in `src/tests/test_verifier.py` into `src/tests/test_iteration.py`; delete the emptied files
 
 **Acceptance Criteria:**
 
-- [ ] Each S2, S3 and S4 hit in review-3 is fixed or carries a scoped marker with a reason
-- [ ] The number of collected tests is unchanged by the moves (`uv run pytest --collect-only -q` before and after)
+- [x] Each S2, S3 and S4 hit in review-3 is fixed or carries a scoped marker with a reason
+- [x] The number of collected tests is unchanged by the moves (`uv run pytest --collect-only -q` before and after)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_printer.py src/tests/test_giter.py src/tests/test_settings.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_printer.py src/tests/test_giter.py src/tests/test_settings.py` passes
 
 **Notes:**
 

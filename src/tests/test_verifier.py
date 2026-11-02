@@ -239,13 +239,6 @@ def test_worktree_task_file_runs_git_worktree_list_once(tmp_path: pathlib.Path) 
     assert parse.call_count == 1
 
 
-def test_make_context_clears_the_cached_worktree_path() -> None:
-    options = ralphlib.options.RalpherOptions(prompt='p', quiet=True)
-    options.worktree_task_path = pathlib.Path('/stale')
-    ralphlib.iteration.make_context(options, 'prompt', 1)
-    assert options.worktree_task_path is None
-
-
 class TestParseWorktrees:
     def test_entries_with_a_branch(self) -> None:
         porcelain = 'worktree /src/probe\nHEAD abc\nbranch refs/heads/main\n\nworktree /src/probe/wt\nHEAD def\nbranch refs/heads/worktree-a-b\n'

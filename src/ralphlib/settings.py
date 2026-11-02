@@ -30,13 +30,10 @@ def default_settings() -> dict[str, typing.Any]:
 
 def load_settings(options: ralphlib.options.RalpherOptions) -> ralphlib.options.RalpherOptions:
     options.settings = default_settings()
-    # home
     options = load_settings_from_file(options, '~/.ralpher/settings.json')
-    # cwd
     if options.cwd:
         cwd = pathlib.Path(options.cwd).resolve()
         options = load_settings_from_file(options, cwd / '.ralpher/settings.json')
-    # cli
     if options.settings_file:
         return load_settings_from_file(options, options.settings_file)
     return options

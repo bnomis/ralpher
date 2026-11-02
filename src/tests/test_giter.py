@@ -46,7 +46,6 @@ class TestIsGitRepo:
 class TestIsWorkingTreeClean:
     def test_returns_true_for_clean_repo(self, tmp_path: pathlib.Path) -> None:
         repo = git.Repo.init(str(tmp_path))
-        # Create an initial commit so the repo has a HEAD
         readme = tmp_path / 'README.md'
         readme.write_text('hello')
         repo.index.add(list(README_FILES))
@@ -88,9 +87,7 @@ class TestIsCleanStrict:
         readme.write_text('hello')
         repo.index.add(list(README_FILES))
         repo.index.commit('initial')
-        # Clean repo should be clean strict
         assert ralphlib.giter.working_tree_is_clean(repo, include_untracked=True) is True
-        # Untracked file makes it dirty
         (tmp_path / 'untracked.txt').write_text('new')
         assert ralphlib.giter.working_tree_is_clean(repo, include_untracked=True) is False
 
@@ -102,10 +99,8 @@ class TestIsCleanNoUntracked:
         readme.write_text('hello')
         repo.index.add(list(README_FILES))
         repo.index.commit('initial')
-        # Untracked file should NOT make it dirty
         (tmp_path / 'untracked.txt').write_text('new')
         assert ralphlib.giter.working_tree_is_clean(repo, include_untracked=False) is True
-        # Modified tracked file should make it dirty
         readme.write_text('modified')
         assert ralphlib.giter.working_tree_is_clean(repo, include_untracked=False) is False
 
@@ -126,7 +121,6 @@ class TestGetUpstreamBranch:
         readme.write_text('hello')
         repo.index.add(list(README_FILES))
         repo.index.commit('initial')
-        # No remote set up, so no tracking branch
         assert ralphlib.giter.read_upstream_branch(repo) is None
 
 

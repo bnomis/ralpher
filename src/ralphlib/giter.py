@@ -164,7 +164,6 @@ def fetch_unpushed_state(repo: git.Repo) -> bool | None:
     if upstream is None:
         return None
 
-    # Count commits ahead of upstream
     try:
         ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
     except (git.GitCommandError, git.GitCommandNotFound, OSError) as e:
