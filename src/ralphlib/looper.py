@@ -28,8 +28,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
-        cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
-        options.cwd = str(cwd_path)
         try:
             os.chdir(options.cwd)
         except OSError as e:
@@ -60,7 +58,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
     task_path = None
     if options.task_file:
-        task_path = pathlib.Path(options.task_file).resolve().expanduser()
+        task_path = pathlib.Path(options.task_file)
         if not task_path.is_file():
             sys.exit(f'Error: Task file "{options.task_file}" does not exist.')
         try:
@@ -69,7 +67,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
             raise ralphlib.exceptions.TasksFileError(f'Cannot read tasks file "{options.task_file}"') from e
         if not task_content:
             sys.exit(f'Error: Task file "{options.task_file}" is empty.')
-        options.task_file = str(task_path)
 
     ralphlib.logger.init(options)
 
@@ -163,21 +160,17 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
-        state_payload = {
-            'end': loop_end.isoformat(),
+        iteration_time = {
             'iteration_time_readable': loop_time_str,
             'iteration_time_seconds': loop_td.total_seconds(),
         }
+        state_payload = {'end': loop_end.isoformat(), **iteration_time}
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
 
         ralphlib.hooks.event(
             options,
             event_type=ralphlib.types.RalpherEventType.ITERATION_END,
-            event_context={
-                'iteration': i,
-                'iteration_time_readable': loop_time_str,
-                'iteration_time_seconds': loop_td.total_seconds(),
-            },
+            event_context={'iteration': i, **iteration_time},
         )
 
         if complete and options.task_file and not options.no_verify_stop and not error:
@@ -251,30 +244,16 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     }
     ralphlib.state.add_to_state(options, new_state)
 
+    end_context = {
+        'iteration': 0,
+        'exit_reason': exit_reason,
+        'iterations_completed': num_loops,
+        'total_time_readable': readable,
+        'total_time_seconds': td.total_seconds(),
+    }
     if error:
-        ralphlib.hooks.event(
-            options,
-            event_type=ralphlib.types.RalpherEventType.ERROR,
-            event_context={
-                'iteration': 0,
-                'exit_reason': exit_reason,
-                'iterations_completed': num_loops,
-                'total_time_readable': readable,
-                'total_time_seconds': td.total_seconds(),
-            },
-        )
-
-    ralphlib.hooks.event(
-        options,
-        event_type=ralphlib.types.RalpherEventType.END,
-        event_context={
-            'iteration': 0,
-            'exit_reason': exit_reason,
-            'iterations_completed': num_loops,
-            'total_time_readable': readable,
-            'total_time_seconds': td.total_seconds(),
-        },
-    )
+        ralphlib.hooks.event(options, event_type=ralphlib.types.RalpherEventType.ERROR, event_context=end_context)
+    ralphlib.hooks.event(options, event_type=ralphlib.types.RalpherEventType.END, event_context=end_context)
 
     if complete and not (bool(error) or termination):
         print_cleanup_cmds(options)
@@ -286,7 +265,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
 def reject_unverified_stop(options: ralphlib.options.RalpherOptions, iteration: int, iterations_key: str) -> bool:
     """Check a stop signal against the tasks file; return whether the loop should still stop."""
-    check = ralphlib.verifier.check_stop(options)
+    check = ralphlib.verifier.verify_stop(options)
     if not check.verified:
         loguru.logger.warning(f'Cannot verify stop signal, trusting it: {check.reason}')
         return True

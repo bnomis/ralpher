@@ -8,7 +8,7 @@ import ralphlib.options
 
 def main() -> None:
     try:
-        options = ralphlib.options.parse_options()
+        options = ralphlib.options.load_options()
         if options.cleanup:
             ralphlib.looper.print_cleanup_cmds(options)
             sys.exit(0)

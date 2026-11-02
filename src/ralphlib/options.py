@@ -136,11 +136,14 @@ class RalpherOptions:
         ),
     ] = False
     settings: dict[str, typing.Any] = dataclasses.field(init=False, default_factory=dict)
+    """Set at run time by `settings.load_settings`."""
     current_iteration: int = dataclasses.field(init=False, default=0)
+    """Set at run time: the iteration in progress."""
     iteration_count: int = dataclasses.field(init=False, default=0)
+    """Set at run time: the iterations finished so far."""
 
     worktree_task_path: pathlib.Path | None = dataclasses.field(init=False, default=None)
-    """The tasks file inside the agent's worktree, cached once found; cleared at the start of each iteration."""
+    """Set at run time: the tasks file inside the agent's worktree, cached once found and cleared at the start of each iteration."""
 
     def __post_init__(self) -> None:
         if self.iterations < 1:
@@ -155,6 +158,16 @@ class RalpherOptions:
                 raise ralphlib.exceptions.InvalidArgsError(f'--args holds {flag}: {REFUSED_ARGS[flag]}')
 
 
-def parse_options() -> RalpherOptions:
+def resolve_paths(options: RalpherOptions) -> RalpherOptions:
+    """Replace `cwd` and `task_file` with their resolved paths."""
+    if options.cwd:
+        options.cwd = str(pathlib.Path(options.cwd).resolve().expanduser())
+    if options.task_file:
+        options.task_file = str(pathlib.Path(options.task_file).resolve().expanduser())
+    return options
+
+
+def load_options() -> RalpherOptions:
+    """Parse the command line, resolve `cwd` and `task_file`, and read the settings files."""
     options: RalpherOptions = cappa.parse(RalpherOptions)
-    return ralphlib.settings.load_settings(options)
+    return ralphlib.settings.load_settings(resolve_paths(options))

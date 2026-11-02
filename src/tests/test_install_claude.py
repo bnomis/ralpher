@@ -54,7 +54,7 @@ class TestSymlinkFile:
 class TestFindDanglingSymlinks:
     def test_reports_a_dangling_link(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         (tmp_path / 'gone.md').symlink_to(tmp_path / 'missing.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path)
         out = capsys.readouterr().out
         assert 'Dangling symlinks found' in out
         assert str(tmp_path / 'gone.md') in out
@@ -62,12 +62,12 @@ class TestFindDanglingSymlinks:
     def test_silent_when_every_link_resolves(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         (tmp_path / 'real.md').write_text('x')
         (tmp_path / 'ok.md').symlink_to(tmp_path / 'real.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path)
         assert capsys.readouterr().out == ''
 
     def test_does_not_descend_past_max_depth(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         deep = tmp_path / 'a' / 'b'
         deep.mkdir(parents=True)
         (deep / 'gone.md').symlink_to(tmp_path / 'missing.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path, max_depth=2)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path, max_depth=2)
         assert capsys.readouterr().out == ''

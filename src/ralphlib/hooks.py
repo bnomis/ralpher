@@ -111,6 +111,7 @@ def make_context(
 
     Raises:
         RalpherError: the local time zone cannot be determined.
+        GitError: `giter.last_commit_summary` could not open the repository.
     """
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     now_local = datetime.datetime.now(local_timezone())

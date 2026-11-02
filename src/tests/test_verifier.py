@@ -131,73 +131,73 @@ def plain_options(path: pathlib.Path) -> ralphlib.options.RalpherOptions:
     return ralphlib.options.RalpherOptions(prompt='p', task_file=str(path), cwd=str(path.parent))
 
 
-def test_check_stop_all_done(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_all_done(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     path.write_text('## Task 1: A\n**Status:** done\n## Task 2: B\n**Status:** Done\n')
-    check = ralphlib.verifier.check_stop(plain_options(path))
+    check = ralphlib.verifier.verify_stop(plain_options(path))
     assert check.verified
     assert check.all_done
     assert check.not_done == []
     assert check.total == 2
 
 
-def test_check_stop_some_not_done(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_some_not_done(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     path.write_text('## Task 1: A\n**Status:** todo\n## Task 2: B\n**Status:** done\n## Task 3: C\n')
-    check = ralphlib.verifier.check_stop(plain_options(path))
+    check = ralphlib.verifier.verify_stop(plain_options(path))
     assert check.verified
     assert not check.all_done
     assert check.not_done == [ralphlib.verifier.TaskStatus(1, 'A', 'todo'), ralphlib.verifier.TaskStatus(3, 'C', '')]
     assert check.total == 3
 
 
-def test_check_stop_missing_file(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_missing_file(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'missing.md'
-    check = ralphlib.verifier.check_stop(plain_options(path))
+    check = ralphlib.verifier.verify_stop(plain_options(path))
     assert not check.verified
     assert str(path) in check.reason
 
 
-def test_check_stop_not_utf8(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_not_utf8(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     path.write_bytes(b'\xff\xfe\x00bad')
-    check = ralphlib.verifier.check_stop(plain_options(path))
+    check = ralphlib.verifier.verify_stop(plain_options(path))
     assert not check.verified
     assert str(path) in check.reason
 
 
-def test_check_stop_empty_file(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_empty_file(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     path.write_text('')
-    check = ralphlib.verifier.check_stop(plain_options(path))
+    check = ralphlib.verifier.verify_stop(plain_options(path))
     assert not check.verified
     assert check.reason == f'no tasks found in {path}'
 
 
-def test_check_stop_worktree_not_found(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_worktree_not_found(tmp_path: pathlib.Path) -> None:
     repo = make_repo(tmp_path)
-    check = ralphlib.verifier.check_stop(make_options(repo))
+    check = ralphlib.verifier.verify_stop(make_options(repo))
     assert not check.verified
     assert check.reason == f'worktree for {SLUG} not found'
 
 
-def test_check_stop_reads_worktree_copy(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_reads_worktree_copy(tmp_path: pathlib.Path) -> None:
     repo = make_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     (repo / TASK_FILE).write_text('## Task 1: T\n**Status:** done\n')
-    check = ralphlib.verifier.check_stop(make_options(repo))
+    check = ralphlib.verifier.verify_stop(make_options(repo))
     assert check.verified
     assert not check.all_done
     assert [t.number for t in check.not_done] == [1]
 
 
-def test_check_stop_worktree_missing_file(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_worktree_missing_file(tmp_path: pathlib.Path) -> None:
     repo = make_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     (wt / TASK_FILE).unlink()
-    check = ralphlib.verifier.check_stop(make_options(repo))
+    check = ralphlib.verifier.verify_stop(make_options(repo))
     assert not check.verified
 
 
@@ -211,12 +211,12 @@ def test_worktree_task_file_cwd_through_symlink(tmp_path: pathlib.Path) -> None:
     assert ralphlib.verifier.worktree_task_file(options) == wt / TASK_FILE
 
 
-def test_check_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None:
+def test_verify_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None:
     repo = make_repo(tmp_path)
     outside = tmp_path / 'outside.md'
     outside.write_text('## Task 1: T\n**Status:** todo\n')
     options = ralphlib.options.RalpherOptions(prompt='p', task_file=str(outside), worktree=True, cwd=str(repo))
-    check = ralphlib.verifier.check_stop(options)
+    check = ralphlib.verifier.verify_stop(options)
     assert not check.verified
     assert str(outside) in check.reason
 

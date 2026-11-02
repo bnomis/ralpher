@@ -333,7 +333,7 @@ files it names.
 
 ## Task 10: Accurate `Raises` sections, fewer late mutations and pure-named I/O
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Findings 11 and 12
@@ -342,22 +342,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add `GitError` to the `Raises:` sections of `hooks.make_context`, `iteration.process` and `verifier.agent_task_file`
-- [ ] Resolve `cwd` and `task_file` in `options.parse_options` (renamed `load_options` below) (or one helper it calls) before the options reach `loop`, and remove the reassignments in `looper.loop`
-- [ ] Build `verifier.TaskStatus` with its status in `parse_tasks`
-- [ ] Rename the functions whose pure-sounding names hide I/O, and update every caller and test: `giter.get_origin` to `read_origin`, `get_current_branch` to `read_current_branch`, `get_upstream_branch` to `read_upstream_branch`, `is_working_tree_clean` to `working_tree_is_clean`, `is_git_repo` to `opens_as_repo`, `has_unpushed_commits` to `fetch_unpushed_state`, `options.parse_options` to `load_options`, `verifier.check_stop` to `verify_stop`, and `find_dangling_symlinks` in `bin/install-claude.py` to `report_dangling_symlinks`
-- [ ] Build the `ERROR` and `END` event contexts and the iteration-end time fields in one helper in `looper.py`
-- [ ] Leave `iteration_count`, `settings`, `worktree_task_path`, `in_progress_tasks`, `complete` and `error` as run-time state, and add a one-line docstring to each field in `RalpherOptions` and `IterationContext` that says it is set at run time
+- [x] Add `GitError` to the `Raises:` sections of `hooks.make_context`, `iteration.process` and `verifier.agent_task_file`
+- [x] Resolve `cwd` and `task_file` in `options.parse_options` (renamed `load_options` below) (or one helper it calls) before the options reach `loop`, and remove the reassignments in `looper.loop`
+- [x] Build `verifier.TaskStatus` with its status in `parse_tasks`
+- [x] Rename the functions whose pure-sounding names hide I/O, and update every caller and test: `giter.get_origin` to `read_origin`, `get_current_branch` to `read_current_branch`, `get_upstream_branch` to `read_upstream_branch`, `is_working_tree_clean` to `working_tree_is_clean`, `is_git_repo` to `opens_as_repo`, `has_unpushed_commits` to `fetch_unpushed_state`, `options.parse_options` to `load_options`, `verifier.check_stop` to `verify_stop`, and `find_dangling_symlinks` in `bin/install-claude.py` to `report_dangling_symlinks`
+- [x] Build the `ERROR` and `END` event contexts and the iteration-end time fields in one helper in `looper.py`
+- [x] Leave `iteration_count`, `settings`, `worktree_task_path`, `in_progress_tasks`, `complete` and `error` as run-time state, and add a one-line docstring to each field in `RalpherOptions` and `IterationContext` that says it is set at run time
 
 **Acceptance Criteria:**
 
-- [ ] `uv run pytest` over the test files below passes with the renamed functions
-- [ ] No caller of a renamed function remains under its old name (`rg`)
+- [x] `uv run pytest` over the test files below passes with the renamed functions
+- [x] No caller of a renamed function remains under its old name (`rg`)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_iteration.py` passes
 
 **Notes:**
 

@@ -51,13 +51,15 @@ class IterationContext:
     background_id_to_tool: dict[str, str] = dataclasses.field(default_factory=dict)
     background_tools: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
     complete: bool = False
+    """Set at run time when the agent reports completion."""
     error: bool = False
+    """Set at run time when the agent run fails."""
     gil: threading.Lock = dataclasses.field(default_factory=threading.Lock)
     message_type_queue: list[ralphlib.types.MessageType] = dataclasses.field(default_factory=list)
     started_tasks: set[str] = dataclasses.field(default_factory=set)
     """Task ids whose start line has been printed this iteration."""
     in_progress_tasks: set[str] = dataclasses.field(default_factory=set)
-    """Task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
+    """Set at run time: task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
     tasks_signature: tuple[int, int] | None = None
     """Modification time and size of the tasks file at the last poll read."""
     progress: pathlib.Path | None = None
@@ -456,6 +458,7 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
 
     Raises:
         RalpherError: the agent cannot be started.
+        GitError: `hooks.event` could not open the repository.
     """
     kwargs = {
         'stdin': subprocess.DEVNULL,

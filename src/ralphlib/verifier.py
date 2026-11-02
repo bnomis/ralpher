@@ -49,7 +49,8 @@ def parse_tasks(text: str) -> list[TaskStatus]:
     """
     tasks: list[TaskStatus] = []
     fence = ''
-    current: TaskStatus | None = None
+    heading: tuple[int, str] | None = None
+    status = ''
     for line in text.splitlines():
         marker = next((f for f in FENCES if line.startswith(f)), '')
         if fence:
@@ -60,15 +61,18 @@ def parse_tasks(text: str) -> list[TaskStatus]:
             fence = marker
             continue
         if line.startswith('## '):
+            if heading:
+                tasks.append(TaskStatus(heading[0], heading[1], status))
             match = HEADING.match(line)
-            current = TaskStatus(int(match.group(1)), match.group(2).strip(), '') if match else None
-            if current:
-                tasks.append(current)
+            heading = (int(match.group(1)), match.group(2).strip()) if match else None
+            status = ''
             continue
-        if current and not current.status:
+        if heading and not status:
             match = STATUS.match(line)
             if match:
-                current.status = match.group(1).strip().lower()
+                status = match.group(1).strip().lower()
+    if heading:
+        tasks.append(TaskStatus(heading[0], heading[1], status))
     return tasks
 
 
@@ -116,6 +120,7 @@ def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
 
     Raises:
         TasksFileError: the worktree does not exist.
+        GitError: `giter.discover_repo_path` could not open the repository.
         git.GitCommandError, ValueError: as `worktree_task_file` does.
     """
     if not options.worktree:
@@ -131,7 +136,7 @@ def read_tasks(options: ralphlib.options.RalpherOptions) -> list[TaskStatus]:
     return parse_tasks(agent_task_file(options).read_text())
 
 
-def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
+def verify_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     """Check a stop signal against the tasks file the agent edits."""
     try:
         path = agent_task_file(options)
