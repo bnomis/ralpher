@@ -368,7 +368,7 @@ files it names.
 
 ## Task 11: The user docs match the code
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 4
@@ -377,23 +377,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Test in `src/tests/test_looper.py`: for a one-part `--task-file` (`TASKS.md`), `print_cleanup_cmds` and a run name the same worktree; confirm it fails first, then make `--cleanup` resolve `--task-file` the way `loop` does (Task 10 moves that resolution into `load_options`, which may already fix it)
-- [ ] `docs/reference/variables.md`: a `--vars` key that names a built-in is rejected
-- [ ] `docs/guide/worktrees.md`: correct the `TASKS.md` row and the `--cleanup` sentence; describe the "cannot tell whether there are unpushed commits" question (default no, exits on no)
-- [ ] `docs/reference/exit-statuses.md`: the divergence check exits when you answer yes
-- [ ] `docs/reference/scripts.md`: `rcl.sh` also needs `RALPHER_PATH`
-- [ ] Read every page under `docs/` once more against the code changed by Tasks 1-10, and correct anything those tasks left behind
+- [x] Test in `src/tests/test_looper.py`: for a one-part `--task-file` (`TASKS.md`), `print_cleanup_cmds` and a run name the same worktree; confirm it fails first, then make `--cleanup` resolve `--task-file` the way `loop` does (Task 10 moves that resolution into `load_options`, which may already fix it)
+- [x] `docs/reference/variables.md`: a `--vars` key that names a built-in is rejected
+- [x] `docs/guide/worktrees.md`: correct the `TASKS.md` row and the `--cleanup` sentence; describe the "cannot tell whether there are unpushed commits" question (default no, exits on no)
+- [x] `docs/reference/exit-statuses.md`: the divergence check exits when you answer yes
+- [x] `docs/reference/scripts.md`: `rcl.sh` also needs `RALPHER_PATH`
+- [x] Read every page under `docs/` once more against the code changed by Tasks 1-10, and correct anything those tasks left behind
 
 **Acceptance Criteria:**
 
-- [ ] Each Doc5 hit in review-3 is fixed
+- [x] Each Doc5 hit in review-3 is fixed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_looper.py`
-- [ ] `uv run pytest src/tests/test_looper.py src/tests/test_templater.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_looper.py`
+- [x] `uv run pytest src/tests/test_looper.py src/tests/test_templater.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

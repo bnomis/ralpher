@@ -293,3 +293,11 @@ def test_cleanup_cmds_name_the_branch_only_with_a_worktree(parent: str, stem: st
         assert f'git branch -D worktree-{parent}-{stem}' in cmds
     else:
         assert cmds == []
+
+
+def test_cleanup_names_the_worktree_the_run_uses_for_a_one_part_task_file(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    options = ralphlib.options.resolve_paths(ralphlib.options.RalpherOptions(task_file='TASKS.md', worktree=True))
+    name = ralphlib.iteration.add_worktree_arg(options, [])[-1]
+    assert name.endswith('-tasks')
+    assert f'git worktree remove --force {name}' in ralphlib.looper.cleanup_cmds(options)

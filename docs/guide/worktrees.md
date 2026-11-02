@@ -10,11 +10,12 @@ Before the first iteration, ralpher checks the repository that contains
 | Not in a git repository | continue? no |
 | Working tree has changes, including untracked files | continue? no |
 | The current branch has commits its upstream lacks (after `git fetch origin`) | continue? no |
+| ralpher cannot tell whether there are unpushed commits (no `origin`, a failed fetch, a detached `HEAD` or no upstream) | continue? no |
 | With `--worktree` and a `fresh` base: `origin/HEAD` is not the current branch | exit now? yes |
 
 The unpushed-commits check is skipped when worktrees are created from the
-local `HEAD` (below). A failed fetch, a missing `origin` or a branch with no
-upstream is reported and not treated as unpushed.
+local `HEAD` (below). When ralpher cannot tell whether there are unpushed commits, it says so and
+asks whether to continue; the default is no, and answering no exits.
 
 The prompts read from the terminal, so an unattended run that hits one waits.
 Commit and push first, or pass `--skip-git-check` to skip every check.
@@ -28,14 +29,14 @@ uses the same worktree. `--args` may not contain `--worktree` or `-w`: ralpher
 refuses it with an error, so every check and hook agrees with the agent on
 whether a worktree is used.
 
-The name comes from the tasks file: its directory name and its stem, joined
+The name comes from the tasks file's absolute path: its directory name and its stem, joined
 with `-`, lowercased, with every run of characters other than `a-z` and `0-9`
 turned into one `-`.
 
 | `--task-file` | Worktree | Branch |
 |---------------|----------|--------|
 | `agents/tasks/config-loader/tasks-1.md` | `config-loader-tasks-1` | `worktree-config-loader-tasks-1` |
-| `TASKS.md` | `tasks` | `worktree-tasks` |
+| `TASKS.md` | `<repo-dir>-tasks` | `worktree-<repo-dir>-tasks` |
 
 Without `--task-file`, `--worktree` is passed on its own and Claude Code
 picks the name.
