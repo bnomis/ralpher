@@ -67,21 +67,22 @@ def make_unique(path: pathlib.Path) -> pathlib.Path:
     return new_path
 
 
+def state_path(options: ralphlib.options.RalpherOptions, name: str) -> pathlib.Path:
+    path = pathlib.Path(name)
+    if not options.logdir:
+        return path
+    if path.is_absolute() or '..' in path.parts:
+        raise ralphlib.exceptions.LogFileError(f'The state file {options.state!r} must be a relative path inside the log directory')
+    return log_dir(options) / path
+
+
 def state_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path | None:
     if not options.state:
         return None
-    path = pathlib.Path(options.state)
-    if options.logdir:
-        logdir = log_dir(options)
-        return logdir / path
-    return path
+    return state_path(options, options.state)
 
 
 def state_lock_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path | None:
     if not options.state:
         return None
-    path = pathlib.Path(options.state + '.lock')
-    if options.logdir:
-        logdir = log_dir(options)
-        return logdir / path
-    return path
+    return state_path(options, options.state + '.lock')

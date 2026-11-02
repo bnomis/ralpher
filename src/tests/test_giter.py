@@ -285,10 +285,26 @@ class TestCheckRepoClean:
         assert all('origin repo' in prompt for prompt in prompts)
 
 
+class TestRedactUrl:
+    @pytest.mark.parametrize(
+        ('url', 'expected'),
+        [
+            ('/local/path/repo', '/local/path/repo'),
+            ('git@github.com:org/repo.git', 'git@github.com:org/repo.git'),
+            ('https://example.com/a.git', 'https://example.com/a.git'),
+            ('https://token@example.com/a.git', 'https://example.com/a.git'),
+            ('https://user:pw@example.com/a.git', 'https://example.com/a.git'),
+        ],
+    )
+    def test_redact_url(self, url: str, expected: str) -> None:
+        assert ralphlib.giter.redact_url(url) == expected
+
+
 class TestHasUnpushedCommitsFetch:
     def make_repo(self, error: Exception) -> unittest.mock.MagicMock:
         repo = unittest.mock.MagicMock()
         repo.remotes.origin.fetch.side_effect = error
+        repo.remotes.origin.url = 'https://example.com/org/repo.git'
         return repo
 
     def test_fetch_git_error_warns_and_returns_false(self) -> None:
@@ -300,6 +316,20 @@ class TestHasUnpushedCommitsFetch:
         finally:
             loguru.logger.remove(sink_id)
         assert any('Fetch failed' in message for message in messages)
+
+    def test_fetch_warning_omits_url_credentials(self) -> None:
+        repo = self.make_repo(git.GitCommandError('fetch', 1))
+        repo.remotes.origin.url = 'https://user:token123@example.com/org/repo.git'
+        repo.remotes.origin.fetch.side_effect = git.GitCommandError('fetch', 1, stderr='fatal: unable to access https://user:token123@example.com/org/repo.git')
+        messages: list[str] = []
+        sink_id = loguru.logger.add(messages.append, level='WARNING')
+        try:
+            ralphlib.giter.has_unpushed_commits(repo)
+        finally:
+            loguru.logger.remove(sink_id)
+        assert messages
+        assert not any('token123' in message for message in messages)
+        assert any('example.com/org/repo.git' in message for message in messages)
 
     def test_fetch_other_error_propagates(self) -> None:
         repo = self.make_repo(RuntimeError('boom'))
@@ -339,5 +369,6 @@ class TestDomainErrors:
 
     def test_has_unpushed_commits_reports_fetch_os_error(self) -> None:
         repo = unittest.mock.MagicMock()
+        repo.remotes.origin.url = 'https://example.com/org/repo.git'
         repo.remotes.origin.fetch.side_effect = OSError('no FETCH_HEAD')
         assert ralphlib.giter.has_unpushed_commits(repo) is False

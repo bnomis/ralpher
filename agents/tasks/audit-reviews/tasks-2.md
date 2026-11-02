@@ -400,7 +400,7 @@ every test file that imports a module this list changed.
 
 ## Task 12: Keep agent output and credentials out of WARNING logs, and contain user paths
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 12 and 13 (Sec2, Sec4, Sec5)
@@ -409,21 +409,21 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] `iteration.py:723`, `:739`, `:747`: log the payload type and length at WARNING and the raw line at DEBUG
-- [ ] `giter.py:135`: strip the user-info part of `origin.url` before logging it
-- [ ] `logger.py:68`, `:78`: reject a `--state` value that is absolute or contains `..` with a domain error
-- [ ] `bin/rrq.sh:31`, `bin/rcl.sh:31`: reject `TASKS-SPEC` and `TASKS-INDEX` containing `/` or `..`, with a usage message
-- [ ] Add tests to `src/tests/test_iteration.py`, `src/tests/test_giter.py` and `src/tests/test_logger.py`
+- [x] `iteration.py:723`, `:739`, `:747`: log the payload type and length at WARNING and the raw line at DEBUG
+- [x] `giter.py:135`: strip the user-info part of `origin.url` before logging it
+- [x] `logger.py:68`, `:78`: reject a `--state` value that is absolute or contains `..` with a domain error
+- [x] `bin/rrq.sh:31`, `bin/rcl.sh:31`: reject `TASKS-SPEC` and `TASKS-INDEX` containing `/` or `..`, with a usage message
+- [x] Add tests to `src/tests/test_iteration.py`, `src/tests/test_giter.py` and `src/tests/test_logger.py`
 
 **Acceptance Criteria:**
 
-- [ ] No WARNING log line contains a raw agent payload or URL credentials
-- [ ] A `--state` value outside the log directory is rejected
+- [x] No WARNING log line contains a raw agent payload or URL credentials
+- [x] A `--state` value outside the log directory is rejected
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`), shellcheck included
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_logger.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`), shellcheck included
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_logger.py` passes
 
 **Notes:**
 

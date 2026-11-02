@@ -30,6 +30,9 @@ Runs a task queue. From your project's root:
 | `--logdir` | `ralpher-logs/SPEC/tasks-INDEX` |
 | `--stdout`, `--stderr`, `--progress`, `--errors`, `--state` | `stdout.jsonl`, `stderr.jsonl`, `progress.log`, `errors.log`, `state.json` |
 
+`SPEC` and `INDEX` must not contain `/` or `..`; `rrq.sh` and `rcl.sh` print
+a usage message and exit otherwise.
+
 Add `ralpher-logs/` to your project's `.gitignore`.
 
 ## `rcl.sh`

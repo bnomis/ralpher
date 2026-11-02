@@ -748,7 +748,8 @@ def process_assistant(
 
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
                     if tool_name == 'UNKNOWN-TOOL':
-                        loguru.logger.warning(f'Tool use without name: {line}')
+                        loguru.logger.warning(f'Tool use without name: {len(line)} characters')
+                        loguru.logger.debug(f'Tool use without name: {line}')
 
                     add_tool_used(context, tool_name)
                     vals = [tool_name]
@@ -764,7 +765,8 @@ def process_assistant(
                                 if run_in_background:
                                     vals.append('(running in background)')
                     else:
-                        loguru.logger.warning(f'Tool {tool_name} without input: {line}')
+                        loguru.logger.warning(f'Tool {tool_name} without input: {len(line)} characters')
+                        loguru.logger.debug(f'Tool {tool_name} without input: {line}')
                         add_unknown_tool(context, tool_name, c.get('input', {}))
 
                     # catch starting background tool uses
@@ -772,7 +774,8 @@ def process_assistant(
                         if tool_name in background_tools_list:
                             add_background_tool(context, tool_name, tool_input, c.get('id', ''))
                         else:
-                            loguru.logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
+                            loguru.logger.warning(f'Tool {tool_name} not in known background tools list')
+                            loguru.logger.debug(f'Tool {tool_name} not in known background tools list: {line}')
 
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 

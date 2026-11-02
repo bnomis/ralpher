@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest.mock
 
+import loguru
 import orjson
 import pytest
 
@@ -384,6 +385,26 @@ def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() ->
         assert 'not in known background tools list' in warning_msg
 
     assert 'tool_xyz' not in context.background_tools
+
+
+def test_process_assistant_warnings_omit_the_raw_payload() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    marker = 'sk-marker-value'
+    payload = {
+        'type': 'assistant',
+        'extra': marker,
+        'message': {'content': [{'type': 'tool_use', 'name': 'UnknownTool', 'input': {}}]},
+    }
+    line = orjson.dumps(payload).decode()
+    warnings: list[str] = []
+    sink_id = loguru.logger.add(warnings.append, level='WARNING')
+    try:
+        ralphlib.iteration.process_assistant(options, context, payload, line)
+    finally:
+        loguru.logger.remove(sink_id)
+    assert warnings
+    assert not any(marker in w for w in warnings)
 
 
 def test_process_assistant_task_output_resolves_background_tool() -> None:

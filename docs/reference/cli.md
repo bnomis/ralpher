@@ -44,7 +44,7 @@ ralpher.sh [OPTIONS]
 | `--stderr FILE` | | Raw agent stderr, per iteration. |
 | `--progress FILE` | | Everything printed, per iteration, plus a run file. |
 | `--errors FILE` | | Unparsed lines and parse errors, per iteration. |
-| `--state FILE` | | The run's JSON state file. |
+| `--state FILE` | | The run's JSON state file. With `--logdir`, it must be a relative path without `..`. |
 | `--quiet` | off | Print nothing to the terminal. Log files are still written. |
 
 See [Logs and state](../guide/logs.md).

@@ -97,6 +97,24 @@ class TestLogDir:
             ralphlib.logger.log_dir(options)
 
 
+class TestStatePathContainment:
+    @pytest.mark.parametrize('state', ['/etc/state.json', '../state.json', 'a/../../state.json'])
+    def test_state_file_rejects_paths_outside_logdir(self, tmp_path: pathlib.Path, state: str) -> None:
+        options = tests.helpers.make_plain_options(state=state, logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.state_file(options)
+
+    @pytest.mark.parametrize('state', ['/etc/state.json', '../state.json'])
+    def test_state_lock_file_rejects_paths_outside_logdir(self, tmp_path: pathlib.Path, state: str) -> None:
+        options = tests.helpers.make_plain_options(state=state, logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.state_lock_file(options)
+
+    def test_nested_relative_state_is_accepted(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='sub/state.json', logdir=str(tmp_path))
+        assert ralphlib.logger.state_file(options) == tmp_path / 'sub' / 'state.json'
+
+
 class TestDomainErrors:
     def test_init_translates_mkdir_error(self, tmp_path: pathlib.Path) -> None:
         blocker = tmp_path / 'file'

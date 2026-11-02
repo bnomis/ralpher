@@ -1,6 +1,7 @@
 import contextlib
 import json
 import pathlib
+import re
 import sys
 import typing
 
@@ -129,6 +130,11 @@ def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> boo
         raise ralphlib.exceptions.GitError(f'Cannot read the git status of {repo.working_dir}') from e
 
 
+def redact_url(text: str) -> str:
+    """Return text with the user-info (credentials) removed from every scheme://user:pw@host URL in it."""
+    return re.sub(r'([a-zA-Z][a-zA-Z0-9+.-]*://)[^/@\s]*@', r'\1', text)
+
+
 def has_unpushed_commits(repo: git.Repo) -> bool:
     """
     Returns True if the current branch has commits not pushed to its upstream
@@ -147,7 +153,7 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
         origin.fetch()
     except (git.GitCommandError, OSError, UnicodeDecodeError) as e:
         # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
-        message = f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}'
+        message = redact_url(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
         console_stderr.print(message)
         loguru.logger.warning(message)
         return False
