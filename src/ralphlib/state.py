@@ -25,14 +25,14 @@ def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any
     if not path:
         raise ralphlib.exceptions.NoStateFilePath()
 
-    try:
-        if path.exists():
-            with path.open('r') as fp:
-                return json.load(fp)
-    except Exception:
-        loguru.logger.exception('Exception in load_state')
+    if not path.exists():
+        return {}
 
-    return {}
+    try:
+        with path.open('r') as fp:
+            return json.load(fp)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot read state file {path}') from e
 
 
 def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing.Any]) -> None:

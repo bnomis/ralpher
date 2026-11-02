@@ -27,6 +27,13 @@ class TestLoadState:
         result = ralphlib.state.load_state(options)
         assert result == {'foo': 'bar'}
 
+    def test_corrupt_file_raises_naming_path(self, tmp_path: pathlib.Path) -> None:
+        state_path = tmp_path / 'state.json'
+        state_path.write_text('{not json')
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json'):
+            ralphlib.state.load_state(options)
+
 
 class TestSaveState:
     def test_noop_when_state_not_set(self, tmp_path: pathlib.Path) -> None:
@@ -87,6 +94,14 @@ class TestAddToState:
         ralphlib.state.add_to_state(options, {'c': 3}, key1='nested')
         result = ralphlib.state.load_state(options)
         assert result == {'a': 1, 'b': 2, 'nested': {'c': 3}}
+
+    def test_corrupt_file_is_left_unchanged(self, tmp_path: pathlib.Path) -> None:
+        state_path = tmp_path / 'state.json'
+        state_path.write_bytes(b'{not json\xff')
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json'):
+            ralphlib.state.add_to_state(options, {'new': 'val'})
+        assert state_path.read_bytes() == b'{not json\xff'
 
     def test_noop_when_state_not_set(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state=None, logdir=str(tmp_path))

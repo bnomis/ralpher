@@ -12,3 +12,7 @@ class InvalidVarFormat(Exception):
 
 class NoStateLockFilePath(Exception):
     pass
+
+
+class StateFileError(Exception):
+    pass

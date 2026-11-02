@@ -56,7 +56,7 @@ every test file that imports a module this list changed.
 
 ## Task 2: Never overwrite an unreadable state file
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -65,20 +65,20 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] In `state.load_state`, return `{}` only when the file does not exist; remove the `except Exception` so a read or parse failure propagates
-- [ ] Translate `OSError`, `UnicodeDecodeError` and `json.JSONDecodeError` from the read into a new domain error `StateFileError` in `src/ralphlib/exceptions.py`, naming the path
-- [ ] Add tests to `src/tests/test_state.py`: a corrupt state file makes `add_to_state` raise and leaves the file's bytes unchanged; a missing file still gives `{}`
-- [ ] Confirm the corrupt-file test fails against the current code
+- [x] In `state.load_state`, return `{}` only when the file does not exist; remove the `except Exception` so a read or parse failure propagates
+- [x] Translate `OSError`, `UnicodeDecodeError` and `json.JSONDecodeError` from the read into a new domain error `StateFileError` in `src/ralphlib/exceptions.py`, naming the path
+- [x] Add tests to `src/tests/test_state.py`: a corrupt state file makes `add_to_state` raise and leaves the file's bytes unchanged; a missing file still gives `{}`
+- [x] Confirm the corrupt-file test fails against the current code
 
 **Acceptance Criteria:**
 
-- [ ] A corrupt state file is unchanged after `add_to_state`
-- [ ] The error names the state file path
+- [x] A corrupt state file is unchanged after `add_to_state`
+- [x] The error names the state file path
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_state.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_state.py` passes
 
 **Notes:**
 
