@@ -201,11 +201,6 @@ class TestWorktreeBaseRef:
         options = tests.helpers.make_options(worktree_base_ref='fresh')
         assert ralphlib.giter.worktree_base_ref(options, git.Repo.init(str(tmp_path))) == 'fresh'
 
-    def test_option_ignored_when_args_hold_settings(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
-        options = tests.helpers.make_options(worktree_base_ref='fresh', args='--print --settings {}')
-        assert ralphlib.giter.worktree_base_ref(options, git.Repo.init(str(tmp_path))) == 'head'
-
     def test_settings_used_without_option(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'head')
         options = tests.helpers.make_options()

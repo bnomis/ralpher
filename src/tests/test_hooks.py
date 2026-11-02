@@ -269,7 +269,9 @@ class TestTaskFileChoice:
     def test_unblock_prompt_falls_back_when_the_worktree_is_missing(self) -> None:
         options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
         with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=None):
-            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file tasks-1.md'
+            assert ralphlib.hooks.unblock_prompt(options, '4') == (
+                'unblock task 4 in task file tasks-1.md (the worktree tasks file could not be found, so this is the main tasks file)'
+            )
 
     def test_duplicate_event_runs_no_git(self) -> None:
         options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo dup']}}, worktree=True, task_file='t.md')

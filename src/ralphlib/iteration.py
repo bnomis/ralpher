@@ -166,13 +166,13 @@ def run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -
         loguru.logger.exception('Exception in run')
         raise
     finally:
-        summary(options, context, iteration)
+        summary(options, context)
         unmake_context(context)
     return get_complete(context), get_error(context)
 
 
 def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
-    base_ref = options.passed_worktree_base_ref
+    base_ref = options.worktree_base_ref
     if base_ref:
         cmd.append('--settings')
         cmd.append(orjson.dumps({'worktree': {'baseRef': base_ref}}).decode())
@@ -180,10 +180,6 @@ def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> li
 
 
 def add_worktree_arg(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
-    # dont add twice
-    if '--worktree' in cmd or '-w' in cmd:
-        return cmd
-
     if options.worktree:
         cmd.append('--worktree')
         if options.task_file:
@@ -270,7 +266,7 @@ def unmake_context(context: IterationContext) -> None:
         flush_and_close_fd(context.errorsfd)
 
 
-def summary(options: ralphlib.options.RalpherOptions, context: IterationContext, iteration: int) -> None:
+def summary(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     state_payload = {}
     lines = []
     if context.tools_used_set:
@@ -308,7 +304,7 @@ def summary(options: ralphlib.options.RalpherOptions, context: IterationContext,
             options,
             state_payload,
             key1='iterations',
-            key2=ralphlib.logger.iteration_to_str(options, iteration),
+            key2=ralphlib.logger.iteration_to_str(options, context.iteration),
         )
 
 

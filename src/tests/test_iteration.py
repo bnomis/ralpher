@@ -922,12 +922,6 @@ def test_add_settings_noop_without_base_ref() -> None:
     assert ralphlib.iteration.add_settings(tests.helpers.make_options(), list(CLAUDE_CMD)) == list(CLAUDE_CMD)
 
 
-def test_add_settings_keeps_existing_settings_arg() -> None:
-    options = tests.helpers.make_options(worktree_base_ref='head', args='--print --settings {}')
-    cmd = ['claude', '--print', '--settings', '{}']
-    assert ralphlib.iteration.add_settings(options, list(cmd)) == cmd
-
-
 # --- Task 2: Test add_worktree_arg ---
 
 
@@ -944,20 +938,6 @@ def test_add_worktree_arg_appends_task_file_slug_when_task_file_set() -> None:
     result = ralphlib.iteration.add_worktree_arg(options, cmd)
     assert '--worktree' in result
     assert 'tasks-my-task' in result
-
-
-def test_add_worktree_arg_does_not_add_if_worktree_already_present() -> None:
-    options = tests.helpers.make_plain_options(worktree=True)
-    cmd = ['claude', '--worktree']
-    result = ralphlib.iteration.add_worktree_arg(options, cmd)
-    assert result.count('--worktree') == 1
-
-
-def test_add_worktree_arg_does_not_add_if_short_flag_already_present() -> None:
-    options = tests.helpers.make_plain_options(worktree=True)
-    cmd = ['claude', '-w']
-    result = ralphlib.iteration.add_worktree_arg(options, cmd)
-    assert '--worktree' not in result
 
 
 def test_add_worktree_arg_noop_when_worktree_false() -> None:

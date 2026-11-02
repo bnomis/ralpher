@@ -24,8 +24,9 @@ Commit and push first, or pass `--skip-git-check` to skip every check.
 With `--worktree`, ralpher adds `--worktree <name>` to the agent's arguments,
 and Claude Code runs the agent in a git worktree of that name, on the branch
 `worktree-<name>`. Every iteration passes the same name, so every iteration
-uses the same worktree. ralpher adds nothing if `--args` already contains
-`--worktree` or `-w`.
+uses the same worktree. `--args` may not contain `--worktree` or `-w`: ralpher
+refuses it with an error, so every check and hook agrees with the agent on
+whether a worktree is used.
 
 The name comes from the tasks file: its directory name and its stem, joined
 with `-`, lowercased, with every run of characters other than `a-z` and `0-9`
@@ -52,27 +53,24 @@ created from:
 - `head`: your local `HEAD`, without uncommitted changes.
 
 `--worktree-base-ref fresh|head` passes the setting to the agent as
-`--settings '{"worktree": {"baseRef": "..."}}'`, unless `--args` already
-contains `--settings`. See the
+`--settings '{"worktree": {"baseRef": "..."}}'`. `--args` may not contain
+`--settings`: ralpher refuses it with an error. See the
 [Claude Code settings reference](https://code.claude.com/docs/en/settings-reference#worktree-baseref).
 
 The pre-run checks use the same value the agent gets: `--worktree-base-ref`
 when ralpher passes it, otherwise `worktree.baseRef` from Claude Code's
-settings files (user, project, local and managed). A `--settings` of your
-own in `--args` is not read.
+settings files (user, project, local and managed).
 
-## Precedence between `--args` and ralpher's options
+## Flags refused in `--args`
 
-A flag in `--args` wins over the ralpher option that would add the same flag:
+| `--args` holds | Use instead |
+|----------------|-------------|
+| `--worktree` or `-w` | ralpher's `--worktree` |
+| `--settings` | `--worktree-base-ref`, or ralpher's settings files |
 
-| `--args` holds | Wins over | Effect |
-|----------------|-----------|--------|
-| `--worktree` or `-w` | `--worktree` | ralpher adds no worktree name; the agent uses yours |
-| `--settings` | `--worktree-base-ref` | ralpher passes no `baseRef` setting |
-
-ralpher logs a warning at start, naming each value that wins. The tasks file
-ralpher reads for the stop check and for hook prompts is the worktree copy
-only under `--worktree`.
+ralpher stops before the first iteration with an `Error:` line naming the flag.
+The tasks file ralpher reads for the stop check and for hook prompts is the
+worktree copy only under `--worktree`.
 
 ## After the queue
 

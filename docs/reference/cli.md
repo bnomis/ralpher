@@ -11,7 +11,7 @@ ralpher.sh [OPTIONS]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--agent AGENT` | `claude` | The agent command. |
-| `--args ARGS` | `--verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json` | The agent's arguments, split as a shell would. Replaces the default entirely. |
+| `--args ARGS` | `--verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json` | The agent's arguments, split as a shell would. Replaces the default entirely. `--worktree`, `-w` and `--settings` are refused; see [Worktrees](../guide/worktrees.md#flags-refused-in-args). |
 | `--prompt FILE` | | Read the prompt from a file. |
 | `--prompts TEXT` | | The prompt as text. Ignored when `--prompt` is given. |
 | `--iterations N` | `3` | The most iterations to run. |

@@ -230,7 +230,7 @@ files it names.
 
 ## Task 7: Worktree options in `--args` are refused, and the unblock prompt is accurate
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 7
@@ -239,23 +239,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Tests in `src/tests/test_options.py`: `--args` containing `--worktree`, `-w` or `--settings` raises `InvalidArgsError` naming the ralpher option to use instead (`--worktree`; for `--settings`, ralpher's settings files); confirm they fail first
-- [ ] Raise it in `RalpherOptions.__post_init__`, replacing the warning that `args_override_warnings` gives for these flags; remove the branches in `iteration.add_worktree_arg` and `giter.worktree_base_ref` that read them from `--args`
-- [ ] Drop the `iteration` parameter of `iteration.summary` and use `context.iteration`
-- [ ] Test and fix `hooks.unblock_prompt`: when the worktree lookup fails, the prompt says the worktree tasks file could not be found and names the main tasks file as such
-- [ ] Update `docs/reference/cli.md` and `docs/guide/worktrees.md` for the refused flags
+- [x] Tests in `src/tests/test_options.py`: `--args` containing `--worktree`, `-w` or `--settings` raises `InvalidArgsError` naming the ralpher option to use instead (`--worktree`; for `--settings`, ralpher's settings files); confirm they fail first
+- [x] Raise it in `RalpherOptions.__post_init__`, replacing the warning that `args_override_warnings` gives for these flags; remove the branches in `iteration.add_worktree_arg` and `giter.worktree_base_ref` that read them from `--args`
+- [x] Drop the `iteration` parameter of `iteration.summary` and use `context.iteration`
+- [x] Test and fix `hooks.unblock_prompt`: when the worktree lookup fails, the prompt says the worktree tasks file could not be found and names the main tasks file as such
+- [x] Update `docs/reference/cli.md` and `docs/guide/worktrees.md` for the refused flags
 
 **Acceptance Criteria:**
 
-- [ ] `--args '... --worktree x'` stops before the first iteration with an `Error:` line
-- [ ] No reader of `options.worktree` can disagree with the agent's command line
+- [x] `--args '... --worktree x'` stops before the first iteration with an `Error:` line
+- [x] No reader of `options.worktree` can disagree with the agent's command line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_hooks.py`
-- [ ] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_hooks.py`
+- [x] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

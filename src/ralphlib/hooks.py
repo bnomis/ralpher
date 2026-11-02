@@ -89,7 +89,7 @@ def unblock_prompt(options: ralphlib.options.RalpherOptions, task_id: str | None
     try:
         tf = ralphlib.verifier.agent_task_file(options)
     except ralphlib.verifier.READ_ERRORS:
-        tf = options.task_file
+        return f'unblock task {task_id} in task file {options.task_file} (the worktree tasks file could not be found, so this is the main tasks file)'
     wt = ' worktree' if options.worktree else ''
     return f'unblock task {task_id} in{wt} task file {tf}'
 
