@@ -98,13 +98,16 @@ hit line or the line above.
 | `get-container-default-then-method-call` | `d.get(k, {})` becomes `d.get(k) or {}`, and `[]` likewise (`iteration.py:665,924,931,942`), so an explicit JSON `null` in the agent's stream no longer raises `AttributeError`. |
 | `leading-underscore-binding`, `leading-underscore-def-class` | `looper.py:27`: call `ralphlib.signals.GracefulTerminator(options)` without binding it; `signal.signal` holds the bound handler, so the object stays alive. In `test_process_termination.py`, rename the `_options` and `_context` parameters and the `_fast_poll` fixture (and its `usefixtures` uses) without the underscore. |
 | `passthrough-shim` | Remove the shims named in [API](#api); `giter.py:91` and `test_giter.py` call `is_working_tree_clean` directly. |
-| `silent-broad-except` | `giter.py:142`: catch `git.GitCommandError` only and log it with `loguru.logger.warning` beside the console message. `hooks.py:126`: the bare `except` around `int(...)` becomes `except ValueError:`. |
+| `silent-broad-except` | `giter.py` `has_unpushed_commits`: catch `(git.GitCommandError, git.GitCommandNotFound, OSError, UnicodeDecodeError)` around the fetch and log it with `loguru.logger.warning` beside the console message. |
 | `mutable-store-without-copy` | `test_looper.py` `LoopRun.__init__` stores `list(calls)` and `dict(state)`. |
 | `non-alphabetical-literal` | Accept `test_verifier.py:9`: `['todo', 'in-progress', 'done']` is the status progression, and order is its meaning. |
-| `filesystem-envelope-gap` | Accept `verifier.py:129`: the second handler catches `READ_ERRORS`, which holds `OSError`; the checker reads the name and not its value. |
 | `stdlib-logging` | Accept `bin/install-claude.py:7`: the installer runs under the system Python, before the project's environment (and `loguru`) exists. |
 
-Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does:
+Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does.
+That mode adds the shared hooks repository to `.pre-commit-config.yaml`,
+installs both hook types, writes the CI workflow below, creates the
+read-only deploy key and its repository secret, and adds the gate wording to
+`AGENTS.md`; the steps below restate each so this spec stands alone:
 
 1. Add to `.pre-commit-config.yaml`, after the existing repos, the
    `git@github.com:bnomis/agents.git` repo pinned at the agents `main` commit
@@ -144,7 +147,7 @@ Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does:
   `event`, `content_block` or `delta` in the agent's stream is treated as
   empty (a test per site, written failing first); `load_settings` returns a
   `theme` dict not shared with a second call; a failed fetch logs a warning
-  and still returns `False`.
+  and returns `None`, so the caller asks the user.
 
 ## External dependencies
 

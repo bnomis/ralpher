@@ -44,14 +44,14 @@ src/
     ├── helpers.py
     ├── test_giter.py
     ├── test_hooks.py
+    ├── test_install_claude.py
     ├── test_iteration.py
     ├── test_logger.py
     ├── test_looper.py
     ├── test_options.py
     ├── test_printer.py
-    ├── test_process_termination.py
+    ├── test_ralpher.py
     ├── test_settings.py
-    ├── test_shlex.py
     ├── test_signals.py
     ├── test_state.py
     ├── test_templater.py
@@ -65,10 +65,17 @@ bin/                       # Entry point scripts
 ├── rcl.sh
 └── rrq.sh
 agents/                    # Specs, tasks, audit reviews, prompts and test plans
-claude/                    # Claude commands (rrq.md)
+claude/commands/           # Claude commands (rrq.md)
 docs/                      # User documentation (MkDocs site)
 img/                       # Images
 mkdocs.yml                 # Site configuration
+.github/                   # Workflows and Dependabot configuration
+README.md
+AGENTS.md
+CLAUDE.md
+pyproject.toml
+setup.cfg
+uv.lock
 ralpher-logs/              # Queue run logs written by bin/rrq.sh (ignored by version control)
 TODO.md                    # Open work
 DONE.md                    # Finished work
@@ -103,6 +110,8 @@ ralpher is developed using the following tools and libraries:
 - Property based testing: hypothesis <https://hypothesis.works/>
 - Documentation site: `mkdocs` and `mkdocs-material` <https://www.mkdocs.org/>
 - Commit and push hooks: `pre-commit` <https://pre-commit.com/>
+- Shell script checks: `shellcheck` <https://www.shellcheck.net/>, run as a pre-commit hook
+- Project-name check: the `no-project-names` hook from the shared tooling repository, run as a pre-commit hook
 - Environment variables: `direnv` <https://direnv.net/> read from the `.envrc` file
 
 ### Dependency management

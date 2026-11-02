@@ -472,7 +472,7 @@ files it names.
 
 ## Task 14: AGENTS.md and the specs match the repository, then the whole-tree gates
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 14 and 15
@@ -481,24 +481,24 @@ files it names.
 
 **Subtasks:**
 
-- [ ] `AGENTS.md` project structure: add `test_install_claude.py` and `test_ralpher.py`, remove `test_shlex.py` and `test_process_termination.py`, add the top-level project files and `.github/`, and show `claude/commands/rrq.md`
-- [ ] `AGENTS.md` tools list: add shellcheck and the shared repository's `no-project-names` hook
-- [ ] `agents/specs/verified-stop/spec.md`: bring the API section and `READ_ERRORS` up to date, and trim it to about 200 lines and eight top-level sections
-- [ ] `agents/specs/auditme-adoption/spec.md`: correct the fetch-handling rows, remove the stale `int(...)` row and the marker that does not exist, and restate the parts of the shared `project-setup` skill the spec relies on
-- [ ] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
-- [ ] Run every test file that imports a module this list changed: every file in `src/tests/` that imports `ralphlib` or loads `bin/`
-- [ ] After the list's last commit, update `agents/audit-reviews/summary.md`: move the findings this list resolved to Recently resolved (auditme step 8b)
+- [x] `AGENTS.md` project structure: add `test_install_claude.py` and `test_ralpher.py`, remove `test_shlex.py` and `test_process_termination.py`, add the top-level project files and `.github/`, and show `claude/commands/rrq.md`
+- [x] `AGENTS.md` tools list: add shellcheck and the shared repository's `no-project-names` hook
+- [x] `agents/specs/verified-stop/spec.md`: bring the API section and `READ_ERRORS` up to date, and trim it to about 200 lines and eight top-level sections
+- [x] `agents/specs/auditme-adoption/spec.md`: correct the fetch-handling rows, remove the stale `int(...)` row and the marker that does not exist, and restate the parts of the shared `project-setup` skill the spec relies on
+- [x] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
+- [x] Run every test file that imports a module this list changed: every file in `src/tests/` that imports `ralphlib` or loads `bin/`
+- [x] After the list's last commit, update `agents/audit-reviews/summary.md`: move the findings this list resolved to Recently resolved (auditme step 8b)
 
 **Acceptance Criteria:**
 
-- [ ] Each Doc1, Doc2, Doc4 and spec-review hit in review-3 is fixed
+- [x] Each Doc1, Doc2, Doc4 and spec-review hit in review-3 is fixed
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_install_claude.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_install_claude.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
