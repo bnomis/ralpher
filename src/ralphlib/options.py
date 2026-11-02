@@ -5,6 +5,7 @@ import typing
 
 import cappa
 
+import ralphlib.exceptions
 import ralphlib.settings
 
 
@@ -138,7 +139,10 @@ class RalpherOptions:
     """The tasks file inside the agent's worktree, cached once found; cleared at the start of each iteration."""
 
     def __post_init__(self) -> None:
-        args = shlex.split(self.args)
+        try:
+            args = shlex.split(self.args)
+        except ValueError as e:
+            raise ralphlib.exceptions.InvalidArgsError(f'Cannot parse --args {self.args!r} (unbalanced quote?)') from e
         if '--settings' not in args:
             self.passed_worktree_base_ref = self.worktree_base_ref
 

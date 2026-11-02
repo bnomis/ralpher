@@ -50,5 +50,7 @@ def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str
                 file_settings = json.load(f)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
             raise ralphlib.exceptions.SettingsError(f'Cannot read settings file {path}') from e
+        if not isinstance(file_settings, dict):
+            raise ralphlib.exceptions.SettingsError(f'Settings file {path} must hold a JSON object')
         options.settings.update(file_settings)
     return options

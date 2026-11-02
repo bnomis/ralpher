@@ -1,4 +1,12 @@
+import pytest
+
+import ralphlib.exceptions
 import ralphlib.options
+
+
+def test_unbalanced_quote_in_args_raises_invalid_args_error() -> None:
+    with pytest.raises(ralphlib.exceptions.InvalidArgsError, match="--print 'oops"):
+        ralphlib.options.RalpherOptions(args="--print 'oops")
 
 
 def test_passed_worktree_base_ref_is_stored() -> None:

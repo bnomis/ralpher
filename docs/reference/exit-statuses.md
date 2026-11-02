@@ -9,6 +9,7 @@
 | 1 | an exception inside ralpher during an iteration | `exception during iteration <n>` |
 | 1 | Ctrl+C twice, `SIGTERM`, an `operator` task block, or a loop on a blocked task | `termination` |
 | 1 | a signal during shutdown | none: ralpher exits at once |
+| 1 | a ralpher error before the first iteration: an unreadable or invalid settings file, an invalid `--args`, a `--cwd` that cannot be entered, a log directory that cannot be created, a `--state` path outside the log directory | none: ralpher prints `Error: ...` |
 | 1 | a pre-run check you answered "no" to, a missing or empty prompt or tasks file, an invalid `--vars` | none: ralpher stops before the first iteration and prints why |
 
 When several apply in one iteration, the exit reason joins them, such as

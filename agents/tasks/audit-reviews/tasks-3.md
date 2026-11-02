@@ -57,7 +57,7 @@ files it names.
 
 ## Task 2: Bad settings files and bad `--args` end with an error message
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -66,23 +66,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add tests: a settings file whose top level is not a JSON object raises `SettingsError` naming the file (`src/tests/test_settings.py`); an `--args` value with an unbalanced quote raises a new `InvalidArgsError(RalpherError)` naming the value (`src/tests/test_options.py`); confirm both fail first
-- [ ] In `ralphlib.settings.load_settings_from_file`, raise `SettingsError` when the loaded value is not a `dict`
-- [ ] Add `InvalidArgsError` to `src/ralphlib/exceptions.py` and raise it from `RalpherOptions.__post_init__` when `shlex.split` raises `ValueError`
-- [ ] In `bin/ralpher.py`, move `ralphlib.options.parse_options()` inside the `try` so its `RalpherError` prints `Error: ...` and exits 1
-- [ ] Add a row to `docs/reference/exit-statuses.md` for ralpher's own errors before the first iteration (`Error: ...`, status 1): an unreadable or invalid settings file, an invalid `--args`, a `--cwd` that cannot be entered, a log directory that cannot be created, a `--state` path outside the log directory
+- [x] Add tests: a settings file whose top level is not a JSON object raises `SettingsError` naming the file (`src/tests/test_settings.py`); an `--args` value with an unbalanced quote raises a new `InvalidArgsError(RalpherError)` naming the value (`src/tests/test_options.py`); confirm both fail first
+- [x] In `ralphlib.settings.load_settings_from_file`, raise `SettingsError` when the loaded value is not a `dict`
+- [x] Add `InvalidArgsError` to `src/ralphlib/exceptions.py` and raise it from `RalpherOptions.__post_init__` when `shlex.split` raises `ValueError`
+- [x] In `bin/ralpher.py`, move `ralphlib.options.parse_options()` inside the `try` so its `RalpherError` prints `Error: ...` and exits 1
+- [x] Add a row to `docs/reference/exit-statuses.md` for ralpher's own errors before the first iteration (`Error: ...`, status 1): an unreadable or invalid settings file, an invalid `--args`, a `--cwd` that cannot be entered, a log directory that cannot be created, a `--state` path outside the log directory
 
 **Acceptance Criteria:**
 
-- [ ] `bin/ralpher.sh` with an invalid settings file prints one `Error:` line and exits 1
-- [ ] The exit-status page lists the case
+- [x] `bin/ralpher.sh` with an invalid settings file prints one `Error:` line and exits 1
+- [x] The exit-status page lists the case
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py` and `src/tests/test_options.py`
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_options.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py` and `src/tests/test_options.py`
+- [x] `uv run pytest src/tests/test_settings.py src/tests/test_options.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

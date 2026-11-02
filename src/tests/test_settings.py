@@ -32,6 +32,13 @@ class TestLoadSettingsFromFile:
         result = ralphlib.settings.load_settings_from_file(options, str(settings_file))
         assert result.settings['key'] == 'new'
 
+    def test_non_object_top_level_raises_settings_error(self, tmp_path: typing.Any) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps(['not', 'an', 'object']))
+        options = tests.helpers.make_options_with_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
+            ralphlib.settings.load_settings_from_file(options, str(settings_file))
+
 
 class TestLoadSettings:
     def test_applies_default_then_home_then_custom_in_order(self, tmp_path: typing.Any) -> None:

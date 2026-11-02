@@ -6,6 +6,10 @@ class GitError(RalpherError):
     pass
 
 
+class InvalidArgsError(RalpherError):
+    pass
+
+
 class InvalidVarFormatError(RalpherError):
     pass
 
