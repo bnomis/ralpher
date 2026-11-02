@@ -1,6 +1,7 @@
 import dataclasses
 import pathlib
 import shlex
+import types
 import typing
 
 import cappa
@@ -8,11 +9,13 @@ import cappa
 import ralphlib.exceptions
 import ralphlib.settings
 
-REFUSED_ARGS = {
-    '--settings': "ralpher sets the agent's --settings itself; use --worktree-base-ref or ralpher's settings files",
-    '--worktree': 'use ralpher --worktree, which names the worktree for the tasks file',
-    '-w': 'use ralpher --worktree, which names the worktree for the tasks file',
-}
+REFUSED_ARGS = types.MappingProxyType(
+    {
+        '--settings': "ralpher sets the agent's --settings itself; use --worktree-base-ref or ralpher's settings files",
+        '--worktree': 'use ralpher --worktree, which names the worktree for the tasks file',
+        '-w': 'use ralpher --worktree, which names the worktree for the tasks file',
+    }
+)
 
 
 @dataclasses.dataclass

@@ -404,7 +404,7 @@ files it names.
 
 ## Task 12: Test gaps
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Finding 13
@@ -413,21 +413,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] `src/tests/test_looper.py`: a `loop` end-to-end test with the fake agent (`src/tests/fixtures/fake_agent.py`) and a real `iteration.run`, asserting the exit status, the hooks fired and the state written
-- [ ] `src/tests/test_ralpher.py` (new, for `bin/ralpher.py`): the `--cleanup` exit, a `RalpherError` exit printing `Error: ...`, and the exit statuses 0 and 1
-- [ ] `src/tests/test_install_claude.py`: `install_claude` (dotfiles skipped, directories and files linked) and `main`'s error exit
-- [ ] `src/tests/test_giter.py`: `last_commit_summary` in a real repository, and `confirm_git_state` with `YNConfirm.ask` patched: not a repository, a dirty tree, divergence
-- [ ] Property tests (`@hypothesis.settings(max_examples=20, deadline=10000)`) for `giter.redact_url`, `verifier.verify_stop`, `iteration.add_worktree_arg`, `giter.claude_worktree_base_ref`, `settings.load_settings`, `options.RalpherOptions.__post_init__`, `iteration.process_user`, `iteration.process_assistant`, `iteration.get_run_in_background` and `iteration.process_result`; where one does not fit, say why in the test module and add an example test
+- [x] `src/tests/test_looper.py`: a `loop` end-to-end test with the fake agent (`src/tests/fixtures/fake_agent.py`) and a real `iteration.run`, asserting the exit status, the hooks fired and the state written
+- [x] `src/tests/test_ralpher.py` (new, for `bin/ralpher.py`): the `--cleanup` exit, a `RalpherError` exit printing `Error: ...`, and the exit statuses 0 and 1
+- [x] `src/tests/test_install_claude.py`: `install_claude` (dotfiles skipped, directories and files linked) and `main`'s error exit
+- [x] `src/tests/test_giter.py`: `last_commit_summary` in a real repository, and `confirm_git_state` with `YNConfirm.ask` patched: not a repository, a dirty tree, divergence
+- [x] Property tests (`@hypothesis.settings(max_examples=20, deadline=10000)`) for `giter.redact_url`, `verifier.verify_stop`, `iteration.add_worktree_arg`, `giter.claude_worktree_base_ref`, `settings.load_settings`, `options.RalpherOptions.__post_init__`, `iteration.process_user`, `iteration.process_assistant`, `iteration.get_run_in_background` and `iteration.process_result`; where one does not fit, say why in the test module and add an example test
 
 **Acceptance Criteria:**
 
-- [ ] Every function in review-3 T1 and T2 has a test, or the module says why a property test does not fit
+- [x] Every function in review-3 T1 and T2 has a test, or the module says why a property test does not fit
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists every test file named above
-- [ ] `uv run pytest src/tests/test_looper.py src/tests/test_ralpher.py src/tests/test_install_claude.py src/tests/test_giter.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_settings.py src/tests/test_options.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists every test file named above
+- [x] `uv run pytest src/tests/test_looper.py src/tests/test_ralpher.py src/tests/test_install_claude.py src/tests/test_giter.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_settings.py src/tests/test_options.py` passes
 
 **Notes:**
 

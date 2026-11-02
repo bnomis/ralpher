@@ -1,7 +1,10 @@
 import datetime
 import json
 import pathlib
+import shlex
+import sys
 import typing
+import unittest.mock
 
 import hypothesis
 import hypothesis.strategies
@@ -11,9 +14,11 @@ import pytest
 import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.iteration
+import ralphlib.logger
 import ralphlib.looper
 import ralphlib.options
 import ralphlib.settings
+import ralphlib.types
 
 
 class TestTimedeltaToReadableExplicit:
@@ -301,3 +306,63 @@ def test_cleanup_names_the_worktree_the_run_uses_for_a_one_part_task_file(tmp_pa
     name = ralphlib.iteration.add_worktree_arg(options, [])[-1]
     assert name.endswith('-tasks')
     assert f'git worktree remove --force {name}' in ralphlib.looper.cleanup_cmds(options)
+
+
+FAKE_AGENT = pathlib.Path(__file__).parent / 'fixtures' / 'fake_agent.py'
+
+AGENT_EVENTS = (
+    ralphlib.types.RalpherEventType.AGENT_PROCESS_END,
+    ralphlib.types.RalpherEventType.AGENT_PROCESS_START,
+)
+
+
+class TestLoopEndToEnd:
+    """`loop` with the fake agent and a real `iteration.run`; only the hook dispatch is recorded."""
+
+    def run_loop(self, tmp_path: pathlib.Path, prompt: str, iterations: int) -> tuple[bool, list[ralphlib.types.RalpherEventType], dict[str, typing.Any]]:
+        ralphlib.logger.log_file_cache.clear()
+        options = ralphlib.options.RalpherOptions(
+            agent=sys.executable,
+            args=shlex.quote(str(FAKE_AGENT)),
+            prompts=prompt,
+            iterations=iterations,
+            cwd=str(tmp_path),
+            logdir=str(tmp_path),
+            state='state.json',
+            quiet=True,
+            skip_git_check=True,
+        )
+        options = ralphlib.settings.load_settings(options)
+        with unittest.mock.patch('ralphlib.hooks.event') as event:
+            error = ralphlib.looper.loop(options)
+        ralphlib.logger.log_file_cache.clear()
+        types = [call.kwargs['event_type'] if 'event_type' in call.kwargs else call.args[1] for call in event.call_args_list]
+        types = [t for t in types if t not in AGENT_EVENTS]
+        state = json.loads((tmp_path / 'state.json').read_text(encoding='utf-8'))
+        return error, types, state
+
+    def test_stop_marker_ends_the_loop_after_one_iteration(self, tmp_path: pathlib.Path) -> None:
+        error, types, state = self.run_loop(tmp_path, 'stop', iterations=3)
+        assert error is False
+        assert types == [
+            ralphlib.types.RalpherEventType.START,
+            ralphlib.types.RalpherEventType.ITERATION_START,
+            ralphlib.types.RalpherEventType.ITERATION_END,
+            ralphlib.types.RalpherEventType.END,
+        ]
+        assert state['exit_reason'] == 'complete'
+        assert state['iterations_completed'] == 1
+
+    def test_normal_session_runs_every_iteration(self, tmp_path: pathlib.Path) -> None:
+        error, types, state = self.run_loop(tmp_path, 'normal', iterations=2)
+        assert error is False
+        assert types.count(ralphlib.types.RalpherEventType.ITERATION_END) == 2
+        assert state['exit_reason'] == 'completed all iterations'
+        assert state['iterations_completed'] == 2
+
+    def test_error_result_fires_the_error_hook_and_returns_true(self, tmp_path: pathlib.Path) -> None:
+        error, types, state = self.run_loop(tmp_path, 'error', iterations=3)
+        assert error is True
+        assert types[-2:] == [ralphlib.types.RalpherEventType.ERROR, ralphlib.types.RalpherEventType.END]
+        assert state['exit_reason'] == 'error'
+        assert state['iterations_completed'] == 1

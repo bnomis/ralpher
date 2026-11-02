@@ -1,8 +1,11 @@
 import json
 import pathlib
+import tempfile
 import unittest.mock
 
 import git
+import hypothesis
+import hypothesis.strategies
 import loguru
 import pytest
 import rich.text
@@ -466,3 +469,111 @@ class TestLastCommitSummary:
             pytest.raises(KeyboardInterrupt),
         ):
             ralphlib.giter.last_commit_summary(tmp_path)
+
+
+class TestConfirmGitState:
+    @pytest.fixture
+    def clean_repo(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> pathlib.Path:
+        repo = git.Repo.init(str(tmp_path))
+        (tmp_path / 'README.md').write_text('hello')
+        repo.index.add(list(README_FILES))
+        repo.index.commit('initial')
+        monkeypatch.setattr(ralphlib.giter, 'claude_worktree_base_ref', lambda repo: 'fresh')
+        monkeypatch.setattr(ralphlib.giter, 'fetch_unpushed_state', lambda repo: False)
+        return tmp_path
+
+    def answer(self, monkeypatch: pytest.MonkeyPatch, decision: bool) -> list[str]:
+        prompts: list[str] = []
+        monkeypatch.setattr(ralphlib.giter.YNConfirm, 'ask', lambda prompt, **kwargs: prompts.append(prompt.plain) or decision)
+        return prompts
+
+    def test_skip_git_check_asks_nothing(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        prompts = self.answer(monkeypatch, False)
+        ralphlib.giter.confirm_git_state(tests.helpers.make_options(skip_git_check=True), tmp_path)
+        assert prompts == []
+
+    def test_not_a_repository_aborts_when_declined(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        prompts = self.answer(monkeypatch, False)
+        with pytest.raises(SystemExit, match='not being in a git repository'):
+            ralphlib.giter.confirm_git_state(tests.helpers.make_options(), tmp_path)
+        assert 'not in a git repository' in prompts[0]
+
+    def test_not_a_repository_continues_when_accepted(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.answer(monkeypatch, True)
+        ralphlib.giter.confirm_git_state(tests.helpers.make_options(), tmp_path)
+
+    def test_clean_repository_asks_nothing(self, clean_repo: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        prompts = self.answer(monkeypatch, False)
+        ralphlib.giter.confirm_git_state(tests.helpers.make_options(), clean_repo)
+        assert prompts == []
+
+    def test_dirty_tree_aborts_when_declined(self, clean_repo: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        (clean_repo / 'untracked.txt').write_text('x')
+        prompts = self.answer(monkeypatch, False)
+        with pytest.raises(SystemExit, match='unclean git working tree'):
+            ralphlib.giter.confirm_git_state(tests.helpers.make_options(), clean_repo)
+        assert 'not clean' in prompts[0]
+
+    def test_divergence_aborts_only_with_a_worktree(self, clean_repo: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(ralphlib.giter, 'read_origin', lambda repo: ORIGIN_MAIN)
+        monkeypatch.setattr(ralphlib.giter, 'read_current_branch', lambda repo: 'feature')
+        prompts = self.answer(monkeypatch, True)
+        ralphlib.giter.confirm_git_state(tests.helpers.make_options(), clean_repo)
+        assert prompts == []
+        with pytest.raises(SystemExit, match='divergence'):
+            ralphlib.giter.confirm_git_state(tests.helpers.make_options(worktree=True), clean_repo)
+        assert 'will diverge' in prompts[0]
+
+
+SCHEMES = hypothesis.strategies.from_regex(r'[a-z][a-z0-9+.-]{0,8}://', fullmatch=True)
+HOSTS = hypothesis.strategies.from_regex(r'[a-z][a-z0-9.]{0,12}(/[a-z0-9._-]{1,8}){0,3}', fullmatch=True)
+SECRETS = hypothesis.strategies.from_regex(r'[A-Za-z0-9:._-]{1,16}', fullmatch=True)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(scheme=SCHEMES, secret=SECRETS, host=HOSTS)
+def test_redact_url_removes_the_user_info(scheme: str, secret: str, host: str) -> None:
+    redacted = ralphlib.giter.redact_url(f'fetch failed for {scheme}{secret}@{host}: boom')
+    assert redacted == f'fetch failed for {scheme}{host}: boom'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=hypothesis.strategies.text())
+def test_redact_url_is_idempotent_and_leaves_text_without_at_signs_alone(text: str) -> None:
+    once = ralphlib.giter.redact_url(text)
+    assert ralphlib.giter.redact_url(once) == once
+    if '@' not in text:
+        assert once == text
+
+
+def base_ref_file(ref: str) -> str:
+    return json.dumps({'worktree': {'baseRef': ref}})
+
+
+BASE_REF_FILES = hypothesis.strategies.lists(
+    hypothesis.strategies.one_of(
+        hypothesis.strategies.none(),
+        hypothesis.strategies.just('{not json'),
+        hypothesis.strategies.just('[1, 2]'),
+        hypothesis.strategies.just('{"worktree": "head"}'),
+        hypothesis.strategies.sampled_from(['fresh', 'head']).map(base_ref_file),
+    ),
+    max_size=5,
+)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(contents=BASE_REF_FILES)
+def test_claude_worktree_base_ref_is_the_last_valid_setting_or_fresh(contents: list[str | None]) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = []
+        expected = 'fresh'
+        for i, content in enumerate(contents):
+            path = pathlib.Path(tmp) / f'settings-{i}.json'
+            paths.append(path)
+            if content is not None:
+                path.write_text(content)
+                if '"baseRef"' in content:
+                    expected = json.loads(content)['worktree']['baseRef']
+        with unittest.mock.patch.object(ralphlib.giter, 'claude_settings_paths', return_value=paths):
+            assert ralphlib.giter.claude_worktree_base_ref(unittest.mock.MagicMock()) == expected

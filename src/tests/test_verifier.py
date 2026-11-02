@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 import threading
 import unittest.mock
 
@@ -281,3 +282,20 @@ def test_parse_worktrees_returns_exactly_the_entries_with_a_branch(entries: list
     blocks = [f'worktree {path}\nHEAD abc\n' + (f'branch {branch}\n' if branch else 'detached\n') for path, branch in entries]
     expected = [(pathlib.Path(path), branch) for path, branch in entries if branch]
     assert ralphlib.verifier.parse_worktrees('\n'.join(blocks)) == expected
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(statuses=hypothesis.strategies.lists(hypothesis.strategies.sampled_from(STATUSES), max_size=6))
+def test_verify_stop_counts_the_tasks_that_are_not_done(statuses: list[str]) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / 'tasks.md'
+        path.write_text(''.join(f'## Task {i}: T\n**Status:** {status}\n' for i, status in enumerate(statuses, start=1)))
+        check = ralphlib.verifier.verify_stop(plain_options(path))
+    if not statuses:
+        assert not check.verified
+        assert check.reason
+        return
+    assert check.verified
+    assert check.total == len(statuses)
+    assert [t.number for t in check.not_done] == [i for i, status in enumerate(statuses, start=1) if status != 'done']
+    assert check.all_done == all(status == 'done' for status in statuses)

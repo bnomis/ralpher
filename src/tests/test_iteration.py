@@ -21,6 +21,7 @@ import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.options
 import ralphlib.signals
+import ralphlib.templater
 import ralphlib.types
 import tests.helpers
 
@@ -1608,3 +1609,107 @@ def test_unknown_tool_records_name_and_input_size_not_raw_input() -> None:
     ralphlib.iteration.add_unknown_tool(context, 'Mystery', {'secret': 'hunter2'})
     assert context.unknown_tools == {'Mystery': {'input_bytes': len(orjson.dumps({'secret': 'hunter2'}))}}
     assert 'hunter2' not in str(context.unknown_tools)
+
+
+STOP = '<promise>COMPLETE</promise>'
+PLAIN_TEXT = hypothesis.strategies.from_regex(r'[A-Za-z0-9 ,.]{0,30}', fullmatch=True)
+TASK_BLOCK = '<task>\n<id>1</id>\n<title>T</title>\n<index>1</index>\n<count>2</count>\n<status>done</status>\n</task>'
+TOOL_NAMES = hypothesis.strategies.from_regex(r'[A-Za-z][A-Za-z0-9]{0,10}', fullmatch=True)
+JSON_SCALARS = hypothesis.strategies.none() | hypothesis.strategies.booleans() | hypothesis.strategies.integers() | hypothesis.strategies.text(max_size=8)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    worktree=hypothesis.strategies.booleans(),
+    task_file=hypothesis.strategies.one_of(
+        hypothesis.strategies.just(''), hypothesis.strategies.from_regex(r'[a-z]{1,6}/[a-z]{1,6}/[a-z]{1,6}\.md', fullmatch=True)
+    ),
+    cmd=hypothesis.strategies.lists(PLAIN_TEXT, max_size=3),
+)
+def test_add_worktree_arg_appends_only_for_a_worktree(worktree: bool, task_file: str, cmd: list[str]) -> None:
+    options = tests.helpers.make_plain_options(worktree=worktree, task_file=task_file)
+    result = ralphlib.iteration.add_worktree_arg(options, list(cmd))
+    if not worktree:
+        assert result == cmd
+    elif task_file:
+        assert result == [*cmd, '--worktree', ralphlib.templater.task_file_slug(task_file)]
+    else:
+        assert result == [*cmd, '--worktree']
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(value=JSON_SCALARS, extra=hypothesis.strategies.dictionaries(hypothesis.strategies.text(max_size=4), JSON_SCALARS, max_size=3))
+def test_get_run_in_background_is_true_only_for_a_boolean_true(value: typing.Any, extra: dict[str, typing.Any]) -> None:
+    content = {'input': {**extra, 'run_in_background': value}}
+    assert ralphlib.iteration.get_run_in_background(content) is (value is True)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(is_error=hypothesis.strategies.booleans(), result=PLAIN_TEXT, stop=hypothesis.strategies.booleans())
+def test_process_result_classifies_errors_stops_and_the_rest(is_error: bool, result: str, stop: bool) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    result = f'{result}\n{STOP}' if stop else result
+    payload = {'is_error': is_error, 'result': result}
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, 'line')
+    if is_error:
+        assert (message_type, message) == (ralphlib.types.MessageType.ERROR, result)
+        assert ralphlib.iteration.get_error(context)
+    elif stop:
+        assert (message_type, message) == (ralphlib.types.MessageType.COMPLETE, '')
+        assert ralphlib.iteration.get_complete(context)
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')
+        assert not ralphlib.iteration.get_complete(context)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=PLAIN_TEXT, stop=hypothesis.strategies.booleans(), task=hypothesis.strategies.booleans())
+def test_process_assistant_text_blocks(text: str, stop: bool, task: bool) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    if stop:
+        text = f'{text}\n{STOP}'
+    elif task:
+        text = f'{text}\n{TASK_BLOCK}'
+    payload = {'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': text}]}}
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, 'line')
+    if stop:
+        assert (message_type, message) == (ralphlib.types.MessageType.COMPLETE, '')
+        assert ralphlib.iteration.get_complete(context)
+    elif task:
+        assert message_type == ralphlib.types.MessageType.PROGRESS
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')
+        assert not ralphlib.iteration.get_complete(context)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(name=TOOL_NAMES, command=hypothesis.strategies.from_regex(r'[a-z]{1,10}', fullmatch=True))
+def test_process_assistant_tool_use_names_the_tool_and_its_input(name: str, command: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'name': name, 'input': {'command': command}}]}}
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, 'line')
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert message.splitlines()[0] == name
+    assert command in message
+    assert name in context.tools_used_set
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    text=PLAIN_TEXT,
+    task=hypothesis.strategies.booleans(),
+    role=hypothesis.strategies.sampled_from(['assistant', 'user']),
+)
+def test_process_user_only_reports_task_blocks_in_tool_results(text: str, task: bool, role: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    content = f'{text}\n{TASK_BLOCK}' if task else text
+    payload = {'type': 'user', 'message': {'role': role, 'content': [{'type': 'tool_result', 'tool_use_id': 'id-1', 'content': content}]}}
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, 'line')
+    if task and role == 'user':
+        assert message_type == ralphlib.types.MessageType.PROGRESS
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')

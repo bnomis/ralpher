@@ -1,5 +1,7 @@
 import pathlib
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
@@ -51,3 +53,28 @@ def test_resolve_paths_leaves_unset_paths_unset() -> None:
     options = ralphlib.options.resolve_paths(ralphlib.options.RalpherOptions())
     assert options.cwd is None
     assert options.task_file is None
+
+
+ARG_TOKENS = hypothesis.strategies.sampled_from(['--model=x', '--print', '--settings', '--settings={}', '--verbose', '--worktree', '--worktree=x', '-w', 'x'])
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    iterations=hypothesis.strategies.integers(min_value=-3, max_value=5),
+    tokens=hypothesis.strategies.lists(ARG_TOKENS, max_size=4),
+    unbalanced=hypothesis.strategies.booleans(),
+)
+def test_post_init_refuses_exactly_the_bad_iterations_and_args(iterations: int, tokens: list[str], unbalanced: bool) -> None:
+    args = ' '.join(tokens) + (" '" if unbalanced else '')
+    refused = any(token.split('=', 1)[0] in ralphlib.options.REFUSED_ARGS for token in tokens)
+    if iterations < 1:
+        expected: type[Exception] | None = ralphlib.exceptions.InvalidIterationsError
+    elif unbalanced or refused:
+        expected = ralphlib.exceptions.InvalidArgsError
+    else:
+        expected = None
+    if expected is None:
+        assert ralphlib.options.RalpherOptions(iterations=iterations, args=args).args == args
+    else:
+        with pytest.raises(expected):
+            ralphlib.options.RalpherOptions(iterations=iterations, args=args)
