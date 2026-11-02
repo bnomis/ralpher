@@ -325,7 +325,12 @@ def print_error(options: ralphlib.options.RalpherOptions, context: IterationCont
     if options.quiet:
         return
     with context.gil:
-        console_stderr.print(message, style='red', end='', soft_wrap=True)
+        console_stderr.print(
+            message,
+            style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ERROR),
+            end='',
+            soft_wrap=True,
+        )
 
 
 def print_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:

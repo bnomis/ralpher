@@ -331,7 +331,7 @@ every test file that imports a module this list changed.
 
 ## Task 10: Bring the user docs in line with the code, and fix `task_file_number`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Findings 4 and 11 (Doc5); review-2 Answers (2026-11-02)
@@ -340,23 +340,23 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] `hooks.py` (lines 115-130): compute `task_file_number` as the digits after the last `-` in `pathlib.Path(task_file).stem`, kept as written (`tasks-3` gives `3`, `tasks-0.md` gives `0`, no number gives empty); add a hypothesis test in `src/tests/test_hooks.py` (`@hypothesis.settings(max_examples=20, deadline=10000)`)
-- [ ] `docs/reference/variables.md:30`: `current_iteration` in `end` and `error` hooks is the last iteration that ran, or 0 if none ran
-- [ ] `docs/guide/terminal.md:13,56`: make agent stderr use the theme's `error` style in `iteration.py:324`, or document the fixed red; use the theme style unless that changes another printed line
-- [ ] `docs/reference/scripts.md:3-4`: `ralpherun.sh` needs `RALPHER_PATH` too, and `install-claude.py` does not activate `.venv`
-- [ ] `docs/install.md:59-60`: an existing symlink at the destination is replaced, and only regular files are renamed `.orig`
-- [ ] `docs/reference/settings.md` and `docs/guide/hooks.md`: say that `.ralpher/settings.json` in the `--cwd` repository can define hooks, which run as commands, so ralpher should be run only on repositories you trust (Finding 4)
+- [x] `hooks.py` (lines 115-130): compute `task_file_number` as the digits after the last `-` in `pathlib.Path(task_file).stem`, kept as written (`tasks-3` gives `3`, `tasks-0.md` gives `0`, no number gives empty); add a hypothesis test in `src/tests/test_hooks.py` (`@hypothesis.settings(max_examples=20, deadline=10000)`)
+- [x] `docs/reference/variables.md:30`: `current_iteration` in `end` and `error` hooks is the last iteration that ran, or 0 if none ran
+- [x] `docs/guide/terminal.md:13,56`: make agent stderr use the theme's `error` style in `iteration.py:324`, or document the fixed red; use the theme style unless that changes another printed line
+- [x] `docs/reference/scripts.md:3-4`: `ralpherun.sh` needs `RALPHER_PATH` too, and `install-claude.py` does not activate `.venv`
+- [x] `docs/install.md:59-60`: an existing symlink at the destination is replaced, and only regular files are renamed `.orig`
+- [x] `docs/reference/settings.md` and `docs/guide/hooks.md`: say that `.ralpher/settings.json` in the `--cwd` repository can define hooks, which run as commands, so ralpher should be run only on repositories you trust (Finding 4)
 
 **Acceptance Criteria:**
 
-- [ ] Every Doc5 item in review-2 is fixed
-- [ ] `task_file_number` follows the documented rule for names with and without an extension
+- [x] Every Doc5 item in review-2 is fixed
+- [x] `task_file_number` follows the documented rule for names with and without an extension
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

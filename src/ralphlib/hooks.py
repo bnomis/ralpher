@@ -23,6 +23,7 @@ if typing.TYPE_CHECKING:
     import ralphlib.options
 
 HOOK_VALUE_SENTINEL = '\x00'
+TASK_FILE_NUMBER_RE = re.compile(r'-([0-9]+)$')
 HOOK_VALUE_RE = re.compile(f'{HOOK_VALUE_SENTINEL}(\\d+){HOOK_VALUE_SENTINEL}')
 
 # auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
@@ -125,20 +126,9 @@ def make_context(
         if cwd_path and task_file_path.is_relative_to(cwd_path):
             task_file_relative_path = task_file_path.relative_to(cwd_path)
 
-        tail = task_file_path.name
-        # try to extract a number from the end of the task file name
-        # e.g. "task-1.md" -> "1"
-        if tail:
-            parts = tail.split('.')
-            if len(parts) > 1:
-                name_parts = parts[0].split('-')
-                if len(name_parts) > 1:
-                    try:
-                        task_file_number = int(name_parts[-1])
-                    except ValueError:
-                        task_file_number = 0
-                    if task_file_number:
-                        task_file_number_str = str(task_file_number)
+        number_match = TASK_FILE_NUMBER_RE.search(task_file_path.stem)
+        if number_match:
+            task_file_number_str = number_match.group(1)
 
     context: dict[str, str] = {
         'current_iteration': str(options.current_iteration),

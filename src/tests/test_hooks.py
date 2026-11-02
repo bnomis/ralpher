@@ -1,6 +1,8 @@
 import pathlib
 import unittest.mock
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
@@ -106,6 +108,37 @@ class TestMakeContext:
         options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task-abc.md')
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == ''
+
+    @pytest.mark.parametrize(
+        ('name', 'expected'),
+        [
+            ('tasks-3', '3'),
+            ('tasks-0.md', '0'),
+            ('tasks-007.md', '007'),
+            ('a-b-12.tar.gz', ''),
+            ('tasks.md', ''),
+            ('3.md', ''),
+            ('tasks-.md', ''),
+        ],
+    )
+    def test_task_file_number_cases(self, name: str, expected: str) -> None:
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file=f'tasks/{name}')
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == expected
+
+    @hypothesis.settings(max_examples=20, deadline=10000)
+    @hypothesis.given(
+        prefix=hypothesis.strategies.text(alphabet='abc-', min_size=1, max_size=8),
+        number=hypothesis.strategies.integers(min_value=0, max_value=10**6),
+        suffix=hypothesis.strategies.sampled_from(['', '.md']),
+    )
+    def test_task_file_number_is_digits_after_last_dash(self, prefix: str, number: int, suffix: str) -> None:
+        options = tests.helpers.make_options_with_settings(
+            iterations=1,
+            task_file=f'tasks/{prefix}-{number}{suffix}',
+        )
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == str(number)
 
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1)

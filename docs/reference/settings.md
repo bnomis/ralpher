@@ -12,6 +12,10 @@ Read in this order; a later file's keys win:
    given (the wrapper scripts give it);
 4. `--settings-file FILE`.
 
+The `.ralpher/settings.json` in the `--cwd` repository can define
+[hooks](../guide/hooks.md), which run as commands, so run ralpher only on
+repositories you trust.
+
 A file that does not exist is skipped. A file that is not valid JSON stops
 the run.
 
