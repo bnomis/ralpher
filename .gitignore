@@ -6,6 +6,7 @@ __pycache__/
 .envrc
 .hypothesis/
 .idea/
+.pre-commit-cache/
 .venv/
 .vscode/
 *.log
