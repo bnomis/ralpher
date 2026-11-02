@@ -58,6 +58,8 @@ class IterationContext:
     """Task ids whose start line has been printed this iteration."""
     in_progress_tasks: set[str] = dataclasses.field(default_factory=set)
     """Task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
+    tasks_signature: tuple[int, int] | None = None
+    """Modification time and size of the tasks file at the last poll read."""
     progress: pathlib.Path | None = None
     errors: pathlib.Path | None = None
     stderr: pathlib.Path | None = None
@@ -862,6 +864,16 @@ def announce_started_tasks(options: ralphlib.options.RalpherOptions, context: It
     The agent is asked to write a start `<task>` block but often does not;
     the status change in the tasks file is the reliable signal.
     """
+    if not options.task_file:
+        return
+    try:
+        stat = ralphlib.verifier.agent_task_file(options).stat()
+    except ralphlib.verifier.READ_ERRORS:
+        return
+    signature = (stat.st_mtime_ns, stat.st_size)
+    if signature == context.tasks_signature:
+        return
+    context.tasks_signature = signature
     for t in read_task_statuses(options):
         if t.status != 'in-progress' or t.id in context.in_progress_tasks:
             continue

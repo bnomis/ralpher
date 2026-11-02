@@ -1,6 +1,7 @@
 import dataclasses
 import pathlib
 import re
+import threading
 import typing
 
 import git
@@ -14,6 +15,8 @@ if typing.TYPE_CHECKING:
 
 HEADING = re.compile(r'^## Task (\d+):\s*(.*)$')
 STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
+# auditme: accept[mutable-module-level-exported] guards the worktree lookup cache on options
+worktree_lock = threading.Lock()
 FENCES = ('```', '~~~')
 READ_ERRORS = (ralphlib.exceptions.TasksFileError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
 
@@ -90,21 +93,22 @@ def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path
     `git.GitCommandError` propagates, and `ValueError` when the tasks file
     is outside the repository.
     """
-    if options.worktree_task_path is not None:
-        return options.worktree_task_path
-    repo = ralphlib.giter.discover_repo_path(options.cwd)
-    if repo is None or repo.working_tree_dir is None or not options.task_file:
-        return None
-
-    branch = f'refs/heads/worktree-{ralphlib.templater.task_file_slug(options.task_file)}'
-    task_file = pathlib.Path(options.task_file)
-    if task_file.is_absolute():
-        task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
-    for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
-        if entry_branch == branch:
-            options.worktree_task_path = path / task_file
+    with worktree_lock:
+        if options.worktree_task_path is not None:
             return options.worktree_task_path
-    return None
+        repo = ralphlib.giter.discover_repo_path(options.cwd)
+        if repo is None or repo.working_tree_dir is None or not options.task_file:
+            return None
+
+        branch = f'refs/heads/worktree-{ralphlib.templater.task_file_slug(options.task_file)}'
+        task_file = pathlib.Path(options.task_file)
+        if task_file.is_absolute():
+            task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
+        for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
+            if entry_branch == branch:
+                options.worktree_task_path = path / task_file
+                return options.worktree_task_path
+        return None
 
 
 def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:

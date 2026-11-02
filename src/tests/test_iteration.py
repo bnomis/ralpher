@@ -1126,6 +1126,22 @@ def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path
     assert context.progressfd.getvalue() == '\ntask 2: Second thing 2/3 start\n\n'
 
 
+def test_announce_started_tasks_does_not_reread_an_unchanged_file(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'todo')
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    with unittest.mock.patch.object(ralphlib.iteration, 'read_task_statuses', wraps=ralphlib.iteration.read_task_statuses) as read:
+        ralphlib.iteration.announce_started_tasks(options, context)
+        ralphlib.iteration.announce_started_tasks(options, context)
+        assert read.call_count == 1
+        write_tasks(path, 'in-progress')
+        ralphlib.iteration.announce_started_tasks(options, context)
+        assert read.call_count == 2
+
+
 def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'tasks.md'
     write_tasks(path, 'in-progress')

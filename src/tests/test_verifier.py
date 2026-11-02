@@ -1,4 +1,5 @@
 import pathlib
+import threading
 import unittest.mock
 
 import git
@@ -92,6 +93,22 @@ def test_worktree_task_file_found(tmp_path: pathlib.Path) -> None:
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     assert ralphlib.verifier.worktree_task_file(make_options(repo)) == wt / TASK_FILE
+
+
+def test_worktree_task_file_threads_list_worktrees_once(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    wt = (tmp_path / 'wt').resolve()
+    run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
+    options = make_options(repo)
+    results: list[pathlib.Path | None] = []
+    with unittest.mock.patch.object(ralphlib.verifier, 'parse_worktrees', wraps=ralphlib.verifier.parse_worktrees) as parse:
+        threads = [threading.Thread(target=lambda: results.append(ralphlib.verifier.worktree_task_file(options))) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    assert results == [wt / TASK_FILE, wt / TASK_FILE]
+    assert parse.call_count == 1
 
 
 def test_worktree_task_file_no_match(tmp_path: pathlib.Path) -> None:

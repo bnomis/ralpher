@@ -299,7 +299,7 @@ files it names.
 
 ## Task 9: Hook events and polls stop repeating fixed work
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Finding 8
@@ -308,21 +308,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] In `src/ralphlib/hooks.py`, compute the run-fixed part of the hook context (time zone, resolved `cwd` and tasks-file paths, `ralpher_root`, the icon and sound checks) once per run, and cache compiled templates in one `SandboxedEnvironment`; keep `last_commit_summary` per event (HEAD can change) but reuse the repository path found once
-- [ ] In `src/ralphlib/verifier.py`, guard `worktree_task_file`'s cache with a lock
-- [ ] In the poll loop of `iteration.process`, re-read the tasks file only when its modification time or size has changed
-- [ ] Add tests: the template cache compiles each template once across two events (`src/tests/test_hooks.py`); the poll does not re-read an unchanged tasks file (`src/tests/test_iteration.py`); two threads calling `worktree_task_file` run `git worktree list` once once the worktree exists (`src/tests/test_verifier.py`)
+- [x] In `src/ralphlib/hooks.py`, compute the run-fixed part of the hook context (time zone, resolved `cwd` and tasks-file paths, `ralpher_root`, the icon and sound checks) once per run, and cache compiled templates in one `SandboxedEnvironment`; keep `last_commit_summary` per event (HEAD can change) but reuse the repository path found once
+- [x] In `src/ralphlib/verifier.py`, guard `worktree_task_file`'s cache with a lock
+- [x] In the poll loop of `iteration.process`, re-read the tasks file only when its modification time or size has changed
+- [x] Add tests: the template cache compiles each template once across two events (`src/tests/test_hooks.py`); the poll does not re-read an unchanged tasks file (`src/tests/test_iteration.py`); two threads calling `worktree_task_file` run `git worktree list` once once the worktree exists (`src/tests/test_verifier.py`)
 
 **Acceptance Criteria:**
 
-- [ ] Hook output for every existing hook test is unchanged
-- [ ] The new tests pass
+- [x] Hook output for every existing hook test is unchanged
+- [x] The new tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_hooks.py`, `src/tests/test_iteration.py` and `src/tests/test_verifier.py`
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_process_termination.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_hooks.py`, `src/tests/test_iteration.py` and `src/tests/test_verifier.py`
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_process_termination.py` passes
 
 **Notes:**
 
