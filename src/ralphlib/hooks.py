@@ -132,9 +132,9 @@ def make_context(
 
     context: dict[str, str] = {
         'current_iteration': str(options.current_iteration),
+        'cwd': cwd,
         'cwd_basename': cwd_path.name if cwd_path else '',
         'cwd_dirname': str(cwd_path.parent) if cwd_path else '',
-        'cwd': cwd,
         'datetime_local': now_local.isoformat(),
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
@@ -142,14 +142,14 @@ def make_context(
         'iterations': str(options.iterations),
         'last_commit_summary': last_commit_summary(options, commands),
         'ralpher_root': str(ralpher_root()),
+        'task_file': str(task_file_path) if task_file_path else '',
         'task_file_basename': task_file_path.name if task_file_path else '',
         'task_file_dir_basename': task_file_path.parent.name if task_file_path else '',
         'task_file_dirname': str(task_file_path.parent) if task_file_path else '',
         'task_file_number': task_file_number_str,
+        'task_file_relative_path': str(task_file_relative_path) if task_file_relative_path else '',
         'task_file_stem': task_file_path.stem if task_file_path else '',
         'task_file_suffix': task_file_path.suffix if task_file_path else '',
-        'task_file': str(task_file_path) if task_file_path else '',
-        'task_file_relative_path': str(task_file_relative_path) if task_file_relative_path else '',
         'time_epoch': str(int(time.time())),
     }
 
@@ -220,6 +220,7 @@ def render_hook_args(cmd: str, context: dict[str, typing.Any]) -> list[str]:
 
 
 def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
+    """Start a hook detached. stdout and stderr both go to `DEVNULL` on purpose: nothing reads a hook's output."""
     try:
         args = shlex.split(cmd) if context is None else render_hook_args(cmd, context)
         subprocess.Popen(  # noqa: S603

@@ -141,7 +141,11 @@ def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     if not tasks:
         return unverified(f'no tasks found in {path}')
     not_done = [t for t in tasks if t.status != 'done']
-    return StopCheck(verified=True, all_done=not not_done, not_done=not_done, total=len(tasks), reason='')
+    return verified(not_done, len(tasks))
+
+
+def verified(not_done: list[TaskStatus], total: int) -> StopCheck:
+    return StopCheck(verified=True, all_done=not not_done, not_done=not_done, total=total, reason='')
 
 
 def unverified(reason: str) -> StopCheck:

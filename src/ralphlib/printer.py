@@ -7,6 +7,7 @@ import ralphlib.logger
 import ralphlib.types
 
 console = rich.console.Console(highlight=False)
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 if typing.TYPE_CHECKING:
     import ralphlib.options

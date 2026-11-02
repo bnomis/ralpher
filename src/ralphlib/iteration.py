@@ -12,7 +12,6 @@ import typing
 
 import loguru
 import orjson
-import rich.console
 
 import ralphlib.exceptions
 import ralphlib.hooks
@@ -72,9 +71,6 @@ class IterationContext:
     unknown_ptype_set: set[str] = dataclasses.field(default_factory=set)
 
 
-console = rich.console.Console(highlight=False)
-console_stderr = rich.console.Console(stderr=True, highlight=False)
-
 SUBPROCESS_POLL_INTERVAL = 3
 MAX_KILL_ATTEMPTS = 3
 
@@ -87,12 +83,12 @@ background_task_tool_name = frozenset(['TaskOutput', 'TaskStop'])
 # message types that should trigger a newline before the next message
 newline_types = frozenset(
     [
+        ralphlib.types.MessageType.ALERT,
         ralphlib.types.MessageType.COMPLETE,
         ralphlib.types.MessageType.ERROR,
+        ralphlib.types.MessageType.PROGRESS,
         ralphlib.types.MessageType.SYSTEM,
         ralphlib.types.MessageType.TOOL_USE,
-        ralphlib.types.MessageType.ALERT,
-        ralphlib.types.MessageType.PROGRESS,
     ]
 )
 
@@ -202,33 +198,56 @@ def make_context(options: ralphlib.options.RalpherOptions, prompt: str, iteratio
     cmd = add_settings(options, cmd)
     cmd = add_worktree_arg(options, cmd)
     cmd.append(prompt)
-    context = IterationContext(
+    opened: list[io.TextIOWrapper] = []
+    try:
+        stdout, stdoutfd = open_log_file(options.stdout, options, iteration, opened)
+        stderr, stderrfd = open_log_file(options.stderr, options, iteration, opened)
+        progress, progressfd = open_log_file(options.progress, options, iteration, opened)
+        errors, errorsfd = open_log_file(options.errors, options, iteration, opened)
+    except Exception:
+        loguru.logger.exception('Exception in make_context')
+        close_all(opened)
+        raise
+    return IterationContext(
         cmd=cmd,
         iteration=iteration,
         prompt=prompt,
+        errors=errors,
+        errorsfd=errorsfd,
+        progress=progress,
+        progressfd=progressfd,
+        stderr=stderr,
+        stderrfd=stderrfd,
+        stdout=stdout,
+        stdoutfd=stdoutfd,
     )
+
+
+def open_log_file(
+    name: str | None,
+    options: ralphlib.options.RalpherOptions,
+    iteration: int,
+    opened: list[io.TextIOWrapper],
+) -> tuple[pathlib.Path | None, io.TextIOWrapper | None]:
+    """Open the iteration log file `name` for appending, recording the handle in `opened` so a later failure can close it.
+
+    Raises:
+        LogFileError: the file cannot be opened.
+    """
+    if not name:
+        return None, None
+    path = ralphlib.logger.log_file(options, name, iteration)
     try:
-        if options.stdout:
-            context.stdout = ralphlib.logger.log_file(options, options.stdout, iteration)
-            context.stdoutfd = context.stdout.open('a', encoding='utf-8')
-        if options.stderr:
-            context.stderr = ralphlib.logger.log_file(options, options.stderr, iteration)
-            context.stderrfd = context.stderr.open('a', encoding='utf-8')
-        if options.progress:
-            context.progress = ralphlib.logger.log_file(options, options.progress, iteration)
-            context.progressfd = context.progress.open('a', encoding='utf-8')
-        if options.errors:
-            context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
-            context.errorsfd = context.errors.open('a', encoding='utf-8')
+        fd = path.open('a', encoding='utf-8')
     except OSError as e:
-        loguru.logger.exception('Exception in make_context')
-        unmake_context(context)
-        raise ralphlib.exceptions.LogFileError('Cannot open an iteration log file') from e
-    except Exception:
-        loguru.logger.exception('Exception in make_context')
-        unmake_context(context)
-        raise
-    return context
+        raise ralphlib.exceptions.LogFileError(f'Cannot open the iteration log file {path}') from e
+    opened.append(fd)
+    return path, fd
+
+
+def close_all(fds: list[io.TextIOWrapper]) -> None:
+    for fd in fds:
+        flush_and_close_fd(fd)
 
 
 def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
@@ -283,7 +302,7 @@ def summary(options: ralphlib.options.RalpherOptions, context: IterationContext,
 
     if lines:
         print_progress_lines(options, context, lines)
-        write_progress_lines(options, context, lines)
+        write_progress_lines(context, lines)
 
         ralphlib.state.add_to_state(
             options,
@@ -298,7 +317,7 @@ def print_progress_lines(options: ralphlib.options.RalpherOptions, context: Iter
         return
     with context.gil:
         for line in lines:
-            console.print(line, end='', soft_wrap=True)
+            ralphlib.printer.console.print(line, end='', soft_wrap=True)
 
 
 def print_progress(
@@ -311,21 +330,21 @@ def print_progress(
         return
 
     with context.gil:
-        console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
+        ralphlib.printer.console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
 
 
 def print_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
-        console.print('')
+        ralphlib.printer.console.print('')
 
 
 def print_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if options.quiet:
         return
     with context.gil:
-        console_stderr.print(
+        ralphlib.printer.console_stderr.print(
             message,
             style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ERROR),
             end='',
@@ -337,65 +356,65 @@ def print_error_eol(options: ralphlib.options.RalpherOptions, context: Iteration
     if options.quiet:
         return
     with context.gil:
-        console_stderr.print('\n')
+        ralphlib.printer.console_stderr.print('\n')
 
 
 def log_msg(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
-    write_progress(options, context, msg)
-    write_progress_eol(options, context)
+    write_progress(context, msg)
+    write_progress_eol(context)
 
     print_progress(options, context, ralphlib.types.MessageType.SYSTEM, msg)
     print_progress_eol(options, context)
 
 
 def log_error(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
-    write_error(options, context, msg)
-    write_error_eol(options, context)
+    write_error(context, msg)
+    write_error_eol(context)
 
     print_error(options, context, msg)
     print_error_eol(options, context)
 
 
-def write_progress(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_progress(context: IterationContext, message: str) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write(message)
 
 
-def write_progress_lines(options: ralphlib.options.RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+def write_progress_lines(context: IterationContext, lines: list[str]) -> None:
     if context.progressfd:
         with context.gil:
             for line in lines:
                 context.progressfd.write(line)
 
 
-def write_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+def write_progress_eol(context: IterationContext) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write('\n')
             context.progressfd.flush()
 
 
-def write_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_error(context: IterationContext, message: str) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write(message)
 
 
-def write_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+def write_error_eol(context: IterationContext) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write('\n')
             context.errorsfd.flush()
 
 
-def write_stdout(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stdout(context: IterationContext, message: str) -> None:
     if context.stdoutfd:
         with context.gil:
             context.stdoutfd.write(message)
 
 
-def write_stderr(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stderr(context: IterationContext, message: str) -> None:
     if context.stderrfd:
         with context.gil:
             context.stderrfd.write(message)
@@ -435,6 +454,11 @@ def agent_environment(environ: dict[str, str], venv: pathlib.Path, src: pathlib.
 
 
 def process(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+    """Run the agent and stream its output. stdout and stderr both get `PIPE` on purpose: each is read by its own thread.
+
+    Raises:
+        RalpherError: the agent cannot be started.
+    """
     kwargs = {
         'stdin': subprocess.DEVNULL,
         'stdout': subprocess.PIPE,
@@ -566,18 +590,18 @@ def read_stdout(
         if not line:
             continue
 
-        write_stdout(options, context, line + '\n')
+        write_stdout(context, line + '\n')
 
         message_type, message = process_line(options, context, line)
         if message_type == ralphlib.types.MessageType.NONE:
             continue
 
         if message:
-            write_progress(options, context, message)
+            write_progress(context, message)
             print_progress(options, context, message_type, message)
 
         if newline_required(context, message_type):
-            write_progress_eol(options, context)
+            write_progress_eol(context)
             print_progress_eol(options, context)
 
         append_message_type(context, message_type)
@@ -594,7 +618,7 @@ def process_stderr(
             if not line:
                 continue
 
-            write_stderr(options, context, line + '\n')
+            write_stderr(context, line + '\n')
             print_error(options, context, line)
     except OSError:
         loguru.logger.exception('I/O error on the agent stderr reader thread')
@@ -652,8 +676,8 @@ def process_system(
         'background_tasks_changed',
         'commands_changed',
         'compat_boundary',
-        'hook_started',
         'hook_progress',
+        'hook_started',
         'hook_response',
         'init',
         'notification',
@@ -847,9 +871,9 @@ def announce_started_tasks(options: ralphlib.options.RalpherOptions, context: It
         if not mark_started(context, t.id):
             continue
         message = task_progress(options, t.id, t.title, str(t.index), str(t.count), 'start')
-        write_progress(options, context, message)
+        write_progress(context, message)
         print_progress(options, context, ralphlib.types.MessageType.PROGRESS, message)
-        write_progress_eol(options, context)
+        write_progress_eol(context)
         print_progress_eol(options, context)
         append_message_type(context, ralphlib.types.MessageType.PROGRESS)
 

@@ -35,10 +35,8 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         except OSError as e:
             raise ralphlib.exceptions.RalpherError(f'Cannot change directory to "{options.cwd}"') from e
 
-    # check git status
-    ralphlib.giter.check_git(options)
+    ralphlib.giter.confirm_git_state(options)
 
-    # check prompt file exists and has content
     content = ''
     if options.prompt:
         if not os.path.isfile(options.prompt):
@@ -60,7 +58,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     if not content:
         sys.exit('Error: No prompt provided. Use --prompt to read from a file or --prompts to provide on the cmd line.')
 
-    # check task file exists and has content
     task_path = None
     if options.task_file:
         task_path = pathlib.Path(options.task_file).resolve().expanduser()
@@ -94,14 +91,12 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 
-    # hook
     ralphlib.hooks.event(
         options,
         event_type=ralphlib.types.RalpherEventType.START,
         event_context={'iteration': 0, 'prompt': content},
     )
 
-    # state json
     new_state = {
         'start': now,
         'agent': options.agent,
@@ -130,21 +125,18 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         s = f'\nStarting iteration {i}/{options.iterations} at {now}\n\nPrompt:\n\n{p}\n\n'
         print_both(options, s, i)
 
-        # state json
         iterations_key = ralphlib.logger.iteration_to_str(options, i)
         state_payload = {
             'start': loop_start.isoformat(),
         }
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
 
-        # hook
         ralphlib.hooks.event(
             options,
             event_type=ralphlib.types.RalpherEventType.ITERATION_START,
             event_context={'iteration': i, 'prompt': p},
         )
 
-        # run the iteration
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
         except Exception:
@@ -171,7 +163,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
-        # state json
         state_payload = {
             'end': loop_end.isoformat(),
             'iteration_time_readable': loop_time_str,
@@ -179,7 +170,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         }
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
 
-        # hook
         ralphlib.hooks.event(
             options,
             event_type=ralphlib.types.RalpherEventType.ITERATION_END,
@@ -247,7 +237,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         lines.append(f'Stopping reason: {stopping_reason}')
     ralphlib.printer.prt(options, f'{"\n".join(lines)}\n', 0)
 
-    # state json
     new_state = {
         'end': now,
         'exit_reason': exit_reason,
@@ -262,7 +251,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     }
     ralphlib.state.add_to_state(options, new_state)
 
-    # hook
     if error:
         ralphlib.hooks.event(
             options,

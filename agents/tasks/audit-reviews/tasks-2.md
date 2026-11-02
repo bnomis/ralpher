@@ -434,7 +434,7 @@ every test file that imports a module this list changed.
 
 ## Task 13: Code clean-ups (names, mutation, duplication, standards)
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Findings 14, 15, 16 and 17 (A8, A9, A10, A13, A15, S1, S4)
@@ -443,24 +443,24 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Rename the interactive git checks to say they prompt (`check_git` to `confirm_git_state`, `check_repo_clean` to `confirm_repo_clean`, `check_divergence` to `confirm_divergence`) and update the callers and tests; leave the other A9 names, which read state their names state
-- [ ] `giter.has_unpushed_commits`: return `bool | None`, with `None` for "cannot tell", and have `confirm_repo_clean` treat `None` as a reason to warn
-- [ ] `iteration.make_context`: open the log files first and pass them to the `IterationContext` constructor (A8)
-- [ ] Move the two shared `rich.console.Console` instances to `printer.py` and import them in `giter.py`, `state.py` and `iteration.py`
-- [ ] Add `verifier.verified()` beside `unverified()` and use it at `verifier.py:142`
-- [ ] Add a one-line docstring to `hooks.run_hook` and `iteration.process` saying that stdout and stderr share a value on purpose (A13)
-- [ ] Annotate the `bin/install-claude.py` parameters (S1); add the annotations missing in `src/tests/test_process_termination.py`
-- [ ] Sort the literals at `iteration.py:93`, `iteration.py:627`, `hooks.py:136-151` and `templater.py:31`, and delete the obvious comments review-2 S4 lists
-- [ ] Remove the unused `options` parameter from the `iteration.py` `write_*` functions (review-1 Finding 9), or keep it and leave a one-line reason, whichever keeps the call sites simpler
+- [x] Rename the interactive git checks to say they prompt (`check_git` to `confirm_git_state`, `check_repo_clean` to `confirm_repo_clean`, `check_divergence` to `confirm_divergence`) and update the callers and tests; leave the other A9 names, which read state their names state
+- [x] `giter.has_unpushed_commits`: return `bool | None`, with `None` for "cannot tell", and have `confirm_repo_clean` treat `None` as a reason to warn
+- [x] `iteration.make_context`: open the log files first and pass them to the `IterationContext` constructor (A8)
+- [x] Move the two shared `rich.console.Console` instances to `printer.py` and import them in `giter.py`, `state.py` and `iteration.py`
+- [x] Add `verifier.verified()` beside `unverified()` and use it at `verifier.py:142`
+- [x] Add a one-line docstring to `hooks.run_hook` and `iteration.process` saying that stdout and stderr share a value on purpose (A13)
+- [x] Annotate the `bin/install-claude.py` parameters (S1); add the annotations missing in `src/tests/test_process_termination.py`
+- [x] Sort the literals at `iteration.py:93`, `iteration.py:627`, `hooks.py:136-151` and `templater.py:31`, and delete the obvious comments review-2 S4 lists
+- [x] Remove the unused `options` parameter from the `iteration.py` `write_*` functions (review-1 Finding 9), or keep it and leave a one-line reason, whichever keeps the call sites simpler
 
 **Acceptance Criteria:**
 
-- [ ] Every A8, A10, A13, A15, S1 and S4 item in review-2 is fixed, along with the A9 items named above
+- [x] Every A8, A10, A13, A15, S1 and S4 item in review-2 is fixed, along with the A9 items named above
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_templater.py src/tests/test_printer.py src/tests/test_state.py src/tests/test_looper.py src/tests/test_process_termination.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_templater.py src/tests/test_printer.py src/tests/test_state.py src/tests/test_looper.py src/tests/test_process_termination.py` passes
 
 **Notes:**
 

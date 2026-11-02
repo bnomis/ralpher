@@ -7,6 +7,7 @@ Confirms that:
 - The child is in a different process group (start_new_session isolation)
 """
 
+import collections.abc
 import os
 import signal
 import subprocess
@@ -28,13 +29,13 @@ SLEEP_SCRIPT = 'import time; time.sleep(60)'
 
 
 @pytest.fixture
-def fast_poll():
+def fast_poll() -> collections.abc.Iterator[None]:
     """Reduce poll interval so tests don't wait 3 seconds per cycle."""
     with unittest.mock.patch.object(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05):
         yield
 
 
-def make_context(cmd):
+def make_context(cmd: list[str]) -> ralphlib.iteration.IterationContext:
     return ralphlib.iteration.IterationContext(
         cmd=cmd,
         iteration=1,
@@ -54,10 +55,10 @@ def child_is_alive(pid: int) -> bool:
 real_popen = subprocess.Popen
 
 
-def capturing_popen(holder):
+def capturing_popen(holder: dict[str, int]) -> collections.abc.Callable[..., subprocess.Popen[str]]:
     """Return a Popen wrapper that stores the child PID in holder['pid']."""
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> subprocess.Popen[str]:
         proc = real_popen(*args, **kwargs)
         holder['pid'] = proc.pid
         return proc
@@ -69,12 +70,12 @@ def capturing_popen(holder):
 class TestProcessTerminatesOnShouldExit:
     """process() should terminate the child when should_exit is set."""
 
-    def test_process_returns_after_should_exit_set(self):
+    def test_process_returns_after_should_exit_set(self) -> None:
         options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
-        def set_exit_after_delay():
+        def set_exit_after_delay() -> None:
             time.sleep(0.2)
             ralphlib.signals.set_should_exit(True)
 
@@ -88,14 +89,14 @@ class TestProcessTerminatesOnShouldExit:
         timer.join()
         assert ralphlib.signals.get_should_exit() is True
 
-    def test_child_process_is_dead_after_termination(self):
+    def test_child_process_is_dead_after_termination(self) -> None:
         options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
 
         holder: dict[str, typing.Any] = {}
 
-        def set_exit_after_delay():
+        def set_exit_after_delay() -> None:
             time.sleep(0.2)
             ralphlib.signals.set_should_exit(True)
 
@@ -117,7 +118,7 @@ class TestProcessTerminatesOnShouldExit:
 class TestGracefulTerminatorTerminatesSubprocess:
     """Full integration: GracefulTerminator handler -> should_exit -> child killed."""
 
-    def test_double_sigint_terminates_subprocess(self):
+    def test_double_sigint_terminates_subprocess(self) -> None:
         options = tests.helpers.make_options(quiet=True)
         cmd = [sys.executable, '-c', SLEEP_SCRIPT]
         context = make_context(cmd)
@@ -125,7 +126,7 @@ class TestGracefulTerminatorTerminatesSubprocess:
         with unittest.mock.patch('ralphlib.signals.signal.signal'):
             terminator = ralphlib.signals.GracefulTerminator(options)
 
-        def send_double_sigint():
+        def send_double_sigint() -> None:
             time.sleep(0.2)
             terminator.handler(signal.SIGINT, None)
             terminator.handler(signal.SIGINT, None)
@@ -144,7 +145,7 @@ class TestGracefulTerminatorTerminatesSubprocess:
 class TestChildSessionIsolation:
     """With start_new_session=True, the child is in a different session/process group."""
 
-    def test_child_has_different_process_group(self):
+    def test_child_has_different_process_group(self) -> None:
         # The child script prints its process group ID to stdout, then sleeps.
         child_script = 'import os, sys; sys.stdout.write(str(os.getpgrp()) + "\\n"); sys.stdout.flush(); import time; time.sleep(60)'
 
@@ -154,13 +155,13 @@ class TestChildSessionIsolation:
 
         child_pgid_lines: list[str] = []
 
-        def capturing_process_stdout(options, context, pipe):
+        def capturing_process_stdout(options: ralphlib.options.RalpherOptions, context: ralphlib.iteration.IterationContext, pipe: typing.IO[str]) -> None:
             for line in iter(pipe.readline, ''):
                 line = line.strip()
                 if line:
                     child_pgid_lines.append(line)
 
-        def set_exit_after_delay():
+        def set_exit_after_delay() -> None:
             time.sleep(0.3)
             ralphlib.signals.set_should_exit(True)
 

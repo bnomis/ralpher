@@ -58,10 +58,10 @@ def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int
     context: dict[str, str | bool] = {
         'iteration': str(iteration),
         'iterations': str(options.iterations),
-        'worktree': False,
-        'worktree_name': '',
         'task_file': '',
         'task_file_relative_path': '',
+        'worktree': False,
+        'worktree_name': '',
     }
     cwd_path = task_file_path = task_file_relative_path = None
     if options.cwd:

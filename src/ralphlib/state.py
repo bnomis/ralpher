@@ -4,17 +4,16 @@ import typing
 
 import filelock
 import loguru
-import rich.console
 import tenacity
 
 import ralphlib.exceptions
 import ralphlib.logger
+import ralphlib.printer
 
 if typing.TYPE_CHECKING:
     import ralphlib.options
 
 STATE_LOCK_TIMEOUT = 10
-console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any] | None:
@@ -69,7 +68,7 @@ def add_to_state(
         # auditme: accept[except-interpolation] the message is also printed to stderr, which shows no traceback
         s = f'Exception in add_to_state: {e}'
         loguru.logger.exception(s)
-        console_stderr.print(s)
+        ralphlib.printer.console_stderr.print(s)
         raise
 
 

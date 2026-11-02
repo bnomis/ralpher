@@ -7,7 +7,6 @@ import typing
 
 import git
 import loguru
-import rich.console
 import rich.prompt
 import rich.text
 
@@ -17,9 +16,6 @@ import ralphlib.types
 
 if typing.TYPE_CHECKING:
     import ralphlib.options
-
-
-console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 class YNConfirm(rich.prompt.Confirm):
@@ -49,7 +45,7 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     return last_commit_summary
 
 
-def check_git(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:
+def confirm_git_state(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:
     if options.skip_git_check:
         return
 
@@ -61,9 +57,9 @@ def check_git(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str
             sys.exit('Aborting due to not being in a git repository.')
         return
 
-    check_repo_clean(options, repo)
+    confirm_repo_clean(options, repo)
     if options.worktree:
-        check_divergence(options, repo)
+        confirm_divergence(options, repo)
 
 
 def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | None:
@@ -90,7 +86,7 @@ def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
-def check_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
+def confirm_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     from_head = options.worktree and worktree_base_ref(options, repo) == 'head'
     if from_head:
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
@@ -105,14 +101,22 @@ def check_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo) -
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
-    if not from_head and has_unpushed_commits(repo):
-        lines = ['Warning: there are unpushed commits.']
+    unpushed = None if from_head else has_unpushed_commits(repo)
+    if not from_head and unpushed is not False:
+        if unpushed is None:
+            lines = ['Warning: cannot tell whether there are unpushed commits.']
+            advice = 'You probably want to check and push before continuing. Continue?'
+            abort = 'Aborting: cannot tell whether there are unpushed commits.'
+        else:
+            lines = ['Warning: there are unpushed commits.']
+            advice = 'You probably want to push before continuing. Continue?'
+            abort = 'Aborting due to unpushed commits.'
         if options.worktree:
             lines.append(wts)
-        lines.append('You probably want to push before continuing. Continue?')
+        lines.append(advice)
         decision = YNConfirm.ask(lines_to_text(options, lines), default=False)
         if not decision:
-            sys.exit('Aborting due to unpushed commits.')
+            sys.exit(abort)
 
 
 def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> bool:
@@ -135,10 +139,11 @@ def redact_url(text: str) -> str:
     return re.sub(r'([a-zA-Z][a-zA-Z0-9+.-]*://)[^/@\s]*@', r'\1', text)
 
 
-def has_unpushed_commits(repo: git.Repo) -> bool:
+def has_unpushed_commits(repo: git.Repo) -> bool | None:
     """
     Returns True if the current branch has commits not pushed to its upstream
-    (usually origin/<branch>).
+    (usually origin/<branch>), False if it has none, and None if that cannot be
+    told: no origin remote, a failed fetch, a detached HEAD or no upstream.
 
     Raises:
         GitError: the upstream branch or its commits cannot be read.
@@ -146,21 +151,21 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
     try:
         origin = repo.remotes.origin
     except ValueError, OSError:
-        console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
-        return False
+        ralphlib.printer.console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
+        return None
 
     try:
         origin.fetch()
     except (git.GitCommandError, OSError, UnicodeDecodeError) as e:
         # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
         message = redact_url(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
-        console_stderr.print(message)
+        ralphlib.printer.console_stderr.print(message)
         loguru.logger.warning(message)
-        return False
+        return None
 
     upstream = get_upstream_branch(repo)
     if upstream is None:
-        return False
+        return None
 
     # Count commits ahead of upstream
     try:
@@ -173,7 +178,7 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
 def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
     try:
         if repo.head.is_detached:
-            console_stderr.print('Detached HEAD — no current branch')
+            ralphlib.printer.console_stderr.print('Detached HEAD — no current branch')
             return None
 
         branch = repo.active_branch
@@ -181,23 +186,23 @@ def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
     except (git.GitCommandError, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot read the upstream branch of {repo.working_dir}') from e
     if tracking is None:
-        console_stderr.print(f'No upstream branch set for the {branch.name} branch')
+        ralphlib.printer.console_stderr.print(f'No upstream branch set for the {branch.name} branch')
         return None
     return tracking
 
 
-def check_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
+def confirm_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> None:
     if worktree_base_ref(options, repo) != 'fresh':
         return
 
     base, base_short = get_origin(repo)
     if not base:
-        console_stderr.print('Warning: origin/HEAD is not set locally. Cannot check for divergence.')
+        ralphlib.printer.console_stderr.print('Warning: origin/HEAD is not set locally. Cannot check for divergence.')
         return
 
     current = get_current_branch(repo)
     if not current:
-        console_stderr.print('Warning: HEAD is detached. Cannot check for divergence.')
+        ralphlib.printer.console_stderr.print('Warning: HEAD is detached. Cannot check for divergence.')
         return
 
     if base_short != current:
