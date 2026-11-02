@@ -10,6 +10,10 @@ class InvalidArgsError(RalpherError):
     pass
 
 
+class InvalidIterationsError(RalpherError):
+    pass
+
+
 class InvalidVarFormatError(RalpherError):
     pass
 

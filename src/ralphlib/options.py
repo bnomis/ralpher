@@ -143,6 +143,8 @@ class RalpherOptions:
     """The tasks file inside the agent's worktree, cached once found; cleared at the start of each iteration."""
 
     def __post_init__(self) -> None:
+        if self.iterations < 1:
+            raise ralphlib.exceptions.InvalidIterationsError(f'--iterations must be at least 1, got {self.iterations}')
         try:
             args = shlex.split(self.args)
         except ValueError as e:

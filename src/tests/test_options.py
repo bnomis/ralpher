@@ -30,3 +30,9 @@ def test_worktree_base_ref_is_stored() -> None:
 
 def test_args_without_worktree_flags_are_accepted() -> None:
     ralphlib.options.RalpherOptions(worktree=True, args='--print --verbose')
+
+
+@pytest.mark.parametrize('iterations', [0, -1])
+def test_iterations_below_one_are_refused(iterations: int) -> None:
+    with pytest.raises(ralphlib.exceptions.InvalidIterationsError, match='at least 1'):
+        ralphlib.options.RalpherOptions(iterations=iterations)

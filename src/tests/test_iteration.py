@@ -1585,3 +1585,10 @@ def test_agent_environment_removes_only_ralphers_own_entries(path: list[str] | N
         else:
             del expected[name]
     assert env == expected
+
+
+def test_unknown_tool_records_name_and_input_size_not_raw_input() -> None:
+    context = make_context()
+    ralphlib.iteration.add_unknown_tool(context, 'Mystery', {'secret': 'hunter2'})
+    assert context.unknown_tools == {'Mystery': {'input_bytes': len(orjson.dumps({'secret': 'hunter2'}))}}
+    assert 'hunter2' not in str(context.unknown_tools)

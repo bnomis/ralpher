@@ -14,7 +14,7 @@ ralpher.sh [OPTIONS]
 | `--args ARGS` | `--verbose --include-partial-messages --print --dangerously-skip-permissions --output-format stream-json` | The agent's arguments, split as a shell would. Replaces the default entirely. `--worktree`, `-w` and `--settings` are refused; see [Worktrees](../guide/worktrees.md#flags-refused-in-args). |
 | `--prompt FILE` | | Read the prompt from a file. |
 | `--prompts TEXT` | | The prompt as text. Ignored when `--prompt` is given. |
-| `--iterations N` | `3` | The most iterations to run. |
+| `--iterations N` | `3` | The most iterations to run; at least `1`. |
 | `--cwd DIR` | the current directory | The directory the agent runs in, and the git checks run in. Also adds `DIR/.ralpher/settings.json` to the settings files. |
 | `--vars KEY=VALUE` | | A prompt template variable. Repeatable. See [Prompts](../guide/prompts.md#-vars). |
 

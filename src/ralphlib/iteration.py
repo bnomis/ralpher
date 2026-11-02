@@ -130,7 +130,7 @@ def add_unknown_ptype(context: IterationContext, ptype: str) -> None:
 def add_unknown_tool(context: IterationContext, tool_name: str, input_values: dict[str, typing.Any]) -> None:
     with context.gil:
         if tool_name not in context.unknown_tools:
-            context.unknown_tools[tool_name] = input_values
+            context.unknown_tools[tool_name] = {'input_bytes': len(orjson.dumps(input_values))}
 
 
 def add_background_tool(context: IterationContext, tool_name: str, tool_input: str, tool_id: str) -> None:

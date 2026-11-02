@@ -267,7 +267,7 @@ files it names.
 
 ## Task 8: At least one iteration, and tool inputs summarised
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 10
@@ -276,20 +276,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Test in `src/tests/test_options.py`: `--iterations 0` and a negative value raise a ralpher error; confirm it fails first. Raise it in `RalpherOptions.__post_init__` and state the minimum in `docs/reference/cli.md`
-- [ ] Test in `src/tests/test_iteration.py`: a tool input with no recognised field records the tool name and the input's size in the state and summary, not the raw input; change the fallback in the tool-use summary path (`iteration.py`, near line 288)
+- [x] Test in `src/tests/test_options.py`: `--iterations 0` and a negative value raise a ralpher error; confirm it fails first. Raise it in `RalpherOptions.__post_init__` and state the minimum in `docs/reference/cli.md`
+- [x] Test in `src/tests/test_iteration.py`: a tool input with no recognised field records the tool name and the input's size in the state and summary, not the raw input; change the fallback in the tool-use summary path (`iteration.py`, near line 288)
 
 **Acceptance Criteria:**
 
-- [ ] `--iterations 0` stops with an `Error:` line and status 1
-- [ ] No raw tool input reaches `state.json` or the summary
+- [x] `--iterations 0` stops with an `Error:` line and status 1
+- [x] No raw tool input reaches `state.json` or the summary
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_iteration.py`
-- [ ] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_iteration.py`
+- [x] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
