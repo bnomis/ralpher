@@ -367,7 +367,7 @@ every test file that imports a module this list changed.
 
 ## Task 11: Bring AGENTS.md and the specs in line with the repository
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 11 (Doc1-Doc4), Spec review
@@ -376,20 +376,20 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] `AGENTS.md` project structure: add `conftest.py`, `test_shlex.py`, `install-claude.py`, `rcl.sh`, `agents/`, `claude/`, `TODO.md`, `DONE.md` and `NOTES.md`; describe `logs/` correctly or remove it; add `ralpher-logs/`; add any test file or module the earlier tasks created
-- [ ] `AGENTS.md` tools: Python 3.14.5 or later; remove Docker; list `filelock`, `gitpython`, `jinja2`, `orjson`, `rich`, `tenacity`, `tzlocal`, the pytest plugins, `mkdocs`, `mkdocs-material` and `pre-commit`
-- [ ] `AGENTS.md` Goals: add verified stops, worktree queues and hooks, matching `README.md`
-- [ ] `agents/specs/verified-stop/spec.md`: fix lines 32, 72, 165 and 167 as review-2 Doc4 lists
-- [ ] `agents/specs/auditme-adoption/spec.md`: release-tag pins (lines 115, 148), the `no-project-names` hook (line 105), the verified-stop status (line 158, with a relative link), and docstrings for `load_state` and `save_state` (lines 61-62)
+- [x] `AGENTS.md` project structure: add `conftest.py`, `test_shlex.py`, `install-claude.py`, `rcl.sh`, `agents/`, `claude/`, `TODO.md`, `DONE.md` and `NOTES.md`; describe `logs/` correctly or remove it; add `ralpher-logs/`; add any test file or module the earlier tasks created
+- [x] `AGENTS.md` tools: Python 3.14.5 or later; remove Docker; list `filelock`, `gitpython`, `jinja2`, `orjson`, `rich`, `tenacity`, `tzlocal`, the pytest plugins, `mkdocs`, `mkdocs-material` and `pre-commit`
+- [x] `AGENTS.md` Goals: add verified stops, worktree queues and hooks, matching `README.md`
+- [x] `agents/specs/verified-stop/spec.md`: fix lines 32, 72, 165 and 167 as review-2 Doc4 lists
+- [x] `agents/specs/auditme-adoption/spec.md`: release-tag pins (lines 115, 148), the `no-project-names` hook (line 105), the verified-stop status (line 158, with a relative link), and docstrings for `load_state` and `save_state` (lines 61-62)
 
 **Acceptance Criteria:**
 
-- [ ] Every Doc1-Doc4 item and spec-review gap in review-2 is fixed
+- [x] Every Doc1-Doc4 item and spec-review gap in review-2 is fixed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
