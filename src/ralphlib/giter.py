@@ -39,10 +39,11 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     if repo is None:
         return ''
 
-    last_commit_summary = ''
-    with contextlib.suppress(BaseException):
-        last_commit_summary = str(repo.head.commit.summary)
-    return last_commit_summary
+    try:
+        return str(repo.head.commit.summary)
+    except git.GitCommandError, git.GitCommandNotFound, ValueError:
+        loguru.logger.opt(exception=True).warning('Cannot read the last commit')
+        return ''
 
 
 def confirm_git_state(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:
@@ -69,20 +70,16 @@ def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | Non
     Raises:
         GitError: the path cannot be opened.
     """
-    if path is None:
-        path = pathlib.Path.cwd()
-    else:
-        path = pathlib.Path(path)
-
     try:
+        path = pathlib.Path.cwd() if path is None else pathlib.Path(path)
         return git.Repo(str(path), search_parent_directories=True)
     except git.InvalidGitRepositoryError:
         return None
     except OSError as e:
-        raise ralphlib.exceptions.GitError(f'Cannot open the git repository at {path}') from e
+        raise ralphlib.exceptions.GitError(f'Cannot open the git repository at {path or "the current directory"}') from e
 
 
-def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
+def opens_as_repo(path: pathlib.Path | str | None = None) -> bool:
     return discover_repo_path(path) is not None
 
 
@@ -92,7 +89,7 @@ def confirm_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo)
         wts = 'Git worktrees will be created from the local HEAD, without uncommitted changes.'
     else:
         wts = 'Git worktrees will be created from the origin repo.'
-    if not is_working_tree_clean(repo, include_untracked=True):
+    if not working_tree_is_clean(repo, include_untracked=True):
         lines = ['Warning: the git working tree is not clean.']
         if options.worktree:
             lines.append(wts)
@@ -101,7 +98,7 @@ def confirm_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo)
         if not decision:
             sys.exit('Aborting due to unclean git working tree.')
 
-    unpushed = None if from_head else has_unpushed_commits(repo)
+    unpushed = None if from_head else fetch_unpushed_state(repo)
     if not from_head and unpushed is not False:
         if unpushed is None:
             lines = ['Warning: cannot tell whether there are unpushed commits.']
@@ -119,7 +116,7 @@ def confirm_repo_clean(options: ralphlib.options.RalpherOptions, repo: git.Repo)
             sys.exit(abort)
 
 
-def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> bool:
+def working_tree_is_clean(repo: git.Repo, include_untracked: bool = True) -> bool:
     """
     Returns True if the working tree is clean (no changes, no untracked files by default).
 
@@ -130,7 +127,7 @@ def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> boo
     """
     try:
         return not repo.is_dirty(untracked_files=include_untracked)
-    except (git.GitCommandError, OSError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot read the git status of {repo.working_dir}') from e
 
 
@@ -139,7 +136,7 @@ def redact_url(text: str) -> str:
     return re.sub(r'([a-zA-Z][a-zA-Z0-9+.-]*://)[^/@\s]*@', r'\1', text)
 
 
-def has_unpushed_commits(repo: git.Repo) -> bool | None:
+def fetch_unpushed_state(repo: git.Repo) -> bool | None:
     """
     Returns True if the current branch has commits not pushed to its upstream
     (usually origin/<branch>), False if it has none, and None if that cannot be
@@ -150,32 +147,31 @@ def has_unpushed_commits(repo: git.Repo) -> bool | None:
     """
     try:
         origin = repo.remotes.origin
-    except ValueError, OSError:
+    except AttributeError, ValueError, OSError:
         ralphlib.printer.console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
         return None
 
     try:
         origin.fetch()
-    except (git.GitCommandError, OSError, UnicodeDecodeError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError, UnicodeDecodeError) as e:
         # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
         message = redact_url(f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}')
         ralphlib.printer.console_stderr.print(message)
         loguru.logger.warning(message)
         return None
 
-    upstream = get_upstream_branch(repo)
+    upstream = read_upstream_branch(repo)
     if upstream is None:
         return None
 
-    # Count commits ahead of upstream
     try:
         ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
-    except (git.GitCommandError, OSError) as e:
+    except (git.GitCommandError, git.GitCommandNotFound, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot list the commits ahead of {upstream.name}') from e
     return ahead > 0
 
 
-def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
+def read_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
     try:
         if repo.head.is_detached:
             ralphlib.printer.console_stderr.print('Detached HEAD — no current branch')
@@ -195,12 +191,12 @@ def confirm_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo)
     if worktree_base_ref(options, repo) != 'fresh':
         return
 
-    base, base_short = get_origin(repo)
+    base, base_short = read_origin(repo)
     if not base:
         ralphlib.printer.console_stderr.print('Warning: origin/HEAD is not set locally. Cannot check for divergence.')
         return
 
-    current = get_current_branch(repo)
+    current = read_current_branch(repo)
     if not current:
         ralphlib.printer.console_stderr.print('Warning: HEAD is detached. Cannot check for divergence.')
         return
@@ -213,7 +209,7 @@ def confirm_divergence(options: ralphlib.options.RalpherOptions, repo: git.Repo)
             sys.exit('Aborting due to divergence.')
 
 
-def get_origin(repo: git.Repo) -> tuple[str | None, str | None]:
+def read_origin(repo: git.Repo) -> tuple[str | None, str | None]:
     # Where origin/HEAD points — the base Claude Code will branch new worktrees from
     try:
         origin_head = repo.remotes.origin.refs.HEAD.reference  # e.g. origin/master
@@ -225,7 +221,7 @@ def get_origin(repo: git.Repo) -> tuple[str | None, str | None]:
     return base, base_short
 
 
-def get_current_branch(repo: git.Repo) -> str | None:
+def read_current_branch(repo: git.Repo) -> str | None:
     try:
         if repo.head.is_detached:
             return None
@@ -236,7 +232,7 @@ def get_current_branch(repo: git.Repo) -> str | None:
 
 def worktree_base_ref(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> str:
     """The ref the agent's worktrees branch from: `--worktree-base-ref` if passed, else Claude Code's settings."""
-    return options.passed_worktree_base_ref or claude_worktree_base_ref(repo)
+    return options.worktree_base_ref or claude_worktree_base_ref(repo)
 
 
 def claude_worktree_base_ref(repo: git.Repo) -> str:

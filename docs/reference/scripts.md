@@ -1,7 +1,7 @@
 # Wrapper scripts
 
 All live in ralpher's `bin/`. Each shell wrapper activates ralpher's `.venv` first (`install-claude.py`
-is run with `python3` and does not). `ralpherun.sh` and `rrq.sh` need
+is run with `python3` and does not). `ralpherun.sh`, `rrq.sh` and `rcl.sh` need
 `RALPHER_PATH` set to ralpher's checkout.
 
 ## `ralpher.sh`

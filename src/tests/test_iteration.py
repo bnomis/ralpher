@@ -6,6 +6,8 @@ import shlex
 import signal
 import subprocess
 import sys
+import threading
+import time
 import typing
 import unittest.mock
 
@@ -21,6 +23,7 @@ import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.options
 import ralphlib.signals
+import ralphlib.templater
 import ralphlib.types
 import tests.helpers
 
@@ -141,6 +144,46 @@ def test_process_line_unexpected_exception_propagates() -> None:
         ralphlib.iteration.process_line(options, context, line)
 
 
+@pytest.mark.parametrize(
+    'writer',
+    [
+        lambda c: ralphlib.iteration.write_progress(c, 'x'),
+        lambda c: ralphlib.iteration.write_progress_lines(c, ['x']),
+        lambda c: ralphlib.iteration.write_progress_eol(c),
+        lambda c: ralphlib.iteration.write_error(c, 'x'),
+        lambda c: ralphlib.iteration.write_error_eol(c),
+        lambda c: ralphlib.iteration.write_stdout(c, 'x'),
+        lambda c: ralphlib.iteration.write_stderr(c, 'x'),
+    ],
+)
+def test_log_writers_raise_log_file_error_on_write_failure(writer: collections.abc.Callable[[ralphlib.iteration.IterationContext], None]) -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.write.side_effect = OSError('disk full')
+    context.progressfd = context.errorsfd = context.stdoutfd = context.stderrfd = fd
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        writer(context)
+
+
+def test_log_writer_raises_log_file_error_on_flush_failure() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = OSError('disk full')
+    context.progressfd = fd
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        ralphlib.iteration.write_progress_eol(context)
+
+
+def test_stdout_reader_log_failure_sets_error_instead_of_dying() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.write.side_effect = OSError('disk full')
+    context.stdoutfd = fd
+    pipe = io.StringIO('{"type": "system"}\n')
+    ralphlib.iteration.process_stdout(tests.helpers.make_plain_options(quiet=True), context, pipe)  # type: ignore[arg-type]
+    assert ralphlib.iteration.get_error(context)
+
+
 def test_flush_and_close_fd_carries_on_after_os_error() -> None:
     fd = unittest.mock.MagicMock()
     fd.flush.side_effect = OSError('disk')
@@ -247,7 +290,7 @@ def test_process_result_empty_result_returns_none() -> None:
     assert message == line
 
 
-# --- Task 7: Test process_assistant ---
+# --- Test process_assistant ---
 
 
 def test_process_assistant_text_with_stop_marker_sets_complete() -> None:
@@ -524,10 +567,10 @@ def test_process_assistant_empty_content_returns_none() -> None:
     assert message == line
 
 
-# --- Task 8: Test process_stream_event ---
+# --- Test process_stream_event ---
 
 
-@pytest.mark.parametrize('event_type', ['message_start', 'message_stop', 'message_delta'])
+@pytest.mark.parametrize('event_type', ['message_delta', 'message_start', 'message_stop'])
 def test_process_stream_event_message_types_return_none(event_type: str) -> None:
     options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
@@ -642,7 +685,7 @@ def test_process_stream_event_unknown_event_type_returns_none_with_line() -> Non
     assert message == line
 
 
-# --- Task 9: Test iteration helper functions ---
+# --- Test iteration helper functions ---
 
 
 def test_input_field_to_content_returns_first_matching_regular_field() -> None:
@@ -882,13 +925,7 @@ def test_add_settings_noop_without_base_ref() -> None:
     assert ralphlib.iteration.add_settings(tests.helpers.make_options(), list(CLAUDE_CMD)) == list(CLAUDE_CMD)
 
 
-def test_add_settings_keeps_existing_settings_arg() -> None:
-    options = tests.helpers.make_options(worktree_base_ref='head', args='--print --settings {}')
-    cmd = ['claude', '--print', '--settings', '{}']
-    assert ralphlib.iteration.add_settings(options, list(cmd)) == cmd
-
-
-# --- Task 2: Test add_worktree_arg ---
+# --- Test add_worktree_arg ---
 
 
 def test_add_worktree_arg_appends_worktree_when_enabled() -> None:
@@ -906,20 +943,6 @@ def test_add_worktree_arg_appends_task_file_slug_when_task_file_set() -> None:
     assert 'tasks-my-task' in result
 
 
-def test_add_worktree_arg_does_not_add_if_worktree_already_present() -> None:
-    options = tests.helpers.make_plain_options(worktree=True)
-    cmd = ['claude', '--worktree']
-    result = ralphlib.iteration.add_worktree_arg(options, cmd)
-    assert result.count('--worktree') == 1
-
-
-def test_add_worktree_arg_does_not_add_if_short_flag_already_present() -> None:
-    options = tests.helpers.make_plain_options(worktree=True)
-    cmd = ['claude', '-w']
-    result = ralphlib.iteration.add_worktree_arg(options, cmd)
-    assert '--worktree' not in result
-
-
 def test_add_worktree_arg_noop_when_worktree_false() -> None:
     options = tests.helpers.make_plain_options(worktree=False)
     cmd = list(CLAUDE_CMD)
@@ -927,7 +950,7 @@ def test_add_worktree_arg_noop_when_worktree_false() -> None:
     assert result == list(CLAUDE_CMD)
 
 
-# --- Task 3: Test process_user ---
+# --- Test process_user ---
 
 
 def test_process_user_matching_tool_use_id_extracts_background_task_id() -> None:
@@ -1066,7 +1089,8 @@ def test_process_user_always_returns_none_and_line() -> None:
     assert message == line
 
 
-TASKS_MD = """# Tasks
+def tasks_md(second: str) -> str:
+    return f"""# Tasks
 
 ## Task 1: First thing
 
@@ -1083,7 +1107,7 @@ TASKS_MD = """# Tasks
 
 
 def write_tasks(path: pathlib.Path, second: str) -> None:
-    path.write_text(TASKS_MD.format(second=second))
+    path.write_text(tasks_md(second))
 
 
 def start_block(tid: str) -> str:
@@ -1104,6 +1128,22 @@ def test_announce_started_tasks_prints_start_when_task_goes_in_progress(tmp_path
     ralphlib.iteration.announce_started_tasks(options, context)
     ralphlib.iteration.announce_started_tasks(options, context)
     assert context.progressfd.getvalue() == '\ntask 2: Second thing 2/3 start\n\n'
+
+
+def test_announce_started_tasks_does_not_reread_an_unchanged_file(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'todo')
+    options = tests.helpers.make_plain_options(quiet=True, task_file=str(path), cwd=str(tmp_path))
+    context = make_context()
+    context.progressfd = io.StringIO()
+
+    with unittest.mock.patch.object(ralphlib.iteration, 'read_task_statuses', wraps=ralphlib.iteration.read_task_statuses) as read:
+        ralphlib.iteration.announce_started_tasks(options, context)
+        ralphlib.iteration.announce_started_tasks(options, context)
+        assert read.call_count == 1
+        write_tasks(path, 'in-progress')
+        ralphlib.iteration.announce_started_tasks(options, context)
+        assert read.call_count == 2
 
 
 def test_announce_started_tasks_skips_task_in_progress_before_agent_started(tmp_path: pathlib.Path) -> None:
@@ -1565,3 +1605,279 @@ def test_agent_environment_removes_only_ralphers_own_entries(path: list[str] | N
         else:
             del expected[name]
     assert env == expected
+
+
+def test_unknown_tool_records_name_and_input_size_not_raw_input() -> None:
+    context = make_context()
+    ralphlib.iteration.add_unknown_tool(context, 'Mystery', {'secret': 'hunter2'})
+    assert context.unknown_tools == {'Mystery': {'input_bytes': len(orjson.dumps({'secret': 'hunter2'}))}}
+    assert 'hunter2' not in str(context.unknown_tools)
+
+
+STOP = '<promise>COMPLETE</promise>'
+PLAIN_TEXT = hypothesis.strategies.from_regex(r'[A-Za-z0-9 ,.]{0,30}', fullmatch=True)
+TASK_BLOCK = '<task>\n<id>1</id>\n<title>T</title>\n<index>1</index>\n<count>2</count>\n<status>done</status>\n</task>'
+TOOL_NAMES = hypothesis.strategies.from_regex(r'[A-Za-z][A-Za-z0-9]{0,10}', fullmatch=True)
+JSON_SCALARS = hypothesis.strategies.none() | hypothesis.strategies.booleans() | hypothesis.strategies.integers() | hypothesis.strategies.text(max_size=8)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    worktree=hypothesis.strategies.booleans(),
+    task_file=hypothesis.strategies.one_of(
+        hypothesis.strategies.just(''), hypothesis.strategies.from_regex(r'[a-z]{1,6}/[a-z]{1,6}/[a-z]{1,6}\.md', fullmatch=True)
+    ),
+    cmd=hypothesis.strategies.lists(PLAIN_TEXT, max_size=3),
+)
+def test_add_worktree_arg_appends_only_for_a_worktree(worktree: bool, task_file: str, cmd: list[str]) -> None:
+    options = tests.helpers.make_plain_options(worktree=worktree, task_file=task_file)
+    result = ralphlib.iteration.add_worktree_arg(options, list(cmd))
+    if not worktree:
+        assert result == cmd
+    elif task_file:
+        assert result == [*cmd, '--worktree', ralphlib.templater.task_file_slug(task_file)]
+    else:
+        assert result == [*cmd, '--worktree']
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(value=JSON_SCALARS, extra=hypothesis.strategies.dictionaries(hypothesis.strategies.text(max_size=4), JSON_SCALARS, max_size=3))
+def test_get_run_in_background_is_true_only_for_a_boolean_true(value: typing.Any, extra: dict[str, typing.Any]) -> None:
+    content = {'input': {**extra, 'run_in_background': value}}
+    assert ralphlib.iteration.get_run_in_background(content) is (value is True)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(is_error=hypothesis.strategies.booleans(), result=PLAIN_TEXT, stop=hypothesis.strategies.booleans())
+def test_process_result_classifies_errors_stops_and_the_rest(is_error: bool, result: str, stop: bool) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    result = f'{result}\n{STOP}' if stop else result
+    payload = {'is_error': is_error, 'result': result}
+    message_type, message = ralphlib.iteration.process_result(options, context, payload, 'line')
+    if is_error:
+        assert (message_type, message) == (ralphlib.types.MessageType.ERROR, result)
+        assert ralphlib.iteration.get_error(context)
+    elif stop:
+        assert (message_type, message) == (ralphlib.types.MessageType.COMPLETE, '')
+        assert ralphlib.iteration.get_complete(context)
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')
+        assert not ralphlib.iteration.get_complete(context)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=PLAIN_TEXT, stop=hypothesis.strategies.booleans(), task=hypothesis.strategies.booleans())
+def test_process_assistant_text_blocks(text: str, stop: bool, task: bool) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    if stop:
+        text = f'{text}\n{STOP}'
+    elif task:
+        text = f'{text}\n{TASK_BLOCK}'
+    payload = {'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': text}]}}
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, 'line')
+    if stop:
+        assert (message_type, message) == (ralphlib.types.MessageType.COMPLETE, '')
+        assert ralphlib.iteration.get_complete(context)
+    elif task:
+        assert message_type == ralphlib.types.MessageType.PROGRESS
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')
+        assert not ralphlib.iteration.get_complete(context)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(name=TOOL_NAMES, command=hypothesis.strategies.from_regex(r'[a-z]{1,10}', fullmatch=True))
+def test_process_assistant_tool_use_names_the_tool_and_its_input(name: str, command: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'name': name, 'input': {'command': command}}]}}
+    message_type, message = ralphlib.iteration.process_assistant(options, context, payload, 'line')
+    assert message_type == ralphlib.types.MessageType.TOOL_USE
+    assert message.splitlines()[0] == name
+    assert command in message
+    assert name in context.tools_used_set
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    text=PLAIN_TEXT,
+    task=hypothesis.strategies.booleans(),
+    role=hypothesis.strategies.sampled_from(['assistant', 'user']),
+)
+def test_process_user_only_reports_task_blocks_in_tool_results(text: str, task: bool, role: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    content = f'{text}\n{TASK_BLOCK}' if task else text
+    payload = {'type': 'user', 'message': {'role': role, 'content': [{'type': 'tool_result', 'tool_use_id': 'id-1', 'content': content}]}}
+    message_type, message = ralphlib.iteration.process_user(options, context, payload, 'line')
+    if task and role == 'user':
+        assert message_type == ralphlib.types.MessageType.PROGRESS
+    else:
+        assert (message_type, message) == (ralphlib.types.MessageType.NONE, 'line')
+
+
+# --- Subprocess termination ---
+
+
+SLEEP_SCRIPT = 'import time; time.sleep(60)'
+
+
+@pytest.fixture
+def fast_poll() -> collections.abc.Iterator[None]:
+    """Reduce poll interval so tests don't wait 3 seconds per cycle."""
+    with unittest.mock.patch.object(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05):
+        yield
+
+
+def make_cmd_context(cmd: list[str]) -> ralphlib.iteration.IterationContext:
+    return ralphlib.iteration.IterationContext(
+        cmd=cmd,
+        iteration=1,
+        prompt='test',
+    )
+
+
+def child_is_alive(pid: int) -> bool:
+    """Check if a process with the given pid exists."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+real_popen = subprocess.Popen
+
+
+def capturing_popen(holder: dict[str, int]) -> collections.abc.Callable[..., subprocess.Popen[str]]:
+    """Return a Popen wrapper that stores the child PID in holder['pid']."""
+
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> subprocess.Popen[str]:
+        proc = real_popen(*args, **kwargs)
+        holder['pid'] = proc.pid
+        return proc
+
+    return wrapper
+
+
+@pytest.mark.usefixtures('fast_poll')
+class TestProcessTerminatesOnShouldExit:
+    """process() should terminate the child when should_exit is set."""
+
+    def test_process_returns_after_should_exit_set(self) -> None:
+        options = tests.helpers.make_options(quiet=True)
+        cmd = [sys.executable, '-c', SLEEP_SCRIPT]
+        context = make_cmd_context(cmd)
+
+        def set_exit_after_delay() -> None:
+            time.sleep(0.2)
+            ralphlib.signals.set_should_exit(True)
+
+        timer = threading.Thread(target=set_exit_after_delay)
+        timer.start()
+
+        # process() blocks until the subprocess ends; it should return
+        # promptly once should_exit is set
+        ralphlib.iteration.process(options, context)
+
+        timer.join()
+        assert ralphlib.signals.get_should_exit() is True
+
+    def test_child_process_is_dead_after_termination(self) -> None:
+        options = tests.helpers.make_options(quiet=True)
+        cmd = [sys.executable, '-c', SLEEP_SCRIPT]
+        context = make_cmd_context(cmd)
+
+        holder: dict[str, typing.Any] = {}
+
+        def set_exit_after_delay() -> None:
+            time.sleep(0.2)
+            ralphlib.signals.set_should_exit(True)
+
+        timer = threading.Thread(target=set_exit_after_delay)
+
+        with unittest.mock.patch('ralphlib.iteration.subprocess.Popen', side_effect=capturing_popen(holder)):
+            timer.start()
+            ralphlib.iteration.process(options, context)
+
+        timer.join()
+
+        assert 'pid' in holder
+        # Give the OS a moment to reap
+        time.sleep(0.1)
+        assert not child_is_alive(holder['pid']), f'Child process {holder["pid"]} still alive after termination'
+
+
+@pytest.mark.usefixtures('fast_poll')
+class TestGracefulTerminatorTerminatesSubprocess:
+    """Full integration: GracefulTerminator handler -> should_exit -> child killed."""
+
+    def test_double_sigint_terminates_subprocess(self) -> None:
+        options = tests.helpers.make_options(quiet=True)
+        cmd = [sys.executable, '-c', SLEEP_SCRIPT]
+        context = make_cmd_context(cmd)
+
+        with unittest.mock.patch('ralphlib.signals.signal.signal'):
+            terminator = ralphlib.signals.GracefulTerminator(options)
+
+        def send_double_sigint() -> None:
+            time.sleep(0.2)
+            terminator.handler(signal.SIGINT, None)
+            terminator.handler(signal.SIGINT, None)
+
+        timer = threading.Thread(target=send_double_sigint)
+        timer.start()
+
+        ralphlib.iteration.process(options, context)
+
+        timer.join()
+        assert terminator.is_shutting_down is True
+        assert ralphlib.signals.get_should_exit() is True
+
+
+@pytest.mark.usefixtures('fast_poll')
+class TestChildSessionIsolation:
+    """With start_new_session=True, the child is in a different session/process group."""
+
+    def test_child_has_different_process_group(self) -> None:
+        # The child script prints its process group ID to stdout, then sleeps.
+        child_script = 'import os, sys; sys.stdout.write(str(os.getpgrp()) + "\\n"); sys.stdout.flush(); import time; time.sleep(60)'
+
+        options = tests.helpers.make_options(quiet=True)
+        cmd = [sys.executable, '-c', child_script]
+        context = make_cmd_context(cmd)
+
+        child_pgid_lines: list[str] = []
+
+        def capturing_process_stdout(options: ralphlib.options.RalpherOptions, context: ralphlib.iteration.IterationContext, pipe: typing.IO[str]) -> None:
+            for line in iter(pipe.readline, ''):
+                line = line.strip()
+                if line:
+                    child_pgid_lines.append(line)
+
+        def set_exit_after_delay() -> None:
+            time.sleep(0.3)
+            ralphlib.signals.set_should_exit(True)
+
+        timer = threading.Thread(target=set_exit_after_delay)
+        timer.start()
+
+        with unittest.mock.patch.object(ralphlib.iteration, 'process_stdout', capturing_process_stdout):
+            ralphlib.iteration.process(options, context)
+
+        timer.join()
+
+        assert len(child_pgid_lines) >= 1, 'Child did not report its pgid'
+        child_pgid = int(child_pgid_lines[0])
+        parent_pgid = os.getpgrp()
+
+        assert child_pgid != parent_pgid, f'Child pgid ({child_pgid}) matches parent pgid ({parent_pgid}) — start_new_session is not working'
+
+
+def test_make_context_clears_the_cached_worktree_path() -> None:
+    options = ralphlib.options.RalpherOptions(prompt='p', quiet=True)
+    options.worktree_task_path = pathlib.Path('/stale')
+    ralphlib.iteration.make_context(options, 'prompt', 1)
+    assert options.worktree_task_path is None

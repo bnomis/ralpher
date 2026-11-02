@@ -28,8 +28,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     ralphlib.signals.GracefulTerminator(options)
 
     if options.cwd:
-        cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
-        options.cwd = str(cwd_path)
         try:
             os.chdir(options.cwd)
         except OSError as e:
@@ -60,7 +58,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
     task_path = None
     if options.task_file:
-        task_path = pathlib.Path(options.task_file).resolve().expanduser()
+        task_path = pathlib.Path(options.task_file)
         if not task_path.is_file():
             sys.exit(f'Error: Task file "{options.task_file}" does not exist.')
         try:
@@ -69,7 +67,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
             raise ralphlib.exceptions.TasksFileError(f'Cannot read tasks file "{options.task_file}"') from e
         if not task_content:
             sys.exit(f'Error: Task file "{options.task_file}" is empty.')
-        options.task_file = str(task_path)
 
     ralphlib.logger.init(options)
 
@@ -86,8 +83,6 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     ralphlib.printer.prt(options, f'Start at {now}\n\n', 0)
     ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n\n', 0)
     ralphlib.printer.prt(options, f'Args:\n{options.args}\n\n', 0)
-    for warning in options.args_override_warnings():
-        loguru.logger.warning(warning)
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 
@@ -98,11 +93,11 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     )
 
     new_state = {
-        'start': now,
         'agent': options.agent,
         'args': options.args,
-        'prompt': content,
         'max_iterations': options.iterations,
+        'prompt': content,
+        'start': now,
     }
     ralphlib.state.add_to_state(options, new_state)
 
@@ -139,7 +134,9 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
-        except Exception:
+        except (
+            Exception
+        ):  # auditme: accept[logger-exception-graceful-degradation] review-3 Decision 1 (2026-11-02): the loop reports any iteration failure and ends the run
             loguru.logger.exception(f'Exception during iteration {i}')
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)
@@ -163,21 +160,17 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         print_both(options, s, i)
         print_both(options, f'\n\n{"-" * 80}\n\n', i)
 
-        state_payload = {
-            'end': loop_end.isoformat(),
+        iteration_time = {
             'iteration_time_readable': loop_time_str,
             'iteration_time_seconds': loop_td.total_seconds(),
         }
+        state_payload = {'end': loop_end.isoformat(), **iteration_time}
         ralphlib.state.add_to_state(options, state_payload, key1='iterations', key2=iterations_key)
 
         ralphlib.hooks.event(
             options,
             event_type=ralphlib.types.RalpherEventType.ITERATION_END,
-            event_context={
-                'iteration': i,
-                'iteration_time_readable': loop_time_str,
-                'iteration_time_seconds': loop_td.total_seconds(),
-            },
+            event_context={'iteration': i, **iteration_time},
         )
 
         if complete and options.task_file and not options.no_verify_stop and not error:
@@ -241,40 +234,26 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         'end': now,
         'exit_reason': exit_reason,
         'iterations_completed': num_loops,
-        'total_time_readable': readable,
-        'total_time_seconds': td.total_seconds(),
         'loop_time_readable': readable_loop_time,
         'loop_time_seconds': total_loop_time_td.total_seconds(),
         'overhead_time_readable': readable_overhead_time,
         'overhead_time_seconds': ralpher_overhead_td.total_seconds(),
         'stopping_reason': stopping_reason,
+        'total_time_readable': readable,
+        'total_time_seconds': td.total_seconds(),
     }
     ralphlib.state.add_to_state(options, new_state)
 
+    end_context = {
+        'exit_reason': exit_reason,
+        'iteration': 0,
+        'iterations_completed': num_loops,
+        'total_time_readable': readable,
+        'total_time_seconds': td.total_seconds(),
+    }
     if error:
-        ralphlib.hooks.event(
-            options,
-            event_type=ralphlib.types.RalpherEventType.ERROR,
-            event_context={
-                'iteration': 0,
-                'exit_reason': exit_reason,
-                'iterations_completed': num_loops,
-                'total_time_readable': readable,
-                'total_time_seconds': td.total_seconds(),
-            },
-        )
-
-    ralphlib.hooks.event(
-        options,
-        event_type=ralphlib.types.RalpherEventType.END,
-        event_context={
-            'iteration': 0,
-            'exit_reason': exit_reason,
-            'iterations_completed': num_loops,
-            'total_time_readable': readable,
-            'total_time_seconds': td.total_seconds(),
-        },
-    )
+        ralphlib.hooks.event(options, event_type=ralphlib.types.RalpherEventType.ERROR, event_context=end_context)
+    ralphlib.hooks.event(options, event_type=ralphlib.types.RalpherEventType.END, event_context=end_context)
 
     if complete and not (bool(error) or termination):
         print_cleanup_cmds(options)
@@ -286,7 +265,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
 def reject_unverified_stop(options: ralphlib.options.RalpherOptions, iteration: int, iterations_key: str) -> bool:
     """Check a stop signal against the tasks file; return whether the loop should still stop."""
-    check = ralphlib.verifier.check_stop(options)
+    check = ralphlib.verifier.verify_stop(options)
     if not check.verified:
         loguru.logger.warning(f'Cannot verify stop signal, trusting it: {check.reason}')
         return True
@@ -352,7 +331,6 @@ def timedelta_to_readable(td: datetime.timedelta, show_seconds: bool = True) -> 
     if total_seconds == 0:
         return '0'
 
-    # Handle negative durations
     sign = '-' if total_seconds < 0 else ''
     total_seconds = abs(total_seconds)
 

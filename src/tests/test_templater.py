@@ -91,6 +91,18 @@ def test_undefined_variable_renders_empty() -> None:
     assert rendered == ''
 
 
+def test_render_refuses_an_attribute_the_sandbox_blocks() -> None:
+    options = ralphlib.options.RalpherOptions(vars=[])
+    with pytest.raises(ralphlib.exceptions.PromptTemplateError, match='blocked'):
+        ralphlib.templater.render(options, "{{ ''.__class__.__mro__ }}", 1)
+
+
+def test_render_reports_a_template_syntax_error() -> None:
+    options = ralphlib.options.RalpherOptions(vars=[])
+    with pytest.raises(ralphlib.exceptions.PromptTemplateError, match='syntax'):
+        ralphlib.templater.render(options, '{% if %}', 1)
+
+
 def test_slugify_lowercases_input() -> None:
     assert ralphlib.templater.slugify('HELLO') == 'hello'
 

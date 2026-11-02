@@ -30,13 +30,10 @@ def default_settings() -> dict[str, typing.Any]:
 
 def load_settings(options: ralphlib.options.RalpherOptions) -> ralphlib.options.RalpherOptions:
     options.settings = default_settings()
-    # home
     options = load_settings_from_file(options, '~/.ralpher/settings.json')
-    # cwd
     if options.cwd:
         cwd = pathlib.Path(options.cwd).resolve()
         options = load_settings_from_file(options, cwd / '.ralpher/settings.json')
-    # cli
     if options.settings_file:
         return load_settings_from_file(options, options.settings_file)
     return options
@@ -50,5 +47,22 @@ def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str
                 file_settings = json.load(f)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
             raise ralphlib.exceptions.SettingsError(f'Cannot read settings file {path}') from e
+        if not isinstance(file_settings, dict):
+            raise ralphlib.exceptions.SettingsError(f'Settings file {path} must hold a JSON object')
+        validate_settings(file_settings, path)
         options.settings.update(file_settings)
     return options
+
+
+def validate_settings(file_settings: dict[str, typing.Any], path: pathlib.Path) -> None:
+    """Raise SettingsError when `hooks`, `hook_templates` or `theme` has the wrong shape."""
+    hooks = file_settings.get('hooks', {})
+    if not isinstance(hooks, dict):
+        raise ralphlib.exceptions.SettingsError(f'Settings file {path}: hooks must be an object')
+    for event, commands in hooks.items():
+        if not isinstance(commands, list) or not all(isinstance(c, str) for c in commands):
+            raise ralphlib.exceptions.SettingsError(f'Settings file {path}: hooks.{event} must be a list of strings')
+    if not isinstance(file_settings.get('hook_templates', True), bool):
+        raise ralphlib.exceptions.SettingsError(f'Settings file {path}: hook_templates must be true or false')
+    if not isinstance(file_settings.get('theme', {}), dict):
+        raise ralphlib.exceptions.SettingsError(f'Settings file {path}: theme must be an object')

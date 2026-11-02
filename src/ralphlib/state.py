@@ -63,7 +63,10 @@ def add_to_state(
         raise ralphlib.exceptions.NoStateLockFilePathError()
 
     try:
-        add_to_state_work(options, lock_path, value, key1, key2)
+        try:
+            add_to_state_work(options, lock_path, value, key1, key2)
+        except filelock.Timeout as e:
+            raise ralphlib.exceptions.StateFileError(f'Timed out waiting for state lock {lock_path}') from e
     except Exception as e:
         # auditme: accept[except-interpolation] the message is also printed to stderr, which shows no traceback
         s = f'Exception in add_to_state: {e}'

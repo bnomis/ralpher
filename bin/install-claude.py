@@ -58,7 +58,7 @@ def dest_claude_dir() -> pathlib.Path:
     return pathlib.Path.home() / '.claude'
 
 
-def find_dangling_symlinks(options: argparse.Namespace, dir: pathlib.Path, max_depth: int = 2) -> None:
+def report_dangling_symlinks(options: argparse.Namespace, dir: pathlib.Path, max_depth: int = 2) -> None:
     root_depth = len(dir.parts)
     dangle = []
     for dirpath, dirnames, filenames in dir.walk(top_down=True):
@@ -95,7 +95,7 @@ def install_claude(options: argparse.Namespace) -> None:
         else:
             symlink_file(options, src, dest)
 
-    find_dangling_symlinks(options, tdir)
+    report_dangling_symlinks(options, tdir)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -114,6 +114,7 @@ def main(argv: list[str]) -> typing.NoReturn:
     try:
         install_claude(options)
     except Exception as e:
+        # auditme: accept[broad-except] runs under the system Python before the project environment and has no domain errors
         # auditme: accept[except-interpolation] the message is the exit message, which shows no traceback
         m = f'Exception: {e}'
         options.logger.exception(m)

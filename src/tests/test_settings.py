@@ -1,7 +1,11 @@
 import json
+import pathlib
+import tempfile
 import typing
 import unittest.mock
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
@@ -10,6 +14,7 @@ import ralphlib.settings
 import tests.helpers
 
 ECHO_HI = ('echo hi',)
+NOTIFY = ('notify',)
 
 
 class TestLoadSettingsFromFile:
@@ -31,6 +36,39 @@ class TestLoadSettingsFromFile:
         options = tests.helpers.make_options_with_settings(settings={'key': 'old'})
         result = ralphlib.settings.load_settings_from_file(options, str(settings_file))
         assert result.settings['key'] == 'new'
+
+    def test_non_object_top_level_raises_settings_error(self, tmp_path: typing.Any) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps(['not', 'an', 'object']))
+        options = tests.helpers.make_options_with_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
+            ralphlib.settings.load_settings_from_file(options, str(settings_file))
+
+
+class TestHookShapes:
+    @pytest.mark.parametrize(
+        ('content', 'key'),
+        [
+            ({'hooks': list(NOTIFY)}, 'hooks'),
+            ({'hooks': {'end': 'notify'}}, 'hooks.end'),
+            ({'hooks': {'end': [*NOTIFY, 3]}}, 'hooks.end'),
+            ({'hook_templates': 'false'}, 'hook_templates'),
+            ({'theme': 'red'}, 'theme'),
+        ],
+    )
+    def test_wrong_shape_raises_settings_error(self, tmp_path: typing.Any, content: dict[str, typing.Any], key: str) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps(content))
+        options = tests.helpers.make_options_with_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError, match=rf'settings\.json.*{key}'):
+            ralphlib.settings.load_settings_from_file(options, str(settings_file))
+
+    def test_valid_shapes_are_accepted(self, tmp_path: typing.Any) -> None:
+        settings_file = tmp_path / 'settings.json'
+        settings_file.write_text(json.dumps({'hooks': {'end': list(NOTIFY)}, 'hook_templates': False, 'theme': {'alert': 'red'}}))
+        options = tests.helpers.make_options_with_settings()
+        result = ralphlib.settings.load_settings_from_file(options, str(settings_file))
+        assert result.settings['hooks'] == {'end': list(NOTIFY)}
 
 
 class TestLoadSettings:
@@ -132,3 +170,51 @@ class TestDomainErrors:
         options.settings = ralphlib.settings.default_settings()
         with pytest.raises(ralphlib.exceptions.SettingsError):
             ralphlib.settings.load_settings_from_file(options, path)
+
+
+JSON_LEAVES = hypothesis.strategies.none() | hypothesis.strategies.booleans() | hypothesis.strategies.integers() | hypothesis.strategies.text(max_size=8)
+JSON_VALUES = hypothesis.strategies.recursive(
+    JSON_LEAVES,
+    lambda children: (
+        hypothesis.strategies.lists(children, max_size=3) | hypothesis.strategies.dictionaries(hypothesis.strategies.text(max_size=8), children, max_size=3)
+    ),
+    max_leaves=8,
+)
+THEMES = hypothesis.strategies.dictionaries(hypothesis.strategies.text(min_size=1, max_size=8), hypothesis.strategies.text(max_size=8), max_size=4)
+
+
+def hooks_are_valid(content: dict[str, typing.Any]) -> bool:
+    hooks = content.get('hooks', {})
+    if not isinstance(hooks, dict):
+        return False
+    return all(isinstance(c, list) and all(isinstance(x, str) for x in c) for c in hooks.values())
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(content=JSON_VALUES)
+def test_load_settings_from_file_accepts_exactly_the_valid_shapes(content: typing.Any) -> None:
+    options = tests.helpers.make_options_with_settings(settings={})
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / 'settings.json'
+        path.write_text(json.dumps(content))
+        valid = (
+            isinstance(content, dict)
+            and hooks_are_valid(content)
+            and isinstance(content.get('hook_templates', True), bool)
+            and isinstance(content.get('theme', {}), dict)
+        )
+        if valid:
+            assert ralphlib.settings.load_settings_from_file(options, path).settings == content
+        else:
+            with pytest.raises(ralphlib.exceptions.SettingsError):
+                ralphlib.settings.load_settings_from_file(options, path)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(theme=THEMES)
+def test_load_settings_applies_the_cli_settings_file_last(theme: dict[str, str]) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / 'settings.json'
+        path.write_text(json.dumps({'theme': theme}))
+        options = tests.helpers.make_plain_options(settings_file=str(path))
+        assert ralphlib.settings.load_settings(options).settings['theme'] == theme

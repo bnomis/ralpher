@@ -1,6 +1,7 @@
 import dataclasses
 import pathlib
 import re
+import threading
 import typing
 
 import git
@@ -14,8 +15,10 @@ if typing.TYPE_CHECKING:
 
 HEADING = re.compile(r'^## Task (\d+):\s*(.*)$')
 STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
+# auditme: accept[mutable-module-level-exported] guards the worktree lookup cache on options
+worktree_lock = threading.Lock()
 FENCES = ('```', '~~~')
-READ_ERRORS = (ralphlib.exceptions.TasksFileError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
+READ_ERRORS = (OSError, UnicodeDecodeError, ValueError, git.GitCommandError, ralphlib.exceptions.TasksFileError)
 
 
 @dataclasses.dataclass
@@ -46,7 +49,8 @@ def parse_tasks(text: str) -> list[TaskStatus]:
     """
     tasks: list[TaskStatus] = []
     fence = ''
-    current: TaskStatus | None = None
+    heading: tuple[int, str] | None = None
+    status = ''
     for line in text.splitlines():
         marker = next((f for f in FENCES if line.startswith(f)), '')
         if fence:
@@ -57,15 +61,18 @@ def parse_tasks(text: str) -> list[TaskStatus]:
             fence = marker
             continue
         if line.startswith('## '):
+            if heading:
+                tasks.append(TaskStatus(heading[0], heading[1], status))
             match = HEADING.match(line)
-            current = TaskStatus(int(match.group(1)), match.group(2).strip(), '') if match else None
-            if current:
-                tasks.append(current)
+            heading = (int(match.group(1)), match.group(2).strip()) if match else None
+            status = ''
             continue
-        if current and not current.status:
+        if heading and not status:
             match = STATUS.match(line)
             if match:
-                current.status = match.group(1).strip().lower()
+                status = match.group(1).strip().lower()
+    if heading:
+        tasks.append(TaskStatus(heading[0], heading[1], status))
     return tasks
 
 
@@ -90,21 +97,22 @@ def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path
     `git.GitCommandError` propagates, and `ValueError` when the tasks file
     is outside the repository.
     """
-    if options.worktree_task_path is not None:
-        return options.worktree_task_path
-    repo = ralphlib.giter.discover_repo_path(options.cwd)
-    if repo is None or repo.working_tree_dir is None or not options.task_file:
-        return None
-
-    branch = f'refs/heads/worktree-{ralphlib.templater.task_file_slug(options.task_file)}'
-    task_file = pathlib.Path(options.task_file)
-    if task_file.is_absolute():
-        task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
-    for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
-        if entry_branch == branch:
-            options.worktree_task_path = path / task_file
+    with worktree_lock:
+        if options.worktree_task_path is not None:
             return options.worktree_task_path
-    return None
+        repo = ralphlib.giter.discover_repo_path(options.cwd)
+        if repo is None or repo.working_tree_dir is None or not options.task_file:
+            return None
+
+        branch = f'refs/heads/worktree-{ralphlib.templater.task_file_slug(options.task_file)}'
+        task_file = pathlib.Path(options.task_file)
+        if task_file.is_absolute():
+            task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
+        for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
+            if entry_branch == branch:
+                options.worktree_task_path = path / task_file
+                return options.worktree_task_path
+        return None
 
 
 def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
@@ -112,6 +120,7 @@ def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
 
     Raises:
         TasksFileError: the worktree does not exist.
+        GitError: `giter.discover_repo_path` could not open the repository.
         git.GitCommandError, ValueError: as `worktree_task_file` does.
     """
     if not options.worktree:
@@ -127,7 +136,7 @@ def read_tasks(options: ralphlib.options.RalpherOptions) -> list[TaskStatus]:
     return parse_tasks(agent_task_file(options).read_text())
 
 
-def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
+def verify_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     """Check a stop signal against the tasks file the agent edits."""
     try:
         path = agent_task_file(options)

@@ -1,11 +1,21 @@
 import dataclasses
 import pathlib
 import shlex
+import types
 import typing
 
 import cappa
 
+import ralphlib.exceptions
 import ralphlib.settings
+
+REFUSED_ARGS = types.MappingProxyType(
+    {
+        '--settings': "ralpher sets the agent's --settings itself; use --worktree-base-ref or ralpher's settings files",
+        '--worktree': 'use ralpher --worktree, which names the worktree for the tasks file',
+        '-w': 'use ralpher --worktree, which names the worktree for the tasks file',
+    }
+)
 
 
 @dataclasses.dataclass
@@ -129,30 +139,38 @@ class RalpherOptions:
         ),
     ] = False
     settings: dict[str, typing.Any] = dataclasses.field(init=False, default_factory=dict)
+    """Set at run time by `settings.load_settings`."""
     current_iteration: int = dataclasses.field(init=False, default=0)
+    """Set at run time: the iteration in progress."""
     iteration_count: int = dataclasses.field(init=False, default=0)
+    """Set at run time: the iterations finished so far."""
 
-    passed_worktree_base_ref: str | None = dataclasses.field(init=False, default=None)
-    """`--worktree-base-ref`, unless `--args` holds its own `--settings`, which then wins."""
     worktree_task_path: pathlib.Path | None = dataclasses.field(init=False, default=None)
-    """The tasks file inside the agent's worktree, cached once found; cleared at the start of each iteration."""
+    """Set at run time: the tasks file inside the agent's worktree, cached once found and cleared at the start of each iteration."""
 
     def __post_init__(self) -> None:
-        args = shlex.split(self.args)
-        if '--settings' not in args:
-            self.passed_worktree_base_ref = self.worktree_base_ref
-
-    def args_override_warnings(self) -> list[str]:
-        """Describe each ralpher option that a flag in `--args` overrides."""
-        args = shlex.split(self.args)
-        warnings = []
-        if self.worktree and ('--worktree' in args or '-w' in args):
-            warnings.append('--args holds --worktree/-w: it wins, and ralpher adds no worktree name')
-        if self.worktree_base_ref and '--settings' in args:
-            warnings.append('--args holds --settings: it wins, and --worktree-base-ref is not passed')
-        return warnings
+        if self.iterations < 1:
+            raise ralphlib.exceptions.InvalidIterationsError(f'--iterations must be at least 1, got {self.iterations}')
+        try:
+            args = shlex.split(self.args)
+        except ValueError as e:
+            raise ralphlib.exceptions.InvalidArgsError(f'Cannot parse --args {self.args!r} (unbalanced quote?)') from e
+        for arg in args:
+            flag = arg.split('=', 1)[0] if arg.startswith('--') else arg
+            if flag in REFUSED_ARGS:
+                raise ralphlib.exceptions.InvalidArgsError(f'--args holds {flag}: {REFUSED_ARGS[flag]}')
 
 
-def parse_options() -> RalpherOptions:
+def resolve_paths(options: RalpherOptions) -> RalpherOptions:
+    """Replace `cwd` and `task_file` with their resolved paths."""
+    if options.cwd:
+        options.cwd = str(pathlib.Path(options.cwd).resolve().expanduser())
+    if options.task_file:
+        options.task_file = str(pathlib.Path(options.task_file).resolve().expanduser())
+    return options
+
+
+def load_options() -> RalpherOptions:
+    """Parse the command line, resolve `cwd` and `task_file`, and read the settings files."""
     options: RalpherOptions = cappa.parse(RalpherOptions)
-    return ralphlib.settings.load_settings(options)
+    return ralphlib.settings.load_settings(resolve_paths(options))

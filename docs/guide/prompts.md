@@ -27,6 +27,11 @@ template, rendered before every iteration. Every value is a string, except
 | `worktree_name` | the worktree's name, with `--worktree` and `--task-file`; otherwise empty |
 | anything from `--vars` | its value |
 
+The template renders in Jinja's sandbox, the same one hooks use. A template
+that reaches for something the sandbox blocks (for example
+`{{ ''.__class__ }}`), or has a syntax error, stops the run with an error
+naming the problem.
+
 ```jinja
 You are on iteration {{ iteration }} of {{ iterations }}.
 {% if worktree %}

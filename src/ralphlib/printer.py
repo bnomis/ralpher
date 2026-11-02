@@ -6,11 +6,11 @@ import ralphlib.exceptions
 import ralphlib.logger
 import ralphlib.types
 
-console = rich.console.Console(highlight=False)
-console_stderr = rich.console.Console(stderr=True, highlight=False)
-
 if typing.TYPE_CHECKING:
     import ralphlib.options
+
+console = rich.console.Console(highlight=False)
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 def prt(
@@ -46,7 +46,7 @@ def type_to_style(
     options: ralphlib.options.RalpherOptions,
     message_type: ralphlib.types.MessageType,
 ) -> str:
-    s = ralphlib.types.message_type_to_str.get(message_type, 'regular')
+    s = ralphlib.types.MESSAGE_TYPE_TO_STR.get(message_type, 'regular')
     if s in options.settings['theme']:
         return options.settings['theme'][s]
     return options.settings['theme'].get('default', 'grey30')

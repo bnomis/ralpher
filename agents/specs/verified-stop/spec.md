@@ -28,10 +28,12 @@ claim itself after the iteration ends: if any task in the tasks file is not
   `complete`
 - `src/ralphlib/options.py`: the `--no-verify-stop` flag
 - `src/tests/test_verifier.py` (new), `src/tests/test_looper.py`
-- `claude/commands/rrq.md`: relay the rejection line
+- `claude/commands/rrq.md`: widen the monitor filter to `^=+ Loop .* signal (received|rejected)` and relay a rejection as `■ loop complete rejected, <n> of <m> tasks not done`
 - `docs/guide/tasks.md` and `docs/reference/cli.md`: document the behaviour and the flag
 
 ## API
+
+No new dependencies: the module uses GitPython (as `giter.py` does) and `re`.
 
 ```python
 @dataclasses.dataclass
@@ -43,44 +45,56 @@ class TaskStatus:
 
 @dataclasses.dataclass
 class StopCheck:
-    verified: bool
-    """True when the tasks file was read and parsed; False when the check could not be made."""
-    all_done: bool
-    """True when every parsed task has status `done`. Meaningless when `verified` is False."""
+    verified: bool  # False when the check could not be made
+    all_done: bool  # every parsed task is `done`; meaningless when not verified
     not_done: list[TaskStatus]
     total: int
-    reason: str
-    """Why the check could not be made, empty when `verified` is True."""
+    reason: str  # why the check could not be made
+
+
+READ_ERRORS = (OSError, UnicodeDecodeError, ValueError, git.GitCommandError, TasksFileError)
+"""The expected failures of reading a file the agent controls."""
 
 
 def parse_tasks(text: str) -> list[TaskStatus]:
     """Return one TaskStatus per `## Task <n>: <title>` heading, in file order.
 
     The status is the value of the first `**Status:** <value>` line after the
-    heading and before the next heading, lowercased and stripped. A task
-    with no status line gets status `''`, which counts as not done.
+    heading and before the next heading, lowercased. A task with no status
+    line gets status `''`, which counts as not done.
     """
+
+
+def parse_worktrees(porcelain: str) -> list[tuple[pathlib.Path, str]]:
+    """Return `(worktree path, branch)` for each worktree-list porcelain entry with a branch."""
 
 
 def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
-    """Return the path of the tasks file inside the agent's worktree.
+    """Return the tasks file's path inside the worktree on branch `refs/heads/worktree-<slug>`.
 
-    The worktree is the entry in `git worktree list --porcelain` whose branch
-    is `refs/heads/worktree-<slug>`, with `<slug>` from
-    `templater.task_file_slug(options.task_file)`. The returned path is that
-    worktree's path joined with the tasks file's path relative to the main
-    repository root. Returns None if there is no repository, no tasks file or
-    no such worktree.
+    `<slug>` comes from `templater.task_file_slug(options.task_file)`. Returns
+    None if there is no repository or no such worktree. A path found is cached
+    on `options.worktree_task_path`, which `iteration.make_context` clears.
     """
 
 
-def check_stop(options: RalpherOptions) -> StopCheck:
-    """Check a stop signal against the tasks file.
+def agent_task_file(options: RalpherOptions) -> pathlib.Path:
+    """Return the tasks file the agent edits: the worktree copy with `options.worktree`, else `options.task_file`.
 
-    Reads the worktree copy when `options.worktree` is set, otherwise
-    `options.task_file`.
+    Raises TasksFileError if the worktree does not exist.
     """
+
+
+def read_tasks(options: RalpherOptions) -> list[TaskStatus]:
+    """Parse the tasks file the agent edits. Raises the errors in READ_ERRORS."""
+
+
+def verify_stop(options: RalpherOptions) -> StopCheck:
+    """Check a stop signal against the tasks file the agent edits."""
 ```
+
+`RalpherOptions.worktree_task_path` (`pathlib.Path | None`, set at run time)
+caches the worktree lookup.
 
 Option added to `RalpherOptions`, after `stops`:
 
@@ -98,12 +112,15 @@ no_verify_stop: Annotated[
 
 ### When the check runs
 
+Verification only applies when `--task-file` is given, and `--no-verify-stop`
+skips it, so the loop stops on any stop marker as before this spec.
+
 In `looper.loop`, after `iteration.run` returns and the iteration's end has
 been recorded, and before the existing exit test:
 
 ```python
 if complete and options.task_file and not options.no_verify_stop:
-    check = ralphlib.verifier.check_stop(options)
+    check = ralphlib.verifier.verify_stop(options)
     ...
 ```
 
@@ -158,16 +175,14 @@ A parse that finds no task headings is not `verified` (reason
   copy is not used as a fallback, because the agent edits only the
   worktree copy and the main copy is stale.
 
-`git` calls go through GitPython via `giter.discover_repo_path`, as the
-rest of ralpher does.
-
 ## Error handling
 
 - Tasks file or worktree missing, unreadable, or not valid UTF-8: the check
   is not `verified`, the reason names the tasks file option
   (`options.task_file`, not the worktree path that was read) and the error,
-  and the loop stops as it does today. `OSError` and `UnicodeDecodeError`
-  (`verifier.READ_ERRORS`) are caught in `check_stop` and where `iteration.py`
+  and the loop stops as it does today. `verifier.READ_ERRORS` (`OSError`,
+  `UnicodeDecodeError`, `ValueError`, `git.GitCommandError` and
+  `TasksFileError`) are caught in `verify_stop` and where `iteration.py`
   reads the tasks file for progress. They are the expected failures of
   reading a file the agent controls.
 - `git worktree list` failing (`git.GitCommandError`): not `verified`, same
@@ -178,51 +193,18 @@ rest of ralpher does.
   still matches the resolved tasks file path.
 - Any other exception propagates, as AGENTS.md requires.
 
-No new exception classes are needed.
-
-## Settings
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `--no-verify-stop` | `bool` | `False` | Skip the check and stop on any stop marker, as before this spec |
-
-Verification only applies when `--task-file` is given. Without it,
-behaviour is unchanged.
-
-## rrq relay
-
-`claude/commands/rrq.md` filters monitor lines with
-`^=+ Loop .* signal received`. Widen the pattern to
-`^=+ Loop .* signal (received|rejected)` and relay a rejection as
-`■ loop complete rejected, <n> of <m> tasks not done`.
-
 ## Tests
 
-`src/tests/test_verifier.py`:
-
-- `parse_tasks`: headings with and without status lines, statuses in mixed
-  case, a task-shaped example inside a fenced block is ignored, no headings
-  returns `[]`. Use hypothesis to generate task lists and check that
-  rendering then parsing returns the same numbers and statuses.
-- `check_stop` without a worktree: all done, some not done, missing file,
-  empty file.
-- `worktree_task_file`: a temporary repository with
-  `git worktree add -b worktree-<slug>`, and a repository with no
-  matching worktree.
+`src/tests/test_verifier.py`: `parse_tasks` (headings with and without
+status lines, mixed case, a fenced example ignored, no headings; a hypothesis
+render-then-parse round trip), `verify_stop` without a worktree (all done,
+some not done, missing file, empty file), and `worktree_task_file` against a
+temporary repository with and without a matching worktree.
 
 `src/tests/test_looper.py`, with `iteration.run` patched to return
-`(True, False)`:
-
-- a tasks file with an unfinished task: the loop runs the next iteration
-  and prints the rejection line
-- every task done: the loop stops after the first iteration
-- `--no-verify-stop`: the loop stops after the first iteration
-- tasks file unreadable: the loop stops and a warning is logged
-
-## External dependencies
-
-None new. Uses GitPython (already used by `giter.py`) and the standard
-library `re`.
+`(True, False)`: an unfinished task runs the next iteration and prints the
+rejection line; every task done, `--no-verify-stop` and an unreadable tasks
+file each stop after the first iteration (the last also logs a warning).
 
 ## Out of scope
 

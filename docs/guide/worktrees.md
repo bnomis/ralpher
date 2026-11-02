@@ -10,11 +10,12 @@ Before the first iteration, ralpher checks the repository that contains
 | Not in a git repository | continue? no |
 | Working tree has changes, including untracked files | continue? no |
 | The current branch has commits its upstream lacks (after `git fetch origin`) | continue? no |
+| ralpher cannot tell whether there are unpushed commits (no `origin`, a failed fetch, a detached `HEAD` or no upstream) | continue? no |
 | With `--worktree` and a `fresh` base: `origin/HEAD` is not the current branch | exit now? yes |
 
 The unpushed-commits check is skipped when worktrees are created from the
-local `HEAD` (below). A failed fetch, a missing `origin` or a branch with no
-upstream is reported and not treated as unpushed.
+local `HEAD` (below). When ralpher cannot tell whether there are unpushed commits, it says so and
+asks whether to continue; the default is no, and answering no exits.
 
 The prompts read from the terminal, so an unattended run that hits one waits.
 Commit and push first, or pass `--skip-git-check` to skip every check.
@@ -24,17 +25,18 @@ Commit and push first, or pass `--skip-git-check` to skip every check.
 With `--worktree`, ralpher adds `--worktree <name>` to the agent's arguments,
 and Claude Code runs the agent in a git worktree of that name, on the branch
 `worktree-<name>`. Every iteration passes the same name, so every iteration
-uses the same worktree. ralpher adds nothing if `--args` already contains
-`--worktree` or `-w`.
+uses the same worktree. `--args` may not contain `--worktree` or `-w`: ralpher
+refuses it with an error, so every check and hook agrees with the agent on
+whether a worktree is used.
 
-The name comes from the tasks file: its directory name and its stem, joined
+The name comes from the tasks file's absolute path: its directory name and its stem, joined
 with `-`, lowercased, with every run of characters other than `a-z` and `0-9`
 turned into one `-`.
 
 | `--task-file` | Worktree | Branch |
 |---------------|----------|--------|
 | `agents/tasks/config-loader/tasks-1.md` | `config-loader-tasks-1` | `worktree-config-loader-tasks-1` |
-| `TASKS.md` | `tasks` | `worktree-tasks` |
+| `TASKS.md` | `<repo-dir>-tasks` | `worktree-<repo-dir>-tasks` |
 
 Without `--task-file`, `--worktree` is passed on its own and Claude Code
 picks the name.
@@ -52,27 +54,24 @@ created from:
 - `head`: your local `HEAD`, without uncommitted changes.
 
 `--worktree-base-ref fresh|head` passes the setting to the agent as
-`--settings '{"worktree": {"baseRef": "..."}}'`, unless `--args` already
-contains `--settings`. See the
+`--settings '{"worktree": {"baseRef": "..."}}'`. `--args` may not contain
+`--settings`: ralpher refuses it with an error. See the
 [Claude Code settings reference](https://code.claude.com/docs/en/settings-reference#worktree-baseref).
 
 The pre-run checks use the same value the agent gets: `--worktree-base-ref`
 when ralpher passes it, otherwise `worktree.baseRef` from Claude Code's
-settings files (user, project, local and managed). A `--settings` of your
-own in `--args` is not read.
+settings files (user, project, local and managed).
 
-## Precedence between `--args` and ralpher's options
+## Flags refused in `--args`
 
-A flag in `--args` wins over the ralpher option that would add the same flag:
+| `--args` holds | Use instead |
+|----------------|-------------|
+| `--worktree` or `-w` | ralpher's `--worktree` |
+| `--settings` | `--worktree-base-ref`, or ralpher's settings files |
 
-| `--args` holds | Wins over | Effect |
-|----------------|-----------|--------|
-| `--worktree` or `-w` | `--worktree` | ralpher adds no worktree name; the agent uses yours |
-| `--settings` | `--worktree-base-ref` | ralpher passes no `baseRef` setting |
-
-ralpher logs a warning at start, naming each value that wins. The tasks file
-ralpher reads for the stop check and for hook prompts is the worktree copy
-only under `--worktree`.
+ralpher stops before the first iteration with an `Error:` line naming the flag.
+The tasks file ralpher reads for the stop check and for hook prompts is the
+worktree copy only under `--worktree`.
 
 ## After the queue
 

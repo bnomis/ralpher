@@ -6,6 +6,14 @@ class GitError(RalpherError):
     pass
 
 
+class InvalidArgsError(RalpherError):
+    pass
+
+
+class InvalidIterationsError(RalpherError):
+    pass
+
+
 class InvalidVarFormatError(RalpherError):
     pass
 
@@ -19,6 +27,10 @@ class NoStateFilePathError(RalpherError):
 
 
 class NoStateLockFilePathError(RalpherError):
+    pass
+
+
+class PromptTemplateError(RalpherError):
     pass
 
 

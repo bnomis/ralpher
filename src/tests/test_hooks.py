@@ -1,8 +1,10 @@
 import pathlib
+import shlex
 import unittest.mock
 
 import hypothesis
 import hypothesis.strategies
+import jinja2.sandbox
 import pytest
 
 import ralphlib.exceptions
@@ -18,6 +20,7 @@ import tests.helpers
 def reset_hook_state() -> None:
     ralphlib.hooks.processed_hooks.clear()
     ralphlib.hooks.seen_task_ids.clear()
+    ralphlib.hooks.clear_caches()
 
 
 class TestEvent:
@@ -269,7 +272,9 @@ class TestTaskFileChoice:
     def test_unblock_prompt_falls_back_when_the_worktree_is_missing(self) -> None:
         options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
         with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=None):
-            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file tasks-1.md'
+            assert ralphlib.hooks.unblock_prompt(options, '4') == (
+                'unblock task 4 in task file tasks-1.md (the worktree tasks file could not be found, so this is the main tasks file)'
+            )
 
     def test_duplicate_event_runs_no_git(self) -> None:
         options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo dup']}}, worktree=True, task_file='t.md')
@@ -295,3 +300,50 @@ class TestTaskFileChoice:
 def test_render_hook_args_round_trips_any_value_as_one_argument(value: str) -> None:
     args = ralphlib.hooks.render_hook_args('notify --message {{ value }} --end', {'value': value})
     assert args == ['notify', '--message', value.replace(ralphlib.hooks.HOOK_VALUE_SENTINEL, ''), '--end']
+
+
+def test_templates_compile_once_across_events() -> None:
+    with unittest.mock.patch.object(ralphlib.hooks.jinja2.sandbox.SandboxedEnvironment, 'from_string', autospec=True) as from_string:
+        ralphlib.hooks.compile_template('echo {{ a }}', True)
+        ralphlib.hooks.compile_template('echo {{ a }}', True)
+        ralphlib.hooks.compile_template('echo {{ a }}')
+    assert from_string.call_count == 2
+
+
+def test_render_hook_args_twice_gives_the_same_arguments() -> None:
+    first = ralphlib.hooks.render_hook_args('notify {{ v }}', {'v': 'a b'})
+    second = ralphlib.hooks.render_hook_args('notify {{ v }}', {'v': 'c "d"'})
+    assert first == ['notify', 'a b']
+    assert second == ['notify', 'c "d"']
+
+
+def test_render_hook_args_cached_template_with_constant_output() -> None:
+    cmd = 'echo {{ "a b" }} {{ v }}'
+    assert ralphlib.hooks.render_hook_args(cmd, {'v': 'x'}) == ['echo', 'a b', 'x']
+    assert ralphlib.hooks.render_hook_args(cmd, {'v': 'y'}) == ['echo', 'a b', 'y']
+
+
+def test_quote_the_value() -> None:
+    var = "Give each project's config.py a module name mypy can distinguish"
+    s = f'/opt/homebrew/bin/alerter --title {shlex.quote("probe audit-reviews 57/7")} --message {shlex.quote(var)}'
+    print(s)
+    args = shlex.split(s)
+    print(args)
+    assert args[-1] == var
+
+
+def test_quote_handles_double_quotes_too() -> None:
+    var = """He said "it's fine" & ran `rm -rf /` $HOME"""
+    args = shlex.split(f'alerter --message {shlex.quote(var)}')
+    assert args == ['alerter', '--message', var]
+
+
+def test_jinja_finalize_quotes_every_substitution() -> None:
+    env = jinja2.sandbox.SandboxedEnvironment(finalize=lambda v: shlex.quote(str(v)))
+    template = env.from_string('/opt/homebrew/bin/alerter --title {{ title }} --message {{ message }}')
+    cmd = template.render(
+        title='probe audit-reviews 57/7',
+        message="Give each project's config.py a module name mypy can distinguish",
+    )
+    args = shlex.split(cmd)
+    assert args[-1] == "Give each project's config.py a module name mypy can distinguish"

@@ -54,7 +54,7 @@ class TestSymlinkFile:
 class TestFindDanglingSymlinks:
     def test_reports_a_dangling_link(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         (tmp_path / 'gone.md').symlink_to(tmp_path / 'missing.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path)
         out = capsys.readouterr().out
         assert 'Dangling symlinks found' in out
         assert str(tmp_path / 'gone.md') in out
@@ -62,12 +62,62 @@ class TestFindDanglingSymlinks:
     def test_silent_when_every_link_resolves(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         (tmp_path / 'real.md').write_text('x')
         (tmp_path / 'ok.md').symlink_to(tmp_path / 'real.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path)
         assert capsys.readouterr().out == ''
 
     def test_does_not_descend_past_max_depth(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
         deep = tmp_path / 'a' / 'b'
         deep.mkdir(parents=True)
         (deep / 'gone.md').symlink_to(tmp_path / 'missing.md')
-        install_claude.find_dangling_symlinks(OPTIONS, tmp_path, max_depth=2)
+        install_claude.report_dangling_symlinks(OPTIONS, tmp_path, max_depth=2)
         assert capsys.readouterr().out == ''
+
+
+class TestInstallClaude:
+    @pytest.fixture
+    def dirs(self, install_claude: types.ModuleType, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> tuple[pathlib.Path, pathlib.Path]:
+        source = tmp_path / 'source'
+        dest = tmp_path / 'dest'
+        source.mkdir()
+        dest.mkdir()
+        monkeypatch.setattr(install_claude, 'src_claude_dir', lambda: source)
+        monkeypatch.setattr(install_claude, 'dest_claude_dir', lambda: dest)
+        return source, dest
+
+    def test_links_files_and_directories_and_skips_dotfiles(self, install_claude: types.ModuleType, dirs: tuple[pathlib.Path, pathlib.Path]) -> None:
+        source, dest = dirs
+        (source / 'CLAUDE.md').write_text('x')
+        (source / '.hidden').write_text('x')
+        (source / 'rules').mkdir()
+        (source / 'rules' / 'a.md').write_text('a')
+        install_claude.install_claude(OPTIONS)
+        assert (dest / 'CLAUDE.md').is_symlink()
+        assert (dest / 'CLAUDE.md').resolve() == (source / 'CLAUDE.md').resolve()
+        assert not (dest / '.hidden').exists()
+        assert not (dest / 'rules').is_symlink()
+        assert (dest / 'rules' / 'a.md').resolve() == (source / 'rules' / 'a.md').resolve()
+
+    def test_reports_dangling_links_in_the_destination(
+        self, install_claude: types.ModuleType, dirs: tuple[pathlib.Path, pathlib.Path], capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        _, dest = dirs
+        (dest / 'gone.md').symlink_to(dest / 'missing.md')
+        install_claude.install_claude(OPTIONS)
+        assert str(dest / 'gone.md') in capsys.readouterr().out
+
+
+class TestMain:
+    def test_exits_zero_on_success(self, install_claude: types.ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(install_claude, 'install_claude', lambda options: None)
+        with pytest.raises(SystemExit) as exit_info:
+            install_claude.main([])
+        assert exit_info.value.code == 0
+
+    def test_exits_with_the_exception_message(self, install_claude: types.ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
+        def fail(options: argparse.Namespace) -> None:
+            raise OSError('disk on fire')
+
+        monkeypatch.setattr(install_claude, 'install_claude', fail)
+        with pytest.raises(SystemExit) as exit_info:
+            install_claude.main([])
+        assert exit_info.value.code == 'Exception: disk on fire'

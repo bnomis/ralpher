@@ -25,7 +25,7 @@ files it names.
 
 ## Task 1: A state-lock timeout is reported as a ralpher error
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 1
@@ -34,20 +34,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_state.py` that holds the lock (patch `filelock.FileLock.acquire` to raise `filelock.Timeout`) and asserts `add_to_state` raises `ralphlib.exceptions.StateFileError` naming the lock file; confirm it fails before the fix
-- [ ] In `ralphlib.state.add_to_state`, translate the `filelock.Timeout` that leaves the tenacity retry into `StateFileError` (`raise ... from e`), keeping the retry in `add_to_state_work`
-- [ ] Update `test_lock_timeout_is_retried_then_raised` in `src/tests/test_state.py` if it asserts the old exception type, keeping its check that the retry ran three times
+- [x] Add a test to `src/tests/test_state.py` that holds the lock (patch `filelock.FileLock.acquire` to raise `filelock.Timeout`) and asserts `add_to_state` raises `ralphlib.exceptions.StateFileError` naming the lock file; confirm it fails before the fix
+- [x] In `ralphlib.state.add_to_state`, translate the `filelock.Timeout` that leaves the tenacity retry into `StateFileError` (`raise ... from e`), keeping the retry in `add_to_state_work`
+- [x] Update `test_lock_timeout_is_retried_then_raised` in `src/tests/test_state.py` if it asserts the old exception type, keeping its check that the retry ran three times
 
 **Acceptance Criteria:**
 
-- [ ] A held lock makes `add_to_state` raise `StateFileError` after three attempts
-- [ ] `bin/ralpher.py` prints `Error: ...` for it, since `StateFileError` is a `RalpherError`
+- [x] A held lock makes `add_to_state` raise `StateFileError` after three attempts
+- [x] `bin/ralpher.py` prints `Error: ...` for it, since `StateFileError` is a `RalpherError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_state.py`
-- [ ] `uv run pytest src/tests/test_state.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_state.py`
+- [x] `uv run pytest src/tests/test_state.py` passes
 
 **Notes:**
 
@@ -57,7 +57,7 @@ files it names.
 
 ## Task 2: Bad settings files and bad `--args` end with an error message
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -66,23 +66,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add tests: a settings file whose top level is not a JSON object raises `SettingsError` naming the file (`src/tests/test_settings.py`); an `--args` value with an unbalanced quote raises a new `InvalidArgsError(RalpherError)` naming the value (`src/tests/test_options.py`); confirm both fail first
-- [ ] In `ralphlib.settings.load_settings_from_file`, raise `SettingsError` when the loaded value is not a `dict`
-- [ ] Add `InvalidArgsError` to `src/ralphlib/exceptions.py` and raise it from `RalpherOptions.__post_init__` when `shlex.split` raises `ValueError`
-- [ ] In `bin/ralpher.py`, move `ralphlib.options.parse_options()` inside the `try` so its `RalpherError` prints `Error: ...` and exits 1
-- [ ] Add a row to `docs/reference/exit-statuses.md` for ralpher's own errors before the first iteration (`Error: ...`, status 1): an unreadable or invalid settings file, an invalid `--args`, a `--cwd` that cannot be entered, a log directory that cannot be created, a `--state` path outside the log directory
+- [x] Add tests: a settings file whose top level is not a JSON object raises `SettingsError` naming the file (`src/tests/test_settings.py`); an `--args` value with an unbalanced quote raises a new `InvalidArgsError(RalpherError)` naming the value (`src/tests/test_options.py`); confirm both fail first
+- [x] In `ralphlib.settings.load_settings_from_file`, raise `SettingsError` when the loaded value is not a `dict`
+- [x] Add `InvalidArgsError` to `src/ralphlib/exceptions.py` and raise it from `RalpherOptions.__post_init__` when `shlex.split` raises `ValueError`
+- [x] In `bin/ralpher.py`, move `ralphlib.options.parse_options()` inside the `try` so its `RalpherError` prints `Error: ...` and exits 1
+- [x] Add a row to `docs/reference/exit-statuses.md` for ralpher's own errors before the first iteration (`Error: ...`, status 1): an unreadable or invalid settings file, an invalid `--args`, a `--cwd` that cannot be entered, a log directory that cannot be created, a `--state` path outside the log directory
 
 **Acceptance Criteria:**
 
-- [ ] `bin/ralpher.sh` with an invalid settings file prints one `Error:` line and exits 1
-- [ ] The exit-status page lists the case
+- [x] `bin/ralpher.sh` with an invalid settings file prints one `Error:` line and exits 1
+- [x] The exit-status page lists the case
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py` and `src/tests/test_options.py`
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_options.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py` and `src/tests/test_options.py`
+- [x] `uv run pytest src/tests/test_settings.py src/tests/test_options.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -93,7 +93,7 @@ files it names.
 
 ## Task 3: Hook settings of the wrong shape are refused
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 3
@@ -102,21 +102,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_settings.py`: `hooks` that is not an object, an event whose value is a string or a list holding a non-string, `hook_templates` that is not a bool and `theme` that is not an object each raise `SettingsError` naming the key and the file; confirm they fail first
-- [ ] Add one validation function in `src/ralphlib/settings.py`, called after each file is merged in `load_settings_from_file`, that checks those keys
-- [ ] State the accepted shapes in `docs/reference/settings.md`
+- [x] Add tests to `src/tests/test_settings.py`: `hooks` that is not an object, an event whose value is a string or a list holding a non-string, `hook_templates` that is not a bool and `theme` that is not an object each raise `SettingsError` naming the key and the file; confirm they fail first
+- [x] Add one validation function in `src/ralphlib/settings.py`, called after each file is merged in `load_settings_from_file`, that checks those keys
+- [x] State the accepted shapes in `docs/reference/settings.md`
 
 **Acceptance Criteria:**
 
-- [ ] `{"hooks": {"end": "notify"}}` stops ralpher with an error naming `hooks.end`
-- [ ] `{"hook_templates": "false"}` stops ralpher with an error naming `hook_templates`
+- [x] `{"hooks": {"end": "notify"}}` stops ralpher with an error naming `hooks.end`
+- [x] `{"hook_templates": "false"}` stops ralpher with an error naming `hook_templates`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py`
-- [ ] `uv run pytest src/tests/test_settings.py src/tests/test_hooks.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py`
+- [x] `uv run pytest src/tests/test_settings.py src/tests/test_hooks.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -127,7 +127,7 @@ files it names.
 
 ## Task 4: The broad handlers follow the coding standard
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 6; review-3 Decision 1
@@ -136,20 +136,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_giter.py` that `last_commit_summary` returns `''` in a repository with no commits, and that a `KeyboardInterrupt` raised while reading the commit propagates; confirm the second fails first
-- [ ] Replace `contextlib.suppress(BaseException)` in `giter.last_commit_summary` with a handler for the errors a repository without commits raises (`ValueError`) and the git errors (`git.GitCommandError`, `git.GitCommandNotFound`), logged at `warning`
-- [ ] Add a scoped accept marker on the `except Exception` in `looper.loop` naming review-3 Decision 1 (2026-11-02); change nothing else in that handler
+- [x] Add a test to `src/tests/test_giter.py` that `last_commit_summary` returns `''` in a repository with no commits, and that a `KeyboardInterrupt` raised while reading the commit propagates; confirm the second fails first
+- [x] Replace `contextlib.suppress(BaseException)` in `giter.last_commit_summary` with a handler for the errors a repository without commits raises (`ValueError`) and the git errors (`git.GitCommandError`, `git.GitCommandNotFound`), logged at `warning`
+- [x] Add a scoped accept marker on the `except Exception` in `looper.loop` naming review-3 Decision 1 (2026-11-02); change nothing else in that handler
 
 **Acceptance Criteria:**
 
-- [ ] `rg 'suppress\(BaseException\)' src` finds nothing
-- [ ] The `loop` handler carries a marker scoped to its rule, with the decision named in its reason
+- [x] `rg 'suppress\(BaseException\)' src` finds nothing
+- [x] The `loop` handler carries a marker scoped to its rule, with the decision named in its reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_hooks.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_hooks.py` passes
 
 **Notes:**
 
@@ -161,7 +161,7 @@ files it names.
 
 ## Task 5: I/O errors are translated
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 5
@@ -170,22 +170,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Tests in `src/tests/test_giter.py`: `git.GitCommandNotFound` from `is_dirty`, `fetch` and `iter_commits`, and a repository with no `origin`, each give the handled outcome (a `GitError`, or `None` from `has_unpushed_commits`) rather than escaping; `Path.cwd()` raising `FileNotFoundError` gives `GitError`
-- [ ] Tests in `src/tests/test_iteration.py`: a log file object whose `write` raises `OSError` makes the write helpers raise `LogFileError`
-- [ ] In `src/ralphlib/giter.py`, add `git.GitCommandNotFound` to the handlers in `is_working_tree_clean`, `has_unpushed_commits` (fetch and `iter_commits`), handle the missing `origin` (`AttributeError` from `repo.remotes.origin`), and move `pathlib.Path.cwd()` in `discover_repo_path` inside its `try`
-- [ ] In `src/ralphlib/iteration.py`, route every log-file `write`/`flush` (`write_progress`, `write_progress_lines`, `write_progress_eol`, `write_error`, `write_error_eol`, `write_stdout`, `write_stderr`) through one helper that raises `LogFileError` naming the log; add `OSError` to the `process_line` handler's write path only if the helper does not already cover it
-- [ ] Add a scoped accept marker to the broad handler in `bin/install-claude.py` `main`, giving the reason (it runs under the system Python, before the project environment, and has no domain errors)
+- [x] Tests in `src/tests/test_giter.py`: `git.GitCommandNotFound` from `is_dirty`, `fetch` and `iter_commits`, and a repository with no `origin`, each give the handled outcome (a `GitError`, or `None` from `has_unpushed_commits`) rather than escaping; `Path.cwd()` raising `FileNotFoundError` gives `GitError`
+- [x] Tests in `src/tests/test_iteration.py`: a log file object whose `write` raises `OSError` makes the write helpers raise `LogFileError`
+- [x] In `src/ralphlib/giter.py`, add `git.GitCommandNotFound` to the handlers in `is_working_tree_clean`, `has_unpushed_commits` (fetch and `iter_commits`), handle the missing `origin` (`AttributeError` from `repo.remotes.origin`), and move `pathlib.Path.cwd()` in `discover_repo_path` inside its `try`
+- [x] In `src/ralphlib/iteration.py`, route every log-file `write`/`flush` (`write_progress`, `write_progress_lines`, `write_progress_eol`, `write_error`, `write_error_eol`, `write_stdout`, `write_stderr`) through one helper that raises `LogFileError` naming the log; add `OSError` to the `process_line` handler's write path only if the helper does not already cover it
+- [x] Add a scoped accept marker to the broad handler in `bin/install-claude.py` `main`, giving the reason (it runs under the system Python, before the project environment, and has no domain errors)
 
 **Acceptance Criteria:**
 
-- [ ] No call named in review-3 A1 under `giter.py` or `iteration.py` lets a third-party or `OSError` exception escape
-- [ ] The `verifier.py` cases review-3 A1 lists as documented stay as they are
+- [x] No call named in review-3 A1 under `giter.py` or `iteration.py` lets a third-party or `OSError` exception escape
+- [x] The `verifier.py` cases review-3 A1 lists as documented stay as they are
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_iteration.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_install_claude.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_iteration.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_install_claude.py` passes
 
 **Notes:**
 
@@ -196,7 +196,7 @@ files it names.
 
 ## Task 6: Prompts render in the sandbox
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 9
@@ -205,22 +205,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_templater.py` that a prompt using an attribute the sandbox blocks (for example `{{ ''.__class__.__mro__ }}`) raises a ralpher error rather than rendering; confirm it fails first
-- [ ] In `templater.render`, render with `jinja2.sandbox.SandboxedEnvironment` (the environment `hooks.py` uses), and translate `jinja2.exceptions.SecurityError` and `TemplateSyntaxError` to a new or existing `RalpherError` subclass naming the prompt file
-- [ ] Add a warning to `docs/guide/hooks.md` beside the `sh -c` advice: a value spliced into an `sh -c` string, including the agent-supplied `task_title` and `prompt`, becomes shell code
-- [ ] Add a line to `docs/guide/prompts.md` that prompts render in Jinja's sandbox
+- [x] Add a test to `src/tests/test_templater.py` that a prompt using an attribute the sandbox blocks (for example `{{ ''.__class__.__mro__ }}`) raises a ralpher error rather than rendering; confirm it fails first
+- [x] In `templater.render`, render with `jinja2.sandbox.SandboxedEnvironment` (the environment `hooks.py` uses), and translate `jinja2.exceptions.SecurityError` and `TemplateSyntaxError` to a new or existing `RalpherError` subclass naming the prompt file
+- [x] Add a warning to `docs/guide/hooks.md` beside the `sh -c` advice: a value spliced into an `sh -c` string, including the agent-supplied `task_title` and `prompt`, becomes shell code
+- [x] Add a line to `docs/guide/prompts.md` that prompts render in Jinja's sandbox
 
 **Acceptance Criteria:**
 
-- [ ] Every existing prompt test still passes
-- [ ] The sandbox test passes
+- [x] Every existing prompt test still passes
+- [x] The sandbox test passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -230,7 +230,7 @@ files it names.
 
 ## Task 7: Worktree options in `--args` are refused, and the unblock prompt is accurate
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 7
@@ -239,23 +239,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Tests in `src/tests/test_options.py`: `--args` containing `--worktree`, `-w` or `--settings` raises `InvalidArgsError` naming the ralpher option to use instead (`--worktree`; for `--settings`, ralpher's settings files); confirm they fail first
-- [ ] Raise it in `RalpherOptions.__post_init__`, replacing the warning that `args_override_warnings` gives for these flags; remove the branches in `iteration.add_worktree_arg` and `giter.worktree_base_ref` that read them from `--args`
-- [ ] Drop the `iteration` parameter of `iteration.summary` and use `context.iteration`
-- [ ] Test and fix `hooks.unblock_prompt`: when the worktree lookup fails, the prompt says the worktree tasks file could not be found and names the main tasks file as such
-- [ ] Update `docs/reference/cli.md` and `docs/guide/worktrees.md` for the refused flags
+- [x] Tests in `src/tests/test_options.py`: `--args` containing `--worktree`, `-w` or `--settings` raises `InvalidArgsError` naming the ralpher option to use instead (`--worktree`; for `--settings`, ralpher's settings files); confirm they fail first
+- [x] Raise it in `RalpherOptions.__post_init__`, replacing the warning that `args_override_warnings` gives for these flags; remove the branches in `iteration.add_worktree_arg` and `giter.worktree_base_ref` that read them from `--args`
+- [x] Drop the `iteration` parameter of `iteration.summary` and use `context.iteration`
+- [x] Test and fix `hooks.unblock_prompt`: when the worktree lookup fails, the prompt says the worktree tasks file could not be found and names the main tasks file as such
+- [x] Update `docs/reference/cli.md` and `docs/guide/worktrees.md` for the refused flags
 
 **Acceptance Criteria:**
 
-- [ ] `--args '... --worktree x'` stops before the first iteration with an `Error:` line
-- [ ] No reader of `options.worktree` can disagree with the agent's command line
+- [x] `--args '... --worktree x'` stops before the first iteration with an `Error:` line
+- [x] No reader of `options.worktree` can disagree with the agent's command line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_hooks.py`
-- [ ] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_hooks.py`
+- [x] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -267,7 +267,7 @@ files it names.
 
 ## Task 8: At least one iteration, and tool inputs summarised
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 10
@@ -276,20 +276,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Test in `src/tests/test_options.py`: `--iterations 0` and a negative value raise a ralpher error; confirm it fails first. Raise it in `RalpherOptions.__post_init__` and state the minimum in `docs/reference/cli.md`
-- [ ] Test in `src/tests/test_iteration.py`: a tool input with no recognised field records the tool name and the input's size in the state and summary, not the raw input; change the fallback in the tool-use summary path (`iteration.py`, near line 288)
+- [x] Test in `src/tests/test_options.py`: `--iterations 0` and a negative value raise a ralpher error; confirm it fails first. Raise it in `RalpherOptions.__post_init__` and state the minimum in `docs/reference/cli.md`
+- [x] Test in `src/tests/test_iteration.py`: a tool input with no recognised field records the tool name and the input's size in the state and summary, not the raw input; change the fallback in the tool-use summary path (`iteration.py`, near line 288)
 
 **Acceptance Criteria:**
 
-- [ ] `--iterations 0` stops with an `Error:` line and status 1
-- [ ] No raw tool input reaches `state.json` or the summary
+- [x] `--iterations 0` stops with an `Error:` line and status 1
+- [x] No raw tool input reaches `state.json` or the summary
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_iteration.py`
-- [ ] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_options.py` and `src/tests/test_iteration.py`
+- [x] `uv run pytest src/tests/test_options.py src/tests/test_iteration.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -299,7 +299,7 @@ files it names.
 
 ## Task 9: Hook events and polls stop repeating fixed work
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Finding 8
@@ -308,21 +308,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] In `src/ralphlib/hooks.py`, compute the run-fixed part of the hook context (time zone, resolved `cwd` and tasks-file paths, `ralpher_root`, the icon and sound checks) once per run, and cache compiled templates in one `SandboxedEnvironment`; keep `last_commit_summary` per event (HEAD can change) but reuse the repository path found once
-- [ ] In `src/ralphlib/verifier.py`, guard `worktree_task_file`'s cache with a lock
-- [ ] In the poll loop of `iteration.process`, re-read the tasks file only when its modification time or size has changed
-- [ ] Add tests: the template cache compiles each template once across two events (`src/tests/test_hooks.py`); the poll does not re-read an unchanged tasks file (`src/tests/test_iteration.py`); two threads calling `worktree_task_file` run `git worktree list` once once the worktree exists (`src/tests/test_verifier.py`)
+- [x] In `src/ralphlib/hooks.py`, compute the run-fixed part of the hook context (time zone, resolved `cwd` and tasks-file paths, `ralpher_root`, the icon and sound checks) once per run, and cache compiled templates in one `SandboxedEnvironment`; keep `last_commit_summary` per event (HEAD can change) but reuse the repository path found once
+- [x] In `src/ralphlib/verifier.py`, guard `worktree_task_file`'s cache with a lock
+- [x] In the poll loop of `iteration.process`, re-read the tasks file only when its modification time or size has changed
+- [x] Add tests: the template cache compiles each template once across two events (`src/tests/test_hooks.py`); the poll does not re-read an unchanged tasks file (`src/tests/test_iteration.py`); two threads calling `worktree_task_file` run `git worktree list` once once the worktree exists (`src/tests/test_verifier.py`)
 
 **Acceptance Criteria:**
 
-- [ ] Hook output for every existing hook test is unchanged
-- [ ] The new tests pass
+- [x] Hook output for every existing hook test is unchanged
+- [x] The new tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_hooks.py`, `src/tests/test_iteration.py` and `src/tests/test_verifier.py`
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_process_termination.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_hooks.py`, `src/tests/test_iteration.py` and `src/tests/test_verifier.py`
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_verifier.py src/tests/test_process_termination.py` passes
 
 **Notes:**
 
@@ -333,7 +333,7 @@ files it names.
 
 ## Task 10: Accurate `Raises` sections, fewer late mutations and pure-named I/O
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Findings 11 and 12
@@ -342,22 +342,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add `GitError` to the `Raises:` sections of `hooks.make_context`, `iteration.process` and `verifier.agent_task_file`
-- [ ] Resolve `cwd` and `task_file` in `options.parse_options` (renamed `load_options` below) (or one helper it calls) before the options reach `loop`, and remove the reassignments in `looper.loop`
-- [ ] Build `verifier.TaskStatus` with its status in `parse_tasks`
-- [ ] Rename the functions whose pure-sounding names hide I/O, and update every caller and test: `giter.get_origin` to `read_origin`, `get_current_branch` to `read_current_branch`, `get_upstream_branch` to `read_upstream_branch`, `is_working_tree_clean` to `working_tree_is_clean`, `is_git_repo` to `opens_as_repo`, `has_unpushed_commits` to `fetch_unpushed_state`, `options.parse_options` to `load_options`, `verifier.check_stop` to `verify_stop`, and `find_dangling_symlinks` in `bin/install-claude.py` to `report_dangling_symlinks`
-- [ ] Build the `ERROR` and `END` event contexts and the iteration-end time fields in one helper in `looper.py`
-- [ ] Leave `iteration_count`, `settings`, `worktree_task_path`, `in_progress_tasks`, `complete` and `error` as run-time state, and add a one-line docstring to each field in `RalpherOptions` and `IterationContext` that says it is set at run time
+- [x] Add `GitError` to the `Raises:` sections of `hooks.make_context`, `iteration.process` and `verifier.agent_task_file`
+- [x] Resolve `cwd` and `task_file` in `options.parse_options` (renamed `load_options` below) (or one helper it calls) before the options reach `loop`, and remove the reassignments in `looper.loop`
+- [x] Build `verifier.TaskStatus` with its status in `parse_tasks`
+- [x] Rename the functions whose pure-sounding names hide I/O, and update every caller and test: `giter.get_origin` to `read_origin`, `get_current_branch` to `read_current_branch`, `get_upstream_branch` to `read_upstream_branch`, `is_working_tree_clean` to `working_tree_is_clean`, `is_git_repo` to `opens_as_repo`, `has_unpushed_commits` to `fetch_unpushed_state`, `options.parse_options` to `load_options`, `verifier.check_stop` to `verify_stop`, and `find_dangling_symlinks` in `bin/install-claude.py` to `report_dangling_symlinks`
+- [x] Build the `ERROR` and `END` event contexts and the iteration-end time fields in one helper in `looper.py`
+- [x] Leave `iteration_count`, `settings`, `worktree_task_path`, `in_progress_tasks`, `complete` and `error` as run-time state, and add a one-line docstring to each field in `RalpherOptions` and `IterationContext` that says it is set at run time
 
 **Acceptance Criteria:**
 
-- [ ] `uv run pytest` over the test files below passes with the renamed functions
-- [ ] No caller of a renamed function remains under its old name (`rg`)
+- [x] `uv run pytest` over the test files below passes with the renamed functions
+- [x] No caller of a renamed function remains under its old name (`rg`)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_verifier.py src/tests/test_hooks.py src/tests/test_iteration.py` passes
 
 **Notes:**
 
@@ -368,7 +368,7 @@ files it names.
 
 ## Task 11: The user docs match the code
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 4
@@ -377,23 +377,23 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Test in `src/tests/test_looper.py`: for a one-part `--task-file` (`TASKS.md`), `print_cleanup_cmds` and a run name the same worktree; confirm it fails first, then make `--cleanup` resolve `--task-file` the way `loop` does (Task 10 moves that resolution into `load_options`, which may already fix it)
-- [ ] `docs/reference/variables.md`: a `--vars` key that names a built-in is rejected
-- [ ] `docs/guide/worktrees.md`: correct the `TASKS.md` row and the `--cleanup` sentence; describe the "cannot tell whether there are unpushed commits" question (default no, exits on no)
-- [ ] `docs/reference/exit-statuses.md`: the divergence check exits when you answer yes
-- [ ] `docs/reference/scripts.md`: `rcl.sh` also needs `RALPHER_PATH`
-- [ ] Read every page under `docs/` once more against the code changed by Tasks 1-10, and correct anything those tasks left behind
+- [x] Test in `src/tests/test_looper.py`: for a one-part `--task-file` (`TASKS.md`), `print_cleanup_cmds` and a run name the same worktree; confirm it fails first, then make `--cleanup` resolve `--task-file` the way `loop` does (Task 10 moves that resolution into `load_options`, which may already fix it)
+- [x] `docs/reference/variables.md`: a `--vars` key that names a built-in is rejected
+- [x] `docs/guide/worktrees.md`: correct the `TASKS.md` row and the `--cleanup` sentence; describe the "cannot tell whether there are unpushed commits" question (default no, exits on no)
+- [x] `docs/reference/exit-statuses.md`: the divergence check exits when you answer yes
+- [x] `docs/reference/scripts.md`: `rcl.sh` also needs `RALPHER_PATH`
+- [x] Read every page under `docs/` once more against the code changed by Tasks 1-10, and correct anything those tasks left behind
 
 **Acceptance Criteria:**
 
-- [ ] Each Doc5 hit in review-3 is fixed
+- [x] Each Doc5 hit in review-3 is fixed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_looper.py`
-- [ ] `uv run pytest src/tests/test_looper.py src/tests/test_templater.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_looper.py`
+- [x] `uv run pytest src/tests/test_looper.py src/tests/test_templater.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -404,7 +404,7 @@ files it names.
 
 ## Task 12: Test gaps
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Finding 13
@@ -413,21 +413,21 @@ files it names.
 
 **Subtasks:**
 
-- [ ] `src/tests/test_looper.py`: a `loop` end-to-end test with the fake agent (`src/tests/fixtures/fake_agent.py`) and a real `iteration.run`, asserting the exit status, the hooks fired and the state written
-- [ ] `src/tests/test_ralpher.py` (new, for `bin/ralpher.py`): the `--cleanup` exit, a `RalpherError` exit printing `Error: ...`, and the exit statuses 0 and 1
-- [ ] `src/tests/test_install_claude.py`: `install_claude` (dotfiles skipped, directories and files linked) and `main`'s error exit
-- [ ] `src/tests/test_giter.py`: `last_commit_summary` in a real repository, and `confirm_git_state` with `YNConfirm.ask` patched: not a repository, a dirty tree, divergence
-- [ ] Property tests (`@hypothesis.settings(max_examples=20, deadline=10000)`) for `giter.redact_url`, `verifier.verify_stop`, `iteration.add_worktree_arg`, `giter.claude_worktree_base_ref`, `settings.load_settings`, `options.RalpherOptions.__post_init__`, `iteration.process_user`, `iteration.process_assistant`, `iteration.get_run_in_background` and `iteration.process_result`; where one does not fit, say why in the test module and add an example test
+- [x] `src/tests/test_looper.py`: a `loop` end-to-end test with the fake agent (`src/tests/fixtures/fake_agent.py`) and a real `iteration.run`, asserting the exit status, the hooks fired and the state written
+- [x] `src/tests/test_ralpher.py` (new, for `bin/ralpher.py`): the `--cleanup` exit, a `RalpherError` exit printing `Error: ...`, and the exit statuses 0 and 1
+- [x] `src/tests/test_install_claude.py`: `install_claude` (dotfiles skipped, directories and files linked) and `main`'s error exit
+- [x] `src/tests/test_giter.py`: `last_commit_summary` in a real repository, and `confirm_git_state` with `YNConfirm.ask` patched: not a repository, a dirty tree, divergence
+- [x] Property tests (`@hypothesis.settings(max_examples=20, deadline=10000)`) for `giter.redact_url`, `verifier.verify_stop`, `iteration.add_worktree_arg`, `giter.claude_worktree_base_ref`, `settings.load_settings`, `options.RalpherOptions.__post_init__`, `iteration.process_user`, `iteration.process_assistant`, `iteration.get_run_in_background` and `iteration.process_result`; where one does not fit, say why in the test module and add an example test
 
 **Acceptance Criteria:**
 
-- [ ] Every function in review-3 T1 and T2 has a test, or the module says why a property test does not fit
+- [x] Every function in review-3 T1 and T2 has a test, or the module says why a property test does not fit
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists every test file named above
-- [ ] `uv run pytest src/tests/test_looper.py src/tests/test_ralpher.py src/tests/test_install_claude.py src/tests/test_giter.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_settings.py src/tests/test_options.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists every test file named above
+- [x] `uv run pytest src/tests/test_looper.py src/tests/test_ralpher.py src/tests/test_install_claude.py src/tests/test_giter.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_settings.py src/tests/test_options.py` passes
 
 **Notes:**
 
@@ -438,7 +438,7 @@ files it names.
 
 ## Task 13: Standards
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 16
@@ -447,22 +447,22 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Rename the lower_snake module constants in `src/ralphlib/iteration.py` and `src/ralphlib/types.py` to UPPER_SNAKE and update every reader
-- [ ] Move the `TYPE_CHECKING` block in `src/ralphlib/printer.py` directly after the imports
-- [ ] Delete the obvious comments and the commented-out code review-3 S4 lists, and the task-number section banners in `src/tests/test_iteration.py`
-- [ ] Sort the literals review-3 S4 lists; where the order carries meaning, keep it and add a scoped `non-alphabetical-literal` accept marker giving the reason
-- [ ] Replace `.format()` in `src/tests/test_iteration.py` with an f-string; make `LoopRun` in `src/tests/test_looper.py` a dataclass
-- [ ] Move the tests in `src/tests/test_shlex.py` into `src/tests/test_hooks.py`, those in `src/tests/test_process_termination.py` into `src/tests/test_iteration.py`, and the `make_context` test in `src/tests/test_verifier.py` into `src/tests/test_iteration.py`; delete the emptied files
+- [x] Rename the lower_snake module constants in `src/ralphlib/iteration.py` and `src/ralphlib/types.py` to UPPER_SNAKE and update every reader
+- [x] Move the `TYPE_CHECKING` block in `src/ralphlib/printer.py` directly after the imports
+- [x] Delete the obvious comments and the commented-out code review-3 S4 lists, and the task-number section banners in `src/tests/test_iteration.py`
+- [x] Sort the literals review-3 S4 lists; where the order carries meaning, keep it and add a scoped `non-alphabetical-literal` accept marker giving the reason
+- [x] Replace `.format()` in `src/tests/test_iteration.py` with an f-string; make `LoopRun` in `src/tests/test_looper.py` a dataclass
+- [x] Move the tests in `src/tests/test_shlex.py` into `src/tests/test_hooks.py`, those in `src/tests/test_process_termination.py` into `src/tests/test_iteration.py`, and the `make_context` test in `src/tests/test_verifier.py` into `src/tests/test_iteration.py`; delete the emptied files
 
 **Acceptance Criteria:**
 
-- [ ] Each S2, S3 and S4 hit in review-3 is fixed or carries a scoped marker with a reason
-- [ ] The number of collected tests is unchanged by the moves (`uv run pytest --collect-only -q` before and after)
+- [x] Each S2, S3 and S4 hit in review-3 is fixed or carries a scoped marker with a reason
+- [x] The number of collected tests is unchanged by the moves (`uv run pytest --collect-only -q` before and after)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_printer.py src/tests/test_giter.py src/tests/test_settings.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_printer.py src/tests/test_giter.py src/tests/test_settings.py` passes
 
 **Notes:**
 
@@ -472,7 +472,7 @@ files it names.
 
 ## Task 14: AGENTS.md and the specs match the repository, then the whole-tree gates
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 14 and 15
@@ -481,24 +481,24 @@ files it names.
 
 **Subtasks:**
 
-- [ ] `AGENTS.md` project structure: add `test_install_claude.py` and `test_ralpher.py`, remove `test_shlex.py` and `test_process_termination.py`, add the top-level project files and `.github/`, and show `claude/commands/rrq.md`
-- [ ] `AGENTS.md` tools list: add shellcheck and the shared repository's `no-project-names` hook
-- [ ] `agents/specs/verified-stop/spec.md`: bring the API section and `READ_ERRORS` up to date, and trim it to about 200 lines and eight top-level sections
-- [ ] `agents/specs/auditme-adoption/spec.md`: correct the fetch-handling rows, remove the stale `int(...)` row and the marker that does not exist, and restate the parts of the shared `project-setup` skill the spec relies on
-- [ ] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
-- [ ] Run every test file that imports a module this list changed: every file in `src/tests/` that imports `ralphlib` or loads `bin/`
-- [ ] After the list's last commit, update `agents/audit-reviews/summary.md`: move the findings this list resolved to Recently resolved (auditme step 8b)
+- [x] `AGENTS.md` project structure: add `test_install_claude.py` and `test_ralpher.py`, remove `test_shlex.py` and `test_process_termination.py`, add the top-level project files and `.github/`, and show `claude/commands/rrq.md`
+- [x] `AGENTS.md` tools list: add shellcheck and the shared repository's `no-project-names` hook
+- [x] `agents/specs/verified-stop/spec.md`: bring the API section and `READ_ERRORS` up to date, and trim it to about 200 lines and eight top-level sections
+- [x] `agents/specs/auditme-adoption/spec.md`: correct the fetch-handling rows, remove the stale `int(...)` row and the marker that does not exist, and restate the parts of the shared `project-setup` skill the spec relies on
+- [x] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
+- [x] Run every test file that imports a module this list changed: every file in `src/tests/` that imports `ralphlib` or loads `bin/`
+- [x] After the list's last commit, update `agents/audit-reviews/summary.md`: move the findings this list resolved to Recently resolved (auditme step 8b)
 
 **Acceptance Criteria:**
 
-- [ ] Each Doc1, Doc2, Doc4 and spec-review hit in review-3 is fixed
+- [x] Each Doc1, Doc2, Doc4 and spec-review hit in review-3 is fixed
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_install_claude.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_install_claude.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

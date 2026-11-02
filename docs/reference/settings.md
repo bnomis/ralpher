@@ -33,8 +33,8 @@ default theme.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `hooks` | object: event name to list of commands | none | Commands to run on events. See [Hooks](../guide/hooks.md). |
-| `hook_templates` | boolean | `true` | Render hook commands as Jinja templates. |
+| `hooks` | object: event name to list of command strings | none | Commands to run on events. See [Hooks](../guide/hooks.md). |
+| `hook_templates` | boolean (`true` or `false`, not a string) | `true` | Render hook commands as Jinja templates. |
 | `hook_icon` | string (template) | none | A file path offered to hooks as `{{hook_icon}}`. |
 | `hook_sound` | string (template) | none | A sound name or path offered to hooks as `{{hook_sound}}`. |
 | `theme` | object: message kind to Rich style | see [Themes](../guide/terminal.md#themes) | Terminal colours and styles. |
