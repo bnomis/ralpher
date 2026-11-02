@@ -2,6 +2,9 @@ import json
 import typing
 import unittest.mock
 
+import pytest
+
+import ralphlib.exceptions
 import ralphlib.options
 import ralphlib.settings
 import tests.helpers
@@ -111,3 +114,21 @@ def test_load_settings_theme_is_not_shared(tmp_path: typing.Any) -> None:
     assert first.settings['theme'] is not second.settings['theme']
     first.settings['theme']['alert'] = 'changed'
     assert second.settings['theme']['alert'] != 'changed'
+
+
+class TestDomainErrors:
+    def test_invalid_json_raises_settings_error(self, tmp_path: typing.Any) -> None:
+        path = tmp_path / 'settings.json'
+        path.write_text('{not json')
+        options = tests.helpers.make_plain_options()
+        options.settings = ralphlib.settings.default_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
+            ralphlib.settings.load_settings_from_file(options, path)
+
+    def test_unreadable_file_raises_settings_error(self, tmp_path: typing.Any) -> None:
+        path = tmp_path / 'settings.json'
+        path.write_bytes(b'\xff\xfe\x00')
+        options = tests.helpers.make_plain_options()
+        options.settings = ralphlib.settings.default_settings()
+        with pytest.raises(ralphlib.exceptions.SettingsError):
+            ralphlib.settings.load_settings_from_file(options, path)

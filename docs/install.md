@@ -56,8 +56,9 @@ python3 bin/install-claude.py
 ```
 
 symlinks everything under ralpher's `claude/` directory into `~/.claude/`,
-which installs the `/rrq` command. An existing file at a destination is
-renamed with a `.orig` suffix, never overwritten. See
+which installs the `/rrq` command. An existing symlink at a destination is
+replaced; an existing regular file is renamed with a `.orig` suffix, never
+overwritten. See
 [Driving ralpher from Claude Code](guide/claude-code.md).
 
 ## Update

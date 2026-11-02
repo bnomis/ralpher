@@ -2,6 +2,8 @@ import json
 import pathlib
 import typing
 
+import ralphlib.exceptions
+
 if typing.TYPE_CHECKING:
     import ralphlib.options
 
@@ -43,7 +45,10 @@ def load_settings(options: ralphlib.options.RalpherOptions) -> ralphlib.options.
 def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str | pathlib.Path) -> ralphlib.options.RalpherOptions:
     path = pathlib.Path(paths).expanduser().resolve()
     if path.is_file():
-        with path.open('r', encoding='utf-8') as f:
-            file_settings = json.load(f)
+        try:
+            with path.open('r', encoding='utf-8') as f:
+                file_settings = json.load(f)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+            raise ralphlib.exceptions.SettingsError(f'Cannot read settings file {path}') from e
         options.settings.update(file_settings)
     return options

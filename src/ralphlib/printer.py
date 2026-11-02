@@ -2,10 +2,12 @@ import typing
 
 import rich.console
 
+import ralphlib.exceptions
 import ralphlib.logger
 import ralphlib.types
 
 console = rich.console.Console(highlight=False)
+console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 if typing.TYPE_CHECKING:
     import ralphlib.options
@@ -20,8 +22,11 @@ def prt(
 ) -> None:
     if options.progress:
         path = ralphlib.logger.log_file(options, options.progress, iteration)
-        with path.open('a', encoding='utf-8') as f:
-            f.write(message)
+        try:
+            with path.open('a', encoding='utf-8') as f:
+                f.write(message)
+        except OSError as e:
+            raise ralphlib.exceptions.LogFileError(f'Cannot write progress log {path}') from e
 
     if options.quiet or dont_print:
         return

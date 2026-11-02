@@ -29,7 +29,7 @@ claim itself after the iteration ends: if any task in the tasks file is not
 - `src/ralphlib/options.py`: the `--no-verify-stop` flag
 - `src/tests/test_verifier.py` (new), `src/tests/test_looper.py`
 - `claude/commands/rrq.md`: relay the rejection line
-- `README.md`: document the behaviour and the flag
+- `docs/guide/tasks.md` and `docs/reference/cli.md`: document the behaviour and the flag
 
 ## API
 
@@ -69,7 +69,8 @@ def worktree_task_file(options: RalpherOptions) -> pathlib.Path | None:
     is `refs/heads/worktree-<slug>`, with `<slug>` from
     `templater.task_file_slug(options.task_file)`. The returned path is that
     worktree's path joined with the tasks file's path relative to the main
-    repository root. Returns None if no such worktree is listed.
+    repository root. Returns None if there is no repository, no tasks file or
+    no such worktree.
     """
 
 
@@ -163,10 +164,12 @@ rest of ralpher does.
 ## Error handling
 
 - Tasks file or worktree missing, unreadable, or not valid UTF-8: the check
-  is not `verified`, the reason names the path and the error, and the loop
-  stops as it does today. `OSError` and `UnicodeDecodeError` are caught in
-  `check_stop` only. They are the expected failures of reading a file the
-  agent controls.
+  is not `verified`, the reason names the tasks file option
+  (`options.task_file`, not the worktree path that was read) and the error,
+  and the loop stops as it does today. `OSError` and `UnicodeDecodeError`
+  (`verifier.READ_ERRORS`) are caught in `check_stop` and where `iteration.py`
+  reads the tasks file for progress. They are the expected failures of
+  reading a file the agent controls.
 - `git worktree list` failing (`git.GitCommandError`): not `verified`, same
   handling.
 - With `--worktree`, a tasks file outside the repository (`ValueError` from

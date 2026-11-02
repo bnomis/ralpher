@@ -27,7 +27,7 @@ Rendered when the hook runs, in a sandbox. Values are strings. See
 |----------|-------|
 | `event_type` | the event name, such as `iteration_end` |
 | `iterations` | `--iterations` |
-| `current_iteration` | the iteration running, or 0 |
+| `current_iteration` | the iteration running; in `end` and `error` hooks, the last iteration that ran, or 0 if none ran |
 | `iteration_count` | iterations finished so far |
 | `datetime_utc` | now, ISO 8601, ending `Z` |
 | `datetime_local` | now, ISO 8601 with offset |

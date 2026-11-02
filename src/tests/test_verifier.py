@@ -1,9 +1,13 @@
 import pathlib
+import unittest.mock
 
 import git
 import hypothesis
 import hypothesis.strategies
+import pytest
 
+import ralphlib.exceptions
+import ralphlib.iteration
 import ralphlib.options
 import ralphlib.verifier
 
@@ -198,3 +202,65 @@ def test_check_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None
     check = ralphlib.verifier.check_stop(options)
     assert not check.verified
     assert str(outside) in check.reason
+
+
+def test_agent_task_file_worktree_not_found_raises_tasks_file_error(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    with pytest.raises(ralphlib.exceptions.TasksFileError):
+        ralphlib.verifier.agent_task_file(make_options(repo))
+
+
+def test_worktree_task_file_runs_git_worktree_list_once(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    wt = (tmp_path / 'wt').resolve()
+    run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
+    options = make_options(repo)
+    with unittest.mock.patch.object(ralphlib.verifier, 'parse_worktrees', wraps=ralphlib.verifier.parse_worktrees) as parse:
+        for _ in range(5):
+            assert ralphlib.verifier.worktree_task_file(options) == wt / TASK_FILE
+    assert parse.call_count == 1
+
+
+def test_make_context_clears_the_cached_worktree_path() -> None:
+    options = ralphlib.options.RalpherOptions(prompt='p', quiet=True)
+    options.worktree_task_path = pathlib.Path('/stale')
+    ralphlib.iteration.make_context(options, 'prompt', 1)
+    assert options.worktree_task_path is None
+
+
+class TestParseWorktrees:
+    def test_entries_with_a_branch(self) -> None:
+        porcelain = 'worktree /src/probe\nHEAD abc\nbranch refs/heads/main\n\nworktree /src/probe/wt\nHEAD def\nbranch refs/heads/worktree-a-b\n'
+        assert ralphlib.verifier.parse_worktrees(porcelain) == [
+            (pathlib.Path('/src/probe'), 'refs/heads/main'),
+            (pathlib.Path('/src/probe/wt'), 'refs/heads/worktree-a-b'),
+        ]
+
+    def test_detached_entry_is_skipped(self) -> None:
+        assert ralphlib.verifier.parse_worktrees('worktree /src/probe\nHEAD abc\ndetached\n') == []
+
+    def test_bare_entry_is_skipped(self) -> None:
+        porcelain = 'worktree /src/probe.git\nbare\n\nworktree /src/wt\nHEAD abc\nbranch refs/heads/x\n'
+        assert ralphlib.verifier.parse_worktrees(porcelain) == [(pathlib.Path('/src/wt'), 'refs/heads/x')]
+
+    def test_empty_output(self) -> None:
+        assert ralphlib.verifier.parse_worktrees('') == []
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    entries=hypothesis.strategies.lists(
+        hypothesis.strategies.tuples(
+            hypothesis.strategies.from_regex(r'/[a-z0-9]{1,8}(/[a-z0-9]{1,8}){0,2}', fullmatch=True),
+            hypothesis.strategies.one_of(
+                hypothesis.strategies.none(),
+                hypothesis.strategies.from_regex(r'refs/heads/[a-z0-9-]{1,12}', fullmatch=True),
+            ),
+        ),
+        max_size=5,
+    )
+)
+def test_parse_worktrees_returns_exactly_the_entries_with_a_branch(entries: list[tuple[str, str | None]]) -> None:
+    blocks = [f'worktree {path}\nHEAD abc\n' + (f'branch {branch}\n' if branch else 'detached\n') for path, branch in entries]
+    expected = [(pathlib.Path(path), branch) for path, branch in entries if branch]
+    assert ralphlib.verifier.parse_worktrees('\n'.join(blocks)) == expected

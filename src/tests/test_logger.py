@@ -1,7 +1,10 @@
 import pathlib
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.logger
 import ralphlib.options
 import tests.helpers
@@ -90,7 +93,43 @@ class TestInit:
 
 
 class TestLogDir:
-    def test_raises_valueerror_when_logdir_not_set(self) -> None:
+    def test_raises_log_file_error_when_logdir_not_set(self) -> None:
         options = tests.helpers.make_plain_options(logdir=None)
-        with pytest.raises(ValueError, match='logdir is not set'):
+        with pytest.raises(ralphlib.exceptions.LogFileError, match='logdir is not set'):
             ralphlib.logger.log_dir(options)
+
+
+class TestStatePathContainment:
+    @pytest.mark.parametrize('state', ['/etc/state.json', '../state.json', 'a/../../state.json'])
+    def test_state_file_rejects_paths_outside_logdir(self, tmp_path: pathlib.Path, state: str) -> None:
+        options = tests.helpers.make_plain_options(state=state, logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.state_file(options)
+
+    @pytest.mark.parametrize('state', ['/etc/state.json', '../state.json'])
+    def test_state_lock_file_rejects_paths_outside_logdir(self, tmp_path: pathlib.Path, state: str) -> None:
+        options = tests.helpers.make_plain_options(state=state, logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.state_lock_file(options)
+
+    def test_nested_relative_state_is_accepted(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='sub/state.json', logdir=str(tmp_path))
+        assert ralphlib.logger.state_file(options) == tmp_path / 'sub' / 'state.json'
+
+
+class TestDomainErrors:
+    def test_init_translates_mkdir_error(self, tmp_path: pathlib.Path) -> None:
+        blocker = tmp_path / 'file'
+        blocker.write_text('x')
+        options = tests.helpers.make_plain_options(logdir=str(blocker / 'logs'))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.init(options)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(iterations=hypothesis.strategies.integers(min_value=1, max_value=10**6), data=hypothesis.strategies.data())
+def test_iteration_to_str_has_a_fixed_width_and_round_trips(iterations: int, data: hypothesis.strategies.DataObject) -> None:
+    iteration = data.draw(hypothesis.strategies.integers(min_value=1, max_value=iterations))
+    result = ralphlib.logger.iteration_to_str(tests.helpers.make_plain_options(iterations=iterations), iteration)
+    assert len(result) == len(str(iterations))
+    assert int(result) == iteration

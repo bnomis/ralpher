@@ -31,6 +31,13 @@ fi
 spec="$1"
 index="$2"
 
+for arg in "$spec" "$index"; do
+    if [[ $arg == */* || $arg == *..* ]]; then
+        echo "TASKS-SPEC and TASKS-INDEX must not contain '/' or '..': $arg"
+        usage
+    fi
+done
+
 # make command array
 cmd=(
     "$RALPHER_PATH/bin/ralpher.sh"
