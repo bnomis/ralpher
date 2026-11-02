@@ -10,6 +10,7 @@ import rich.console
 import rich.prompt
 import rich.text
 
+import ralphlib.exceptions
 import ralphlib.printer
 import ralphlib.types
 
@@ -67,6 +68,9 @@ def check_git(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str
 def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | None:
     """
     Returns the path to the git repository if the given path (or current directory) is inside a git repository.
+
+    Raises:
+        GitError: the path cannot be opened.
     """
     if path is None:
         path = pathlib.Path.cwd()
@@ -77,6 +81,8 @@ def discover_repo_path(path: pathlib.Path | str | None = None) -> git.Repo | Non
         return git.Repo(str(path), search_parent_directories=True)
     except git.InvalidGitRepositoryError:
         return None
+    except OSError as e:
+        raise ralphlib.exceptions.GitError(f'Cannot open the git repository at {path}') from e
 
 
 def is_git_repo(path: pathlib.Path | str | None = None) -> bool:
@@ -113,24 +119,33 @@ def is_working_tree_clean(repo: git.Repo, include_untracked: bool = True) -> boo
     Returns True if the working tree is clean (no changes, no untracked files by default).
 
     - include_untracked=False → ignores new/untracked files (like git status --untracked-files=no)
+
+    Raises:
+        GitError: the status cannot be read.
     """
-    return not repo.is_dirty(untracked_files=include_untracked)
+    try:
+        return not repo.is_dirty(untracked_files=include_untracked)
+    except (git.GitCommandError, OSError) as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read the git status of {repo.working_dir}') from e
 
 
 def has_unpushed_commits(repo: git.Repo) -> bool:
     """
     Returns True if the current branch has commits not pushed to its upstream
     (usually origin/<branch>).
+
+    Raises:
+        GitError: the upstream branch or its commits cannot be read.
     """
     try:
         origin = repo.remotes.origin
-    except ValueError:
+    except ValueError, OSError:
         console_stderr.print(f"No 'origin' remote found for: {repo.working_dir}")
         return False
 
     try:
         origin.fetch()
-    except git.GitCommandError as e:
+    except (git.GitCommandError, OSError, UnicodeDecodeError) as e:
         # auditme: accept[except-interpolation] the message goes to the console, which shows no traceback
         message = f'Fetch failed for remote "{origin.name}" at "{origin.url}": {e}'
         console_stderr.print(message)
@@ -142,17 +157,23 @@ def has_unpushed_commits(repo: git.Repo) -> bool:
         return False
 
     # Count commits ahead of upstream
-    ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
+    try:
+        ahead = sum(1 for _ in repo.iter_commits(f'{upstream.name}..HEAD'))
+    except (git.GitCommandError, OSError) as e:
+        raise ralphlib.exceptions.GitError(f'Cannot list the commits ahead of {upstream.name}') from e
     return ahead > 0
 
 
 def get_upstream_branch(repo: git.Repo) -> git.RemoteReference | None:
-    if repo.head.is_detached:
-        console_stderr.print('Detached HEAD — no current branch')
-        return None
+    try:
+        if repo.head.is_detached:
+            console_stderr.print('Detached HEAD — no current branch')
+            return None
 
-    branch = repo.active_branch
-    tracking = branch.tracking_branch()
+        branch = repo.active_branch
+        tracking = branch.tracking_branch()
+    except (git.GitCommandError, OSError) as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read the upstream branch of {repo.working_dir}') from e
     if tracking is None:
         console_stderr.print(f'No upstream branch set for the {branch.name} branch')
         return None
@@ -187,16 +208,19 @@ def get_origin(repo: git.Repo) -> tuple[str | None, str | None]:
         origin_head = repo.remotes.origin.refs.HEAD.reference  # e.g. origin/master
         base = origin_head.name  # "origin/master"
         base_short = base.split('/', 1)[1]  # "master"
-    except AttributeError, TypeError:
+    except AttributeError, TypeError, OSError:
         # origin/HEAD not set locally
         base = base_short = None
     return base, base_short
 
 
 def get_current_branch(repo: git.Repo) -> str | None:
-    if repo.head.is_detached:
-        return None
-    return repo.active_branch.name
+    try:
+        if repo.head.is_detached:
+            return None
+        return repo.active_branch.name
+    except (git.GitCommandError, OSError) as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read the current branch of {repo.working_dir}') from e
 
 
 def worktree_base_ref(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> str:

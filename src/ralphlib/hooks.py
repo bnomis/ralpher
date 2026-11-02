@@ -10,6 +10,7 @@ import jinja2.sandbox
 import loguru
 import tzlocal
 
+import ralphlib.exceptions
 import ralphlib.giter
 import ralphlib.signals
 import ralphlib.types
@@ -101,7 +102,10 @@ def make_context(
     event_context: dict[str, typing.Any],
 ) -> dict[str, typing.Any]:
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    local_tz = tzlocal.get_localzone()
+    try:
+        local_tz = tzlocal.get_localzone()
+    except (OSError, LookupError, ValueError) as e:
+        raise ralphlib.exceptions.RalpherError('Cannot determine the local time zone') from e
     now_local = datetime.datetime.now(local_tz)
     cwd = task_file_number_str = ''
     cwd_path = task_file_path = task_file_relative_path = None

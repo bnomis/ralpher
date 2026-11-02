@@ -2,6 +2,7 @@ import unittest.mock
 
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.options
 import ralphlib.types
@@ -197,3 +198,10 @@ class TestRunHook:
             mock_log.assert_called_once()
             log_msg = mock_log.call_args[0][0]
             assert 'nonexistent_cmd' in log_msg
+
+
+class TestMakeContextDomainErrors:
+    def test_time_zone_failure_raises_ralpher_error(self) -> None:
+        options = tests.helpers.make_options_with_settings()
+        with unittest.mock.patch('tzlocal.get_localzone', side_effect=LookupError('no zone')), pytest.raises(ralphlib.exceptions.RalpherError):
+            ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})

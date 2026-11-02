@@ -3,7 +3,9 @@ import pathlib
 import git
 import hypothesis
 import hypothesis.strategies
+import pytest
 
+import ralphlib.exceptions
 import ralphlib.options
 import ralphlib.verifier
 
@@ -198,3 +200,9 @@ def test_check_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None
     check = ralphlib.verifier.check_stop(options)
     assert not check.verified
     assert str(outside) in check.reason
+
+
+def test_agent_task_file_worktree_not_found_raises_tasks_file_error(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    with pytest.raises(ralphlib.exceptions.TasksFileError):
+        ralphlib.verifier.agent_task_file(make_options(repo))

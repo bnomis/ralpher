@@ -8,6 +8,7 @@ import hypothesis.strategies
 import loguru
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.looper
@@ -234,3 +235,24 @@ class TestCleanupCmds:
             'git push',
             f'(git push origin --delete {BRANCH} 2>/dev/null || true)',
         ]
+
+
+class TestDomainErrors:
+    def test_chdir_failure_raises_ralpher_error(self, tmp_path: pathlib.Path) -> None:
+        options = ralphlib.options.RalpherOptions(prompts='p', cwd=str(tmp_path / 'missing'), skip_git_check=True)
+        with pytest.raises(ralphlib.exceptions.RalpherError, match='change directory'):
+            ralphlib.looper.loop(options)
+
+    def test_unreadable_prompt_raises_ralpher_error(self, tmp_path: pathlib.Path) -> None:
+        prompt = tmp_path / 'prompt.md'
+        prompt.write_bytes(b'\xff\xfe\x00')
+        options = ralphlib.options.RalpherOptions(prompt=str(prompt), cwd=str(tmp_path), skip_git_check=True)
+        with pytest.raises(ralphlib.exceptions.RalpherError, match='prompt file'):
+            ralphlib.looper.loop(options)
+
+    def test_unreadable_tasks_file_raises_tasks_file_error(self, tmp_path: pathlib.Path) -> None:
+        tasks = tmp_path / 'tasks.md'
+        tasks.write_bytes(b'\xff\xfe\x00')
+        options = ralphlib.options.RalpherOptions(prompts='p', task_file=str(tasks), cwd=str(tmp_path), skip_git_check=True)
+        with pytest.raises(ralphlib.exceptions.TasksFileError):
+            ralphlib.looper.loop(options)

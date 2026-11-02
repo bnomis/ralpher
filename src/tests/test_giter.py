@@ -7,6 +7,7 @@ import loguru
 import pytest
 import rich.text
 
+import ralphlib.exceptions
 import ralphlib.giter
 import ralphlib.options
 import ralphlib.printer
@@ -304,3 +305,39 @@ class TestHasUnpushedCommitsFetch:
         repo = self.make_repo(RuntimeError('boom'))
         with pytest.raises(RuntimeError):
             ralphlib.giter.has_unpushed_commits(repo)
+
+
+class TestDomainErrors:
+    def test_discover_repo_path_translates_os_error(self, tmp_path: pathlib.Path) -> None:
+        with unittest.mock.patch('git.Repo', side_effect=OSError('denied')), pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.discover_repo_path(tmp_path)
+
+    def test_is_working_tree_clean_translates_command_error(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.is_dirty.side_effect = git.GitCommandError('status', 1)
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.is_working_tree_clean(repo)
+
+    def test_get_upstream_branch_translates_os_error(self) -> None:
+        repo = unittest.mock.MagicMock()
+        type(repo.head).is_detached = unittest.mock.PropertyMock(side_effect=OSError('denied'))
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.get_upstream_branch(repo)
+
+    def test_get_current_branch_translates_os_error(self) -> None:
+        repo = unittest.mock.MagicMock()
+        type(repo.head).is_detached = unittest.mock.PropertyMock(side_effect=OSError('denied'))
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.get_current_branch(repo)
+
+    def test_has_unpushed_commits_translates_iter_commits_error(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.head.is_detached = False
+        repo.iter_commits.side_effect = git.GitCommandError('rev-list', 1)
+        with pytest.raises(ralphlib.exceptions.GitError):
+            ralphlib.giter.has_unpushed_commits(repo)
+
+    def test_has_unpushed_commits_reports_fetch_os_error(self) -> None:
+        repo = unittest.mock.MagicMock()
+        repo.remotes.origin.fetch.side_effect = OSError('no FETCH_HEAD')
+        assert ralphlib.giter.has_unpushed_commits(repo) is False

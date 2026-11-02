@@ -14,6 +14,7 @@ import loguru
 import orjson
 import rich.console
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.logger
 import ralphlib.printer
@@ -218,6 +219,10 @@ def make_context(options: ralphlib.options.RalpherOptions, prompt: str, iteratio
         if options.errors:
             context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
             context.errorsfd = context.errors.open('a', encoding='utf-8')
+    except OSError as e:
+        loguru.logger.exception('Exception in make_context')
+        unmake_context(context)
+        raise ralphlib.exceptions.LogFileError('Cannot open an iteration log file') from e
     except Exception:
         loguru.logger.exception('Exception in make_context')
         unmake_context(context)
@@ -440,10 +445,13 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     context.in_progress_tasks = {t.id for t in read_task_statuses(options) if t.status == 'in-progress'}
 
     # log_msg(options, context, f'Forking subprocess {context.cmd}')
-    proc = subprocess.Popen(  # noqa: S603
-        context.cmd,
-        **kwargs,
-    )
+    try:
+        proc = subprocess.Popen(  # noqa: S603
+            context.cmd,
+            **kwargs,
+        )
+    except OSError as e:
+        raise ralphlib.exceptions.RalpherError(f'Cannot start the agent "{context.cmd[0]}"') from e
     log_msg(options, context, f'Started agent process {proc.pid}')
     ralphlib.hooks.event(
         options,
@@ -536,6 +544,17 @@ def process_stdout(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
+    try:
+        read_stdout(options, context, pipe)
+    except OSError:
+        loguru.logger.exception('I/O error on the agent stdout reader thread')
+
+
+def read_stdout(
+    options: ralphlib.options.RalpherOptions,
+    context: IterationContext,
+    pipe: io.TextIOWrapper,
+) -> None:
     for line in iter(pipe.readline, ''):
         line = line.strip()
         if not line:
@@ -563,13 +582,16 @@ def process_stderr(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
-    for line in iter(pipe.readline, ''):
-        line = line.strip()
-        if not line:
-            continue
+    try:
+        for line in iter(pipe.readline, ''):
+            line = line.strip()
+            if not line:
+                continue
 
-        write_stderr(options, context, line + '\n')
-        print_error(options, context, line)
+            write_stderr(options, context, line + '\n')
+            print_error(options, context, line)
+    except OSError:
+        loguru.logger.exception('I/O error on the agent stderr reader thread')
 
 
 def process_line(

@@ -2,6 +2,7 @@ import pathlib
 
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.logger
 import ralphlib.options
 import tests.helpers
@@ -90,7 +91,16 @@ class TestInit:
 
 
 class TestLogDir:
-    def test_raises_valueerror_when_logdir_not_set(self) -> None:
+    def test_raises_log_file_error_when_logdir_not_set(self) -> None:
         options = tests.helpers.make_plain_options(logdir=None)
-        with pytest.raises(ValueError, match='logdir is not set'):
+        with pytest.raises(ralphlib.exceptions.LogFileError, match='logdir is not set'):
             ralphlib.logger.log_dir(options)
+
+
+class TestDomainErrors:
+    def test_init_translates_mkdir_error(self, tmp_path: pathlib.Path) -> None:
+        blocker = tmp_path / 'file'
+        blocker.write_text('x')
+        options = tests.helpers.make_plain_options(logdir=str(blocker / 'logs'))
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.logger.init(options)

@@ -30,7 +30,10 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     if options.cwd:
         cwd_path = pathlib.Path(options.cwd).resolve().expanduser()
         options.cwd = str(cwd_path)
-        os.chdir(options.cwd)
+        try:
+            os.chdir(options.cwd)
+        except OSError as e:
+            raise ralphlib.exceptions.RalpherError(f'Cannot change directory to "{options.cwd}"') from e
 
     # check git status
     ralphlib.giter.check_git(options)
@@ -41,8 +44,10 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         if not os.path.isfile(options.prompt):
             sys.exit(f'Error: Prompt file "{options.prompt}" does not exist.')
 
-        with open(options.prompt, 'r', encoding='utf-8') as f:
-            content = f.read().strip()
+        try:
+            content = pathlib.Path(options.prompt).read_text(encoding='utf-8').strip()
+        except (OSError, UnicodeDecodeError) as e:
+            raise ralphlib.exceptions.RalpherError(f'Cannot read prompt file "{options.prompt}"') from e
         if not content:
             sys.exit(f'Error: Prompt file "{options.prompt}" is empty.')
 
@@ -61,8 +66,10 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         task_path = pathlib.Path(options.task_file).resolve().expanduser()
         if not task_path.is_file():
             sys.exit(f'Error: Task file "{options.task_file}" does not exist.')
-        with open(task_path, 'r', encoding='utf-8') as f:
-            task_content = f.read().strip()
+        try:
+            task_content = task_path.read_text(encoding='utf-8').strip()
+        except (OSError, UnicodeDecodeError) as e:
+            raise ralphlib.exceptions.TasksFileError(f'Cannot read tasks file "{options.task_file}"') from e
         if not task_content:
             sys.exit(f'Error: Task file "{options.task_file}" is empty.')
         options.task_file = str(task_path)
@@ -71,7 +78,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
     try:
         ralphlib.templater.parse_vars(options)
-    except ralphlib.exceptions.InvalidVarFormat as e:
+    except ralphlib.exceptions.InvalidVarFormatError as e:
         ralphlib.printer.prt(options, '\nError: ' + str(e) + '\n', 0)
         return True
 

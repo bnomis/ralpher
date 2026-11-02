@@ -23,7 +23,7 @@ def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise ralphlib.exceptions.NoStateFilePath()
+        raise ralphlib.exceptions.NoStateFilePathError()
 
     if not path.exists():
         return {}
@@ -41,10 +41,13 @@ def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise ralphlib.exceptions.NoStateFilePath()
+        raise ralphlib.exceptions.NoStateFilePathError()
 
-    with path.open('w') as fp:
-        json.dump(state, fp, indent=2, sort_keys=True)
+    try:
+        with path.open('w') as fp:
+            json.dump(state, fp, indent=2, sort_keys=True)
+    except OSError as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot write state file {path}') from e
 
 
 def add_to_state(
@@ -58,7 +61,7 @@ def add_to_state(
 
     lock_path = ralphlib.logger.state_lock_file(options)
     if not lock_path:
-        raise ralphlib.exceptions.NoStateLockFilePath()
+        raise ralphlib.exceptions.NoStateLockFilePathError()
 
     try:
         add_to_state_work(options, lock_path, value, key1, key2)
@@ -85,7 +88,14 @@ def add_to_state_work(
 ) -> None:
     lock = filelock.FileLock(lock_path)
 
-    with lock.acquire(timeout=STATE_LOCK_TIMEOUT):
+    try:
+        acquired = lock.acquire(timeout=STATE_LOCK_TIMEOUT)
+    except filelock.Timeout:
+        raise
+    except OSError as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot create state lock file {lock_path}') from e
+
+    with acquired:
         state = load_state(options)
         if state is None:
             return
@@ -93,11 +103,11 @@ def add_to_state_work(
         if key1 is not None:
             current_value = state.get(key1, {})
             if not isinstance(current_value, dict):
-                raise ralphlib.exceptions.ValueNotADict(f'{key1}')
+                raise ralphlib.exceptions.ValueNotADictError(f'{key1}')
             if key2 is not None:
                 current_value2 = current_value.get(key2, {})
                 if not isinstance(current_value2, dict):
-                    raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
+                    raise ralphlib.exceptions.ValueNotADictError(f'{key1}/{key2}')
                 current_value2.update(value)
                 current_value[key2] = current_value2
             else:

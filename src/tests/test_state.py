@@ -127,11 +127,29 @@ class TestAddToState:
     def test_value_not_a_dict_raised_for_key1_non_dict(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
         ralphlib.state.save_state(options, {'key': 'string_not_dict'})
-        with pytest.raises(ralphlib.exceptions.ValueNotADict, match='key'):
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='key'):
             ralphlib.state.add_to_state(options, {'new': 'val'}, key1='key')
 
     def test_value_not_a_dict_raised_for_key1_key2_non_dict(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
         ralphlib.state.save_state(options, {'outer': {'inner': 'string_not_dict'}})
-        with pytest.raises(ralphlib.exceptions.ValueNotADict, match='outer/inner'):
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='outer/inner'):
             ralphlib.state.add_to_state(options, {'new': 'val'}, key1='outer', key2='inner')
+
+
+class TestDomainErrors:
+    def test_save_state_translates_os_error(self, tmp_path: pathlib.Path) -> None:
+        (tmp_path / 'state.json').mkdir()
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError):
+            ralphlib.state.save_state(options, {'a': 1})
+
+    def test_lock_os_error_is_translated(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            raise PermissionError('denied')
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        with pytest.raises(ralphlib.exceptions.StateFileError):
+            ralphlib.state.add_to_state(options, {'new': 'val'})

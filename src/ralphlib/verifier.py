@@ -5,6 +5,7 @@ import typing
 
 import git
 
+import ralphlib.exceptions
 import ralphlib.giter
 import ralphlib.templater
 
@@ -14,7 +15,7 @@ if typing.TYPE_CHECKING:
 HEADING = re.compile(r'^## Task (\d+):\s*(.*)$')
 STATUS = re.compile(r'^\*\*Status:\*\*\s*(\S+)')
 FENCES = ('```', '~~~')
-READ_ERRORS = (LookupError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
+READ_ERRORS = (ralphlib.exceptions.TasksFileError, OSError, UnicodeDecodeError, ValueError, git.GitCommandError)
 
 
 @dataclasses.dataclass
@@ -105,14 +106,15 @@ def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path
 def agent_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
     """Return the tasks file the agent edits: the worktree copy when `options.worktree` is set, otherwise `options.task_file`.
 
-    Raises `LookupError` when the worktree does not exist, `git.GitCommandError`
-    and `ValueError` as `worktree_task_file` does.
+    Raises:
+        TasksFileError: the worktree does not exist.
+        git.GitCommandError, ValueError: as `worktree_task_file` does.
     """
     if not options.worktree:
         return pathlib.Path(options.task_file)
     path = worktree_task_file(options)
     if path is None:
-        raise LookupError(f'worktree for {ralphlib.templater.task_file_slug(options.task_file)} not found')
+        raise ralphlib.exceptions.TasksFileError(f'worktree for {ralphlib.templater.task_file_slug(options.task_file)} not found')
     return path
 
 
@@ -126,7 +128,7 @@ def check_stop(options: ralphlib.options.RalpherOptions) -> StopCheck:
     try:
         path = agent_task_file(options)
         tasks = parse_tasks(path.read_text())
-    except LookupError as e:
+    except ralphlib.exceptions.TasksFileError as e:
         return unverified(str(e))
     except READ_ERRORS as e:
         # auditme: accept[except-interpolation] the text is the stop-check reason, which shows no traceback

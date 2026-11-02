@@ -38,14 +38,18 @@ BUILTIN_VARS = (
 
 
 def parse_vars(options: ralphlib.options.RalpherOptions) -> dict[str, str]:
-    """Split the KEY=VALUE entries of --vars, rejecting a bad format or a built-in name."""
+    """Split the KEY=VALUE entries of --vars.
+
+    Raises:
+        InvalidVarFormatError: an entry has no `=` or names a built-in variable.
+    """
     parsed: dict[str, str] = {}
     for var in options.vars:
         if '=' not in var:
-            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var format: '{var}', expected key=value")
+            raise ralphlib.exceptions.InvalidVarFormatError(f"Invalid var format: '{var}', expected key=value")
         key, value = var.split('=', 1)
         if key in BUILTIN_VARS:
-            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var: '{key}' is a built-in template variable")
+            raise ralphlib.exceptions.InvalidVarFormatError(f"Invalid var: '{key}' is a built-in template variable")
         parsed[key] = value
     return parsed
 

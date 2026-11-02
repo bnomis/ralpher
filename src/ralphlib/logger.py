@@ -2,6 +2,8 @@ import pathlib
 import threading
 import typing
 
+import ralphlib.exceptions
+
 if typing.TYPE_CHECKING:
     import ralphlib.options
 
@@ -13,12 +15,15 @@ log_file_cache: dict[tuple[str | None, str, int], pathlib.Path] = {}
 def init(options: ralphlib.options.RalpherOptions) -> None:
     if options.logdir:
         logdir = log_dir(options)
-        logdir.mkdir(parents=True, exist_ok=True)
+        try:
+            logdir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise ralphlib.exceptions.LogFileError(f'Cannot create log directory {logdir}') from e
 
 
 def log_dir(options: ralphlib.options.RalpherOptions) -> pathlib.Path:
     if not options.logdir:
-        raise ValueError('logdir is not set')
+        raise ralphlib.exceptions.LogFileError('logdir is not set')
     return pathlib.Path(options.logdir).expanduser().absolute()
 
 

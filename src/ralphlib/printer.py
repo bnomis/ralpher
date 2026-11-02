@@ -2,6 +2,7 @@ import typing
 
 import rich.console
 
+import ralphlib.exceptions
 import ralphlib.logger
 import ralphlib.types
 
@@ -20,8 +21,11 @@ def prt(
 ) -> None:
     if options.progress:
         path = ralphlib.logger.log_file(options, options.progress, iteration)
-        with path.open('a', encoding='utf-8') as f:
-            f.write(message)
+        try:
+            with path.open('a', encoding='utf-8') as f:
+                f.write(message)
+        except OSError as e:
+            raise ralphlib.exceptions.LogFileError(f'Cannot write progress log {path}') from e
 
     if options.quiet or dont_print:
         return

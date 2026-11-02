@@ -8,6 +8,7 @@ import unittest.mock
 import orjson
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.options
@@ -1240,3 +1241,31 @@ def test_process_fires_agent_process_end_with_exit_code(monkeypatch: pytest.Monk
     assert names == [ralphlib.types.RalpherEventType.AGENT_PROCESS_START, ralphlib.types.RalpherEventType.AGENT_PROCESS_END]
     start, end = (extra for _, extra in events)
     assert end == {'agent_process_id': start['agent_process_id'], 'agent_exit_code': 3}
+
+
+class TestDomainErrors:
+    def test_make_context_translates_log_open_error(self, tmp_path: pathlib.Path) -> None:
+        blocker = tmp_path / 'file'
+        blocker.write_text('x')
+        options = tests.helpers.make_options(stdout='out.log', logdir=str(blocker), quiet=True)
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.iteration.make_context(options, 'prompt', 1)
+
+    def test_process_translates_popen_error(self) -> None:
+        options = tests.helpers.make_plain_options()
+        context = ralphlib.iteration.IterationContext(cmd=['no-such-agent'], iteration=1, prompt='p')
+        popen = unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('missing'))
+        with popen, pytest.raises(ralphlib.exceptions.RalpherError, match='no-such-agent'):
+            ralphlib.iteration.process(options, context)
+
+    def test_stdout_reader_stops_cleanly_on_os_error(self) -> None:
+        options = tests.helpers.make_plain_options(quiet=True)
+        pipe = unittest.mock.MagicMock()
+        pipe.readline.side_effect = OSError('closed')
+        ralphlib.iteration.process_stdout(options, make_context(), pipe)
+
+    def test_stderr_reader_stops_cleanly_on_os_error(self) -> None:
+        options = tests.helpers.make_plain_options(quiet=True)
+        pipe = unittest.mock.MagicMock()
+        pipe.readline.side_effect = OSError('closed')
+        ralphlib.iteration.process_stderr(options, make_context(), pipe)

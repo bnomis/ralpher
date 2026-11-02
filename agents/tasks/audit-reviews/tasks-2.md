@@ -186,7 +186,7 @@ every test file that imports a module this list changed.
 
 ## Task 6: Translate I/O errors into domain errors
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Source Reference:** Finding 6 (A1, A2, A3)
@@ -195,28 +195,28 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] In `exceptions.py`, add a base `RalpherError` and `GitError`, `LogFileError`, `SettingsError`, `TasksFileError` (with `StateFileError` from Task 2), each subclassing `RalpherError`; rename the existing classes to end in `Error` (`NoStateFilePathError`, `ValueNotADictError`, `InvalidVarFormatError`, `NoStateLockFilePathError`) and update every reference
-- [ ] `giter.py`: wrap the calls at lines 77, 117, 145, 150-155 and 197-199 (2026-11-02) in `GitError`; add `OSError` to the tuples at 76, 125, 186 and `OSError, UnicodeDecodeError` at 131
-- [ ] `state.py`: translate `OSError` from `save_state` and from `lock.acquire` (tuple at line 88) into `StateFileError`
-- [ ] `logger.py`: `mkdir` (line 16) raises `LogFileError`; replace `raise ValueError` (line 21) with `LogFileError`
-- [ ] `settings.py`: `load_settings_from_file` translates `OSError`, `UnicodeDecodeError` and `json.JSONDecodeError` into `SettingsError`, naming the path
-- [ ] `looper.py`: `os.chdir` and the prompt and tasks-file reads (lines 32, 43, 63) translate into `RalpherError` subclasses; convert the two `open()` calls to `pathlib.Path(...).read_text(encoding='utf-8')` (review-1 Finding 8)
-- [ ] `verifier.py`: replace `raise LookupError` (line 115) with `TasksFileError`, and update `READ_ERRORS` and its callers
-- [ ] `iteration.py`: translate the log-file opens (lines 211-220) into `LogFileError` and `Popen` (line 443) into `RalpherError`; in the reader threads, catch `OSError` from `readline` and the log writes, log it with `loguru.logger.exception`, and stop the thread cleanly
-- [ ] `printer.py:23` and `hooks.py:104` (`tzlocal`): translate into `LogFileError` and `RalpherError`
-- [ ] `bin/ralpher.py`: catch `RalpherError` around `loop`, print its message without a traceback and exit 1
-- [ ] Add a test per area to the matching `src/tests/test_<module>.py`, each forcing the failure and asserting the domain error
+- [x] In `exceptions.py`, add a base `RalpherError` and `GitError`, `LogFileError`, `SettingsError`, `TasksFileError` (with `StateFileError` from Task 2), each subclassing `RalpherError`; rename the existing classes to end in `Error` (`NoStateFilePathError`, `ValueNotADictError`, `InvalidVarFormatError`, `NoStateLockFilePathError`) and update every reference
+- [x] `giter.py`: wrap the calls at lines 77, 117, 145, 150-155 and 197-199 (2026-11-02) in `GitError`; add `OSError` to the tuples at 76, 125, 186 and `OSError, UnicodeDecodeError` at 131
+- [x] `state.py`: translate `OSError` from `save_state` and from `lock.acquire` (tuple at line 88) into `StateFileError`
+- [x] `logger.py`: `mkdir` (line 16) raises `LogFileError`; replace `raise ValueError` (line 21) with `LogFileError`
+- [x] `settings.py`: `load_settings_from_file` translates `OSError`, `UnicodeDecodeError` and `json.JSONDecodeError` into `SettingsError`, naming the path
+- [x] `looper.py`: `os.chdir` and the prompt and tasks-file reads (lines 32, 43, 63) translate into `RalpherError` subclasses; convert the two `open()` calls to `pathlib.Path(...).read_text(encoding='utf-8')` (review-1 Finding 8)
+- [x] `verifier.py`: replace `raise LookupError` (line 115) with `TasksFileError`, and update `READ_ERRORS` and its callers
+- [x] `iteration.py`: translate the log-file opens (lines 211-220) into `LogFileError` and `Popen` (line 443) into `RalpherError`; in the reader threads, catch `OSError` from `readline` and the log writes, log it with `loguru.logger.exception`, and stop the thread cleanly
+- [x] `printer.py:23` and `hooks.py:104` (`tzlocal`): translate into `LogFileError` and `RalpherError`
+- [x] `bin/ralpher.py`: catch `RalpherError` around `loop`, print its message without a traceback and exit 1
+- [x] Add a test per area to the matching `src/tests/test_<module>.py`, each forcing the failure and asserting the domain error
 
 **Acceptance Criteria:**
 
-- [ ] Every call in review-2's A1 list is inside an envelope that raises a `RalpherError` subclass
-- [ ] Every A2 tuple includes `OSError`
-- [ ] No `raise ValueError` or `raise LookupError` remains in `src/ralphlib`
+- [x] Every call in review-2's A1 list is inside an envelope that raises a `RalpherError` subclass
+- [x] Every A2 tuple includes `OSError`
+- [x] No `raise ValueError` or `raise LookupError` remains in `src/ralphlib`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_state.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_templater.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_state.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_looper.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_printer.py src/tests/test_hooks.py src/tests/test_templater.py` passes
 
 **Notes:**
 

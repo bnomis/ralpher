@@ -37,7 +37,7 @@ def test_var_without_equals_raises_an_error() -> None:
     options = ralphlib.options.RalpherOptions(vars=['noequals', 'valid=yes'])
     prompt = '{{ valid }}'
 
-    with pytest.raises(ralphlib.exceptions.InvalidVarFormat):
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError):
         ralphlib.templater.render(options, prompt, 1)
 
 
