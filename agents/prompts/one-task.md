@@ -14,6 +14,15 @@ Before doing anything, remember and follow these rules:
 - ONLY read/modify/commit the tasks file in the worktree
 {% endif %}
 
+## Environment variables
+
+Never print an environment variable's value, nor list the environment
+(`env`, `printenv`, `set`, `echo $NAME`), nor print an env file, even for a
+path. To test that a variable is set, use `[ -n "${NAME:-}" ]` and print only
+yes or no. To use a path a variable holds, pass the variable itself to the
+command (`"${NAME:?}/bin/tool"`); if the harness refuses that form, write the
+literal path you already know, rather than printing the variable to find it.
+
 ## Read the tasks file
 
 Read the tasks file {{ task_file_relative_path }}{% if worktree %} in the worktree{% endif %} and identify tasks.
