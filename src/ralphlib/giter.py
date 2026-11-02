@@ -39,10 +39,11 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     if repo is None:
         return ''
 
-    last_commit_summary = ''
-    with contextlib.suppress(BaseException):
-        last_commit_summary = str(repo.head.commit.summary)
-    return last_commit_summary
+    try:
+        return str(repo.head.commit.summary)
+    except git.GitCommandError, git.GitCommandNotFound, ValueError:
+        loguru.logger.opt(exception=True).warning('Cannot read the last commit')
+        return ''
 
 
 def confirm_git_state(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:

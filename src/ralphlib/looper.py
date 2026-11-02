@@ -139,7 +139,9 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
 
         try:
             complete, error = ralphlib.iteration.run(options, prompt=p, iteration=i)
-        except Exception:
+        except (
+            Exception
+        ):  # auditme: accept[logger-exception-graceful-degradation] review-3 Decision 1 (2026-11-02): the loop reports any iteration failure and ends the run
             loguru.logger.exception(f'Exception during iteration {i}')
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)

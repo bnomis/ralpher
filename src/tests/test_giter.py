@@ -423,3 +423,24 @@ class TestGetCurrentBranch:
         repo.index.add(list(README_FILES))
         repo.head.reference = repo.index.commit('initial')  # type: ignore[assignment]
         assert ralphlib.giter.get_current_branch(repo) is None
+
+
+class TestLastCommitSummary:
+    def test_returns_summary_of_last_commit(self, tmp_path: pathlib.Path) -> None:
+        repo = git.Repo.init(str(tmp_path))
+        (tmp_path / 'README.md').write_text('hello')
+        repo.index.add(list(README_FILES))
+        repo.index.commit('initial')
+        assert ralphlib.giter.last_commit_summary(tmp_path) == 'initial'
+
+    def test_returns_empty_string_without_commits(self, tmp_path: pathlib.Path) -> None:
+        git.Repo.init(str(tmp_path))
+        assert ralphlib.giter.last_commit_summary(tmp_path) == ''
+
+    def test_keyboard_interrupt_propagates(self, tmp_path: pathlib.Path) -> None:
+        git.Repo.init(str(tmp_path))
+        with (
+            unittest.mock.patch.object(git.Repo, 'head', new_callable=unittest.mock.PropertyMock, side_effect=KeyboardInterrupt),
+            pytest.raises(KeyboardInterrupt),
+        ):
+            ralphlib.giter.last_commit_summary(tmp_path)

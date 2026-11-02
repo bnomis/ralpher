@@ -127,7 +127,7 @@ files it names.
 
 ## Task 4: The broad handlers follow the coding standard
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 6; review-3 Decision 1
@@ -136,20 +136,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_giter.py` that `last_commit_summary` returns `''` in a repository with no commits, and that a `KeyboardInterrupt` raised while reading the commit propagates; confirm the second fails first
-- [ ] Replace `contextlib.suppress(BaseException)` in `giter.last_commit_summary` with a handler for the errors a repository without commits raises (`ValueError`) and the git errors (`git.GitCommandError`, `git.GitCommandNotFound`), logged at `warning`
-- [ ] Add a scoped accept marker on the `except Exception` in `looper.loop` naming review-3 Decision 1 (2026-11-02); change nothing else in that handler
+- [x] Add a test to `src/tests/test_giter.py` that `last_commit_summary` returns `''` in a repository with no commits, and that a `KeyboardInterrupt` raised while reading the commit propagates; confirm the second fails first
+- [x] Replace `contextlib.suppress(BaseException)` in `giter.last_commit_summary` with a handler for the errors a repository without commits raises (`ValueError`) and the git errors (`git.GitCommandError`, `git.GitCommandNotFound`), logged at `warning`
+- [x] Add a scoped accept marker on the `except Exception` in `looper.loop` naming review-3 Decision 1 (2026-11-02); change nothing else in that handler
 
 **Acceptance Criteria:**
 
-- [ ] `rg 'suppress\(BaseException\)' src` finds nothing
-- [ ] The `loop` handler carries a marker scoped to its rule, with the decision named in its reason
+- [x] `rg 'suppress\(BaseException\)' src` finds nothing
+- [x] The `loop` handler carries a marker scoped to its rule, with the decision named in its reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_hooks.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_looper.py src/tests/test_hooks.py` passes
 
 **Notes:**
 
