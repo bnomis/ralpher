@@ -4,27 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The `--vars` validation from audit review 2 has no tests
-
-Found on 2026-11-02, reviewing `TODO.md` against the queue log for
-`agents/tasks/audit-reviews/tasks-2.md` Task 5 ("Validate `--vars` before the
-loop starts"). The agent reported adding tests for a bad format, each reserved
-key and good vars in `src/tests/test_templater.py`, and looper tests for
-`noequals` and `iteration=3`. Its commit, `a72ca80`, changes no test file, and
-on 2026-11-02 nothing under `src/tests/` names `parse_vars`, a reserved key or
-the loop refusing bad `--vars`. The tests were most likely written in the
-queue's worktree and never staged. The task's subtask to confirm the looper
-test fails against the old code was ticked without being run.
-
-`templater.parse_vars` (`src/ralphlib/templater.py`) raises `InvalidVarFormat`
-for a value without `=` and for a key `render` sets itself; `looper.loop`
-(`src/ralphlib/looper.py`) calls it before the `start` hook.
-
-Fix direction: add the tests the task describes - bad format, each reserved
-key and good vars for `parse_vars`, and a `loop` test asserting no `start`
-hook, no iteration and a `True` (error) return on bad `--vars` - and confirm
-each fails against `a72ca80^`.
-
 ## The audit summary still lists the findings tasks-2 fixed as unresolved
 
 Found on 2026-11-02, after `agents/tasks/audit-reviews/tasks-2.md` shipped in

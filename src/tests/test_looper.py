@@ -115,6 +115,7 @@ def run_loop(
     no_verify_stop: bool = False,
     remove_tasks_file: bool = False,
     raises: bool = False,
+    vars: list[str] | None = None,
 ) -> LoopRun:
     """Run the loop with every iteration reporting a stop marker."""
     task_file = tmp_path / 'tasks.md'
@@ -145,10 +146,12 @@ def run_loop(
         state='state.json',
         logdir=str(tmp_path / 'logs'),
         cwd=str(tmp_path),
+        vars=list(vars or []),
     )
     options.settings = ralphlib.settings.default_settings()
     result = ralphlib.looper.loop(options)
-    state = json.loads((tmp_path / 'logs' / 'state.json').read_text())
+    state_path = tmp_path / 'logs' / 'state.json'
+    state = json.loads(state_path.read_text()) if state_path.exists() else {}
     return LoopRun(calls, capsys.readouterr().out, state, result, events)
 
 
@@ -202,6 +205,25 @@ def test_loop_exception_in_iteration_is_an_error(tmp_path: pathlib.Path, monkeyp
     assert 'Exit reason: exception during iteration 1' in result.out
     assert 'error' in result.events
     assert 'iteration_end' not in result.events
+
+
+@pytest.mark.parametrize('bad_var', ['noequals', 'iteration=3'], ids=['no_equals', 'reserved_key'])
+def test_loop_rejects_bad_vars_before_starting(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], bad_var: str
+) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_DONE, vars=[bad_var])
+    assert result.result is True
+    assert result.calls == []
+    assert result.events == []
+    assert result.state == {}
+    assert 'Error: Invalid var' in result.out
+
+
+def test_loop_accepts_good_vars(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_DONE, vars=['name=World'])
+    assert result.result is False
+    assert result.calls == [1]
+    assert result.events[0] == 'start'
 
 
 TASK_FILE = 'agents/tasks/auditme-adoption/tasks-1.md'

@@ -41,6 +41,35 @@ def test_var_without_equals_raises_an_error() -> None:
         ralphlib.templater.render(options, prompt, 1)
 
 
+def test_parse_vars_splits_good_vars() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['name=World', 'expr=a=b', 'empty='])
+    assert ralphlib.templater.parse_vars(options) == {'name': 'World', 'expr': 'a=b', 'empty': ''}
+
+
+def test_parse_vars_without_vars_is_empty() -> None:
+    options = ralphlib.options.RalpherOptions(vars=[])
+    assert ralphlib.templater.parse_vars(options) == {}
+
+
+def test_parse_vars_rejects_a_value_without_equals() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['valid=yes', 'noequals'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match="'noequals', expected key=value"):
+        ralphlib.templater.parse_vars(options)
+
+
+@pytest.mark.parametrize('key', ralphlib.templater.BUILTIN_VARS)
+def test_parse_vars_rejects_each_built_in_key(key: str) -> None:
+    options = ralphlib.options.RalpherOptions(vars=[f'{key}=override'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match=f"'{key}' is a built-in template variable"):
+        ralphlib.templater.parse_vars(options)
+
+
+def test_render_never_lets_a_var_replace_a_built_in() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['iteration=99'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError):
+        ralphlib.templater.render(options, '{{ iteration }}', 1)
+
+
 def test_var_with_multiple_equals_splits_on_first() -> None:
     options = ralphlib.options.RalpherOptions(vars=['key=val=ue'])
     prompt = '{{ key }}'
