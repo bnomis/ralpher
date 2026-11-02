@@ -136,6 +136,8 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
             s = f'\nException during iteration {i}\n'
             ralphlib.printer.prt(options, s, 0)
             ralphlib.printer.prt(options, s, i)
+            error = True
+            exit_reason = f'exception during iteration {i}'
             break
 
         loop_end = datetime.datetime.now()

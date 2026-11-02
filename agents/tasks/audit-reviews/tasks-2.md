@@ -20,7 +20,7 @@ every test file that imports a module this list changed.
 
 ## Task 1: An exception during an iteration ends the run as an error
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 1
@@ -29,23 +29,23 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] In `looper.loop`, on an exception from `ralphlib.iteration.run`, set `error = True` and set `exit_reason` to name the failure (for example `'exception during iteration {i}'`) before breaking, keeping `loguru.logger.exception`
-- [ ] Check that the `error` hook (`looper.py`, the `if error:` block near line 248) fires and the state file records the exit reason; the `iteration_end` hook stays skipped for an iteration that did not end
-- [ ] Add a row for this case to `docs/reference/exit-statuses.md` and a line to `docs/guide/stopping.md`
-- [ ] Add a test to `src/tests/test_looper.py` that makes `iteration.run` raise, and asserts that `loop` returns `True`, that the exit reason names the exception, and that the `error` hook event is fired
-- [ ] Confirm the new test fails against the current code before the fix
+- [x] In `looper.loop`, on an exception from `ralphlib.iteration.run`, set `error = True` and set `exit_reason` to name the failure (for example `'exception during iteration {i}'`) before breaking, keeping `loguru.logger.exception`
+- [x] Check that the `error` hook (`looper.py`, the `if error:` block near line 248) fires and the state file records the exit reason; the `iteration_end` hook stays skipped for an iteration that did not end
+- [x] Add a row for this case to `docs/reference/exit-statuses.md` and a line to `docs/guide/stopping.md`
+- [x] Add a test to `src/tests/test_looper.py` that makes `iteration.run` raise, and asserts that `loop` returns `True`, that the exit reason names the exception, and that the `error` hook event is fired
+- [x] Confirm the new test fails against the current code before the fix
 
 **Acceptance Criteria:**
 
-- [ ] `loop` returns `True` after an iteration raises
-- [ ] The printed and stored exit reason is not `completed all iterations`
-- [ ] The docs list the exit status for this case
+- [x] `loop` returns `True` after an iteration raises
+- [x] The printed and stored exit reason is not `completed all iterations`
+- [x] The docs list the exit status for this case
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_looper.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_looper.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

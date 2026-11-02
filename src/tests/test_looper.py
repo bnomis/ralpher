@@ -8,6 +8,7 @@ import hypothesis.strategies
 import loguru
 import pytest
 
+import ralphlib.hooks
 import ralphlib.iteration
 import ralphlib.looper
 import ralphlib.options
@@ -96,7 +97,9 @@ TASKS_DONE = '## Task 1: A\n**Status:** done\n'
 
 
 class LoopRun:
-    def __init__(self, calls: list[int], out: str, state: dict[str, typing.Any]) -> None:
+    def __init__(self, calls: list[int], out: str, state: dict[str, typing.Any], result: bool = False, events: list[str] | None = None) -> None:
+        self.result = result
+        self.events = list(events or [])
         self.calls = list(calls)
         self.out = out
         self.state = dict(state)
@@ -110,6 +113,7 @@ def run_loop(
     iterations: int = 3,
     no_verify_stop: bool = False,
     remove_tasks_file: bool = False,
+    raises: bool = False,
 ) -> LoopRun:
     """Run the loop with every iteration reporting a stop marker."""
     task_file = tmp_path / 'tasks.md'
@@ -118,11 +122,19 @@ def run_loop(
 
     def fake_run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> tuple[bool, bool]:
         calls.append(iteration)
+        if raises:
+            raise RuntimeError('boom')
         if remove_tasks_file:
             task_file.unlink()
         return True, False
 
+    events: list[str] = []
+
+    def fake_event(options: ralphlib.options.RalpherOptions, event_type: typing.Any, event_context: dict[str, typing.Any] | None = None) -> None:
+        events.append(event_type.name.lower())
+
     monkeypatch.setattr(ralphlib.iteration, 'run', fake_run)
+    monkeypatch.setattr(ralphlib.hooks, 'event', fake_event)
     options = ralphlib.options.RalpherOptions(
         prompts='p',
         task_file=str(task_file),
@@ -134,9 +146,9 @@ def run_loop(
         cwd=str(tmp_path),
     )
     options.settings = ralphlib.settings.default_settings()
-    ralphlib.looper.loop(options)
+    result = ralphlib.looper.loop(options)
     state = json.loads((tmp_path / 'logs' / 'state.json').read_text())
-    return LoopRun(calls, capsys.readouterr().out, state)
+    return LoopRun(calls, capsys.readouterr().out, state, result, events)
 
 
 def test_loop_rejects_stop_while_tasks_unfinished(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
@@ -179,6 +191,16 @@ def test_loop_stops_and_warns_when_tasks_file_unreadable(tmp_path: pathlib.Path,
         loguru.logger.remove(sink)
     assert result.calls == [1]
     assert any('Cannot verify stop signal' in m for m in messages)
+
+
+def test_loop_exception_in_iteration_is_an_error(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    result = run_loop(tmp_path, monkeypatch, capsys, TASKS_DONE, raises=True)
+    assert result.result is True
+    assert result.calls == [1]
+    assert result.state['exit_reason'] == 'exception during iteration 1'
+    assert 'Exit reason: exception during iteration 1' in result.out
+    assert 'error' in result.events
+    assert 'iteration_end' not in result.events
 
 
 TASK_FILE = 'agents/tasks/auditme-adoption/tasks-1.md'

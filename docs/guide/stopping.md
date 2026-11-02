@@ -36,8 +36,10 @@ An agent `result` message flagged `is_error` (out of usage, an API error)
 stops the agent and ends the run with exit reason `error`. The `error` hook
 runs, then `end`.
 
-An exception inside ralpher during an iteration is logged, and ends the loop
-after that iteration.
+An exception inside ralpher during an iteration is logged, and ends the run
+as an error with exit reason `exception during iteration <n>` and status 1.
+The `error` hook runs, then `end`; `iteration_end` does not run for that
+iteration.
 
 ## Ending without stopping
 
