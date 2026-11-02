@@ -1,10 +1,16 @@
+import pathlib
 import unittest.mock
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
+import ralphlib.exceptions
+import ralphlib.giter
 import ralphlib.hooks
 import ralphlib.options
 import ralphlib.types
+import ralphlib.verifier
 import tests.helpers
 
 
@@ -103,6 +109,37 @@ class TestMakeContext:
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == ''
 
+    @pytest.mark.parametrize(
+        ('name', 'expected'),
+        [
+            ('tasks-3', '3'),
+            ('tasks-0.md', '0'),
+            ('tasks-007.md', '007'),
+            ('a-b-12.tar.gz', ''),
+            ('tasks.md', ''),
+            ('3.md', ''),
+            ('tasks-.md', ''),
+        ],
+    )
+    def test_task_file_number_cases(self, name: str, expected: str) -> None:
+        options = tests.helpers.make_options_with_settings(iterations=1, task_file=f'tasks/{name}')
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == expected
+
+    @hypothesis.settings(max_examples=20, deadline=10000)
+    @hypothesis.given(
+        prefix=hypothesis.strategies.text(alphabet='abc-', min_size=1, max_size=8),
+        number=hypothesis.strategies.integers(min_value=0, max_value=10**6),
+        suffix=hypothesis.strategies.sampled_from(['', '.md']),
+    )
+    def test_task_file_number_is_digits_after_last_dash(self, prefix: str, number: int, suffix: str) -> None:
+        options = tests.helpers.make_options_with_settings(
+            iterations=1,
+            task_file=f'tasks/{prefix}-{number}{suffix}',
+        )
+        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        assert context['task_file_number'] == str(number)
+
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1)
         context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
@@ -184,16 +221,77 @@ class TestRunHook:
         assert mock_popen.call_args[0][0] == ['echo', "it's here"]
 
     @unittest.mock.patch('subprocess.Popen')
-    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
-        with unittest.mock.patch('loguru.logger.exception') as mock_log:
+    def test_warns_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
             ralphlib.hooks.run_hook("echo 'unclosed", {})
             mock_popen.assert_not_called()
-            mock_log.assert_called_once()
+            mock_opt.return_value.warning.assert_called_once()
+
+    @unittest.mock.patch('subprocess.Popen')
+    def test_warns_on_template_error(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
+            ralphlib.hooks.run_hook('echo {{ unclosed', {})
+            mock_popen.assert_not_called()
+            mock_opt.return_value.warning.assert_called_once()
 
     @unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
-    def test_logs_exception_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
-        with unittest.mock.patch('loguru.logger.exception') as mock_log:
+    def test_warns_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
             ralphlib.hooks.run_hook('nonexistent_cmd')
-            mock_log.assert_called_once()
-            log_msg = mock_log.call_args[0][0]
-            assert 'nonexistent_cmd' in log_msg
+            mock_opt.return_value.warning.assert_called_once()
+            assert 'nonexistent_cmd' in mock_opt.return_value.warning.call_args[0][0]
+
+    @unittest.mock.patch('subprocess.Popen', side_effect=RuntimeError('boom'))
+    def test_unexpected_error_propagates(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with pytest.raises(RuntimeError):
+            ralphlib.hooks.run_hook('echo hi')
+
+
+class TestMakeContextDomainErrors:
+    def test_time_zone_failure_raises_ralpher_error(self) -> None:
+        options = tests.helpers.make_options_with_settings()
+        with unittest.mock.patch('tzlocal.get_localzone', side_effect=LookupError('no zone')), pytest.raises(ralphlib.exceptions.RalpherError):
+            ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+
+
+class TestTaskFileChoice:
+    def test_unblock_prompt_uses_the_verifier_choice_without_worktree(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=False)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=pathlib.Path('/wt/tasks-1.md')) as wt:
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in task file tasks-1.md'
+        wt.assert_not_called()
+
+    def test_unblock_prompt_uses_the_worktree_copy_under_worktree(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=pathlib.Path('/wt/tasks-1.md')):
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file /wt/tasks-1.md'
+
+    def test_unblock_prompt_falls_back_when_the_worktree_is_missing(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=None):
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file tasks-1.md'
+
+    def test_duplicate_event_runs_no_git(self) -> None:
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo dup']}}, worktree=True, task_file='t.md')
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook'):
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file') as wt:
+                ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+        wt.assert_not_called()
+
+    def test_last_commit_summary_looked_up_only_when_named(self) -> None:
+        with unittest.mock.patch.object(ralphlib.giter, 'last_commit_summary', return_value='s') as summary:
+            options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo plain']}})
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            summary.assert_not_called()
+            ralphlib.hooks.processed_hooks.clear()
+            options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo {{ last_commit_summary }}']}})
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            summary.assert_called_once()
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(value=hypothesis.strategies.text())
+def test_render_hook_args_round_trips_any_value_as_one_argument(value: str) -> None:
+    args = ralphlib.hooks.render_hook_args('notify --message {{ value }} --end', {'value': value})
+    assert args == ['notify', '--message', value.replace(ralphlib.hooks.HOOK_VALUE_SENTINEL, ''), '--end']

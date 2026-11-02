@@ -1,5 +1,8 @@
+import pathlib
+
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.options
 import ralphlib.printer
 import ralphlib.settings
@@ -42,3 +45,11 @@ class TestTypeToStyle:
     ) -> None:
         options = tests.helpers.make_options()
         assert ralphlib.printer.type_to_style(options, message_type) == 'grey30'
+
+
+def test_prt_translates_progress_log_error(tmp_path: pathlib.Path) -> None:
+    blocker = tmp_path / 'file'
+    blocker.write_text('x')
+    options = tests.helpers.make_options(progress='progress.log', logdir=str(blocker), quiet=True)
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        ralphlib.printer.prt(options, 'hello', 1)

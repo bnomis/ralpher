@@ -12,7 +12,7 @@ import sys
 import typing
 
 
-def symlink_file(options, src: pathlib.Path, dst: pathlib.Path) -> None:
+def symlink_file(options: argparse.Namespace, src: pathlib.Path, dst: pathlib.Path) -> None:
     """link a file from source to target, renaming existing file if necessary"""
     if dst.exists() or dst.is_symlink():
         if dst.is_symlink():
@@ -33,7 +33,7 @@ def symlink_file(options, src: pathlib.Path, dst: pathlib.Path) -> None:
     dst.symlink_to(relative_parent / src.name)
 
 
-def symlink_dir(options, src: pathlib.Path, dst: pathlib.Path) -> None:
+def symlink_dir(options: argparse.Namespace, src: pathlib.Path, dst: pathlib.Path) -> None:
     """links files in a directory from src to dst"""
     print(f'Linking directory {src} to {dst}')
     dst.mkdir(parents=True, exist_ok=True)
@@ -58,7 +58,7 @@ def dest_claude_dir() -> pathlib.Path:
     return pathlib.Path.home() / '.claude'
 
 
-def find_dangling_symlinks(options, dir: pathlib.Path, max_depth: int = 2) -> None:
+def find_dangling_symlinks(options: argparse.Namespace, dir: pathlib.Path, max_depth: int = 2) -> None:
     root_depth = len(dir.parts)
     dangle = []
     for dirpath, dirnames, filenames in dir.walk(top_down=True):
@@ -79,7 +79,7 @@ def find_dangling_symlinks(options, dir: pathlib.Path, max_depth: int = 2) -> No
         print(f'rm {" ".join(str(p) for p in dangle)}')
 
 
-def install_claude(options) -> None:
+def install_claude(options: argparse.Namespace) -> None:
     """link files from source to target"""
     fdir = src_claude_dir()
     tdir = dest_claude_dir()
@@ -98,7 +98,7 @@ def install_claude(options) -> None:
     find_dangling_symlinks(options, tdir)
 
 
-def parse_args(argv) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog='install-claude',
         description='symlinks files into ~/.claude',
@@ -106,11 +106,11 @@ def parse_args(argv) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv) -> typing.NoReturn:
+def main(argv: list[str]) -> typing.NoReturn:
     options = parse_args(argv)
     logging.basicConfig(level=logging.DEBUG)
     options.logger = logging.getLogger('install-claude')
-    m = 0
+    m: int | str = 0
     try:
         install_claude(options)
     except Exception as e:

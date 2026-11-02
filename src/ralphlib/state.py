@@ -4,17 +4,16 @@ import typing
 
 import filelock
 import loguru
-import rich.console
 import tenacity
 
 import ralphlib.exceptions
 import ralphlib.logger
+import ralphlib.printer
 
 if typing.TYPE_CHECKING:
     import ralphlib.options
 
 STATE_LOCK_TIMEOUT = 10
-console_stderr = rich.console.Console(stderr=True, highlight=False)
 
 
 def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any] | None:
@@ -23,16 +22,16 @@ def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise ralphlib.exceptions.NoStateFilePath()
+        raise ralphlib.exceptions.NoStateFilePathError()
+
+    if not path.exists():
+        return {}
 
     try:
-        if path.exists():
-            with path.open('r') as fp:
-                return json.load(fp)
-    except Exception:
-        loguru.logger.exception('Exception in load_state')
-
-    return {}
+        with path.open('r') as fp:
+            return json.load(fp)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot read state file {path}') from e
 
 
 def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing.Any]) -> None:
@@ -41,10 +40,13 @@ def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing
 
     path = ralphlib.logger.state_file(options)
     if not path:
-        raise ralphlib.exceptions.NoStateFilePath()
+        raise ralphlib.exceptions.NoStateFilePathError()
 
-    with path.open('w') as fp:
-        json.dump(state, fp, indent=2, sort_keys=True)
+    try:
+        with path.open('w') as fp:
+            json.dump(state, fp, indent=2, sort_keys=True)
+    except OSError as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot write state file {path}') from e
 
 
 def add_to_state(
@@ -58,7 +60,7 @@ def add_to_state(
 
     lock_path = ralphlib.logger.state_lock_file(options)
     if not lock_path:
-        raise ralphlib.exceptions.NoStateLockFilePath()
+        raise ralphlib.exceptions.NoStateLockFilePathError()
 
     try:
         add_to_state_work(options, lock_path, value, key1, key2)
@@ -66,7 +68,7 @@ def add_to_state(
         # auditme: accept[except-interpolation] the message is also printed to stderr, which shows no traceback
         s = f'Exception in add_to_state: {e}'
         loguru.logger.exception(s)
-        console_stderr.print(s)
+        ralphlib.printer.console_stderr.print(s)
         raise
 
 
@@ -86,26 +88,30 @@ def add_to_state_work(
     lock = filelock.FileLock(lock_path)
 
     try:
-        with lock.acquire(timeout=STATE_LOCK_TIMEOUT):
-            state = load_state(options)
-            if state is None:
-                return
-
-            if key1 is not None:
-                current_value = state.get(key1, {})
-                if not isinstance(current_value, dict):
-                    raise ralphlib.exceptions.ValueNotADict(f'{key1}')
-                if key2 is not None:
-                    current_value2 = current_value.get(key2, {})
-                    if not isinstance(current_value2, dict):
-                        raise ralphlib.exceptions.ValueNotADict(f'{key1}/{key2}')
-                    current_value2.update(value)
-                    current_value[key2] = current_value2
-                else:
-                    current_value.update(value)
-                state[key1] = current_value
-            else:
-                state.update(value)
-            save_state(options, state)
+        acquired = lock.acquire(timeout=STATE_LOCK_TIMEOUT)
     except filelock.Timeout:
-        loguru.logger.exception(f'Could not acquire state lock after {STATE_LOCK_TIMEOUT} seconds')
+        raise
+    except OSError as e:
+        raise ralphlib.exceptions.StateFileError(f'Cannot create state lock file {lock_path}') from e
+
+    with acquired:
+        state = load_state(options)
+        if state is None:
+            return
+
+        if key1 is not None:
+            current_value = state.get(key1, {})
+            if not isinstance(current_value, dict):
+                raise ralphlib.exceptions.ValueNotADictError(f'{key1}')
+            if key2 is not None:
+                current_value2 = current_value.get(key2, {})
+                if not isinstance(current_value2, dict):
+                    raise ralphlib.exceptions.ValueNotADictError(f'{key1}/{key2}')
+                current_value2.update(value)
+                current_value[key2] = current_value2
+            else:
+                current_value.update(value)
+            state[key1] = current_value
+        else:
+            state.update(value)
+        save_state(options, state)

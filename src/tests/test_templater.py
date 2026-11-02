@@ -37,8 +37,37 @@ def test_var_without_equals_raises_an_error() -> None:
     options = ralphlib.options.RalpherOptions(vars=['noequals', 'valid=yes'])
     prompt = '{{ valid }}'
 
-    with pytest.raises(ralphlib.exceptions.InvalidVarFormat):
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError):
         ralphlib.templater.render(options, prompt, 1)
+
+
+def test_parse_vars_splits_good_vars() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['name=World', 'expr=a=b', 'empty='])
+    assert ralphlib.templater.parse_vars(options) == {'name': 'World', 'expr': 'a=b', 'empty': ''}
+
+
+def test_parse_vars_without_vars_is_empty() -> None:
+    options = ralphlib.options.RalpherOptions(vars=[])
+    assert ralphlib.templater.parse_vars(options) == {}
+
+
+def test_parse_vars_rejects_a_value_without_equals() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['valid=yes', 'noequals'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match="'noequals', expected key=value"):
+        ralphlib.templater.parse_vars(options)
+
+
+@pytest.mark.parametrize('key', ralphlib.templater.BUILTIN_VARS)
+def test_parse_vars_rejects_each_built_in_key(key: str) -> None:
+    options = ralphlib.options.RalpherOptions(vars=[f'{key}=override'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match=f"'{key}' is a built-in template variable"):
+        ralphlib.templater.parse_vars(options)
+
+
+def test_render_never_lets_a_var_replace_a_built_in() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['iteration=99'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError):
+        ralphlib.templater.render(options, '{{ iteration }}', 1)
 
 
 def test_var_with_multiple_equals_splits_on_first() -> None:
@@ -99,3 +128,19 @@ def test_task_file_slug_with_multipart_path_uses_parent_stem() -> None:
 def test_task_file_slug_with_single_part_path_uses_stem_only() -> None:
     result = ralphlib.templater.task_file_slug('my_task.md')
     assert result == 'my-task'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    parent=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+    stem=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+)
+def test_task_file_slug_joins_parent_and_stem(parent: str, stem: str) -> None:
+    assert ralphlib.templater.task_file_slug(f'x/{parent}/{stem}.md') == f'{parent}-{stem}'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(path=hypothesis.strategies.text(alphabet='abcXY_ -./', min_size=1, max_size=30))
+def test_task_file_slug_is_a_safe_name(path: str) -> None:
+    slug = ralphlib.templater.task_file_slug(path)
+    assert all(c.islower() or c.isdigit() or c == '-' for c in slug)

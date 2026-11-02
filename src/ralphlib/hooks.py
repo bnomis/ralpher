@@ -6,10 +6,12 @@ import subprocess
 import time
 import typing
 
+import jinja2.exceptions
 import jinja2.sandbox
 import loguru
 import tzlocal
 
+import ralphlib.exceptions
 import ralphlib.giter
 import ralphlib.signals
 import ralphlib.types
@@ -21,6 +23,7 @@ if typing.TYPE_CHECKING:
     import ralphlib.options
 
 HOOK_VALUE_SENTINEL = '\x00'
+TASK_FILE_NUMBER_RE = re.compile(r'-([0-9]+)$')
 HOOK_VALUE_RE = re.compile(f'{HOOK_VALUE_SENTINEL}(\\d+){HOOK_VALUE_SENTINEL}')
 
 # auditme: accept[mutable-module-level-exported] process-lifetime cache, mutated at run time; tests reset it
@@ -41,15 +44,6 @@ def event(
     # don't process the same hook twice
     ev_str = event_type_string + str(event_context)
     ev_str_hash = str(hash(ev_str))
-    tf = ralphlib.verifier.worktree_task_file(options)
-
-    # unblock prompt
-    if not tf:
-        tf = options.task_file
-    wt = ''
-    if options.worktree:
-        wt = ' worktree'
-    prompt = f'unblock task {task_id} in{wt} task file {tf}'
 
     if ev_str_hash in processed_hooks:
         if event_type == ralphlib.types.RalpherEventType.LLM_TASK_PROGRESS:
@@ -59,7 +53,7 @@ def event(
                     ralphlib.signals.set_should_exit(
                         True,
                         reason=f'Loop detected for task {task_id} with status {task_status}',
-                        prompt=prompt,
+                        prompt=unblock_prompt(options, task_id),
                     )
                     return
 
@@ -76,7 +70,7 @@ def event(
         hook_templates = options.settings.get('hook_templates', True)
         context = {}
         if hook_templates:
-            context = make_context(options, event_type, event_context)
+            context = make_context(options, event_type, event_context, hooks[event_type_string])
 
         # run each hook command with the prepared context
         for cmd in hooks[event_type_string]:
@@ -87,8 +81,17 @@ def event(
         ralphlib.signals.set_should_exit(
             True,
             reason=f'Operator input required for task {task_id}',
-            prompt=prompt,
+            prompt=unblock_prompt(options, task_id),
         )
+
+
+def unblock_prompt(options: ralphlib.options.RalpherOptions, task_id: str | None) -> str:
+    try:
+        tf = ralphlib.verifier.agent_task_file(options)
+    except ralphlib.verifier.READ_ERRORS:
+        tf = options.task_file
+    wt = ' worktree' if options.worktree else ''
+    return f'unblock task {task_id} in{wt} task file {tf}'
 
 
 def ralpher_root() -> pathlib.Path:
@@ -99,9 +102,18 @@ def make_context(
     options: ralphlib.options.RalpherOptions,
     event_type: ralphlib.types.RalpherEventType,
     event_context: dict[str, typing.Any],
+    commands: list[str] | None = None,
 ) -> dict[str, typing.Any]:
+    """Build the template context. Given `commands`, `last_commit_summary` is looked up only if a command or the icon/sound setting names it.
+
+    Raises:
+        RalpherError: the local time zone cannot be determined.
+    """
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    local_tz = tzlocal.get_localzone()
+    try:
+        local_tz = tzlocal.get_localzone()
+    except (OSError, LookupError, ValueError) as e:
+        raise ralphlib.exceptions.RalpherError('Cannot determine the local time zone') from e
     now_local = datetime.datetime.now(local_tz)
     cwd = task_file_number_str = ''
     cwd_path = task_file_path = task_file_relative_path = None
@@ -114,41 +126,30 @@ def make_context(
         if cwd_path and task_file_path.is_relative_to(cwd_path):
             task_file_relative_path = task_file_path.relative_to(cwd_path)
 
-        tail = task_file_path.name
-        # try to extract a number from the end of the task file name
-        # e.g. "task-1.md" -> "1"
-        if tail:
-            parts = tail.split('.')
-            if len(parts) > 1:
-                name_parts = parts[0].split('-')
-                if len(name_parts) > 1:
-                    try:
-                        task_file_number = int(name_parts[-1])
-                    except ValueError:
-                        task_file_number = 0
-                    if task_file_number:
-                        task_file_number_str = str(task_file_number)
+        number_match = TASK_FILE_NUMBER_RE.search(task_file_path.stem)
+        if number_match:
+            task_file_number_str = number_match.group(1)
 
     context: dict[str, str] = {
         'current_iteration': str(options.current_iteration),
+        'cwd': cwd,
         'cwd_basename': cwd_path.name if cwd_path else '',
         'cwd_dirname': str(cwd_path.parent) if cwd_path else '',
-        'cwd': cwd,
         'datetime_local': now_local.isoformat(),
         'datetime_utc': now_utc.isoformat().replace('+00:00', 'Z'),
         'event_type': ralphlib.types.ralpher_event_type_to_str[event_type],
         'iteration_count': str(options.iteration_count),
         'iterations': str(options.iterations),
-        'last_commit_summary': ralphlib.giter.last_commit_summary(),
+        'last_commit_summary': last_commit_summary(options, commands),
         'ralpher_root': str(ralpher_root()),
+        'task_file': str(task_file_path) if task_file_path else '',
         'task_file_basename': task_file_path.name if task_file_path else '',
         'task_file_dir_basename': task_file_path.parent.name if task_file_path else '',
         'task_file_dirname': str(task_file_path.parent) if task_file_path else '',
         'task_file_number': task_file_number_str,
+        'task_file_relative_path': str(task_file_relative_path) if task_file_relative_path else '',
         'task_file_stem': task_file_path.stem if task_file_path else '',
         'task_file_suffix': task_file_path.suffix if task_file_path else '',
-        'task_file': str(task_file_path) if task_file_path else '',
-        'task_file_relative_path': str(task_file_relative_path) if task_file_relative_path else '',
         'time_epoch': str(int(time.time())),
     }
 
@@ -175,6 +176,14 @@ def make_context(
 
     context.update(event_context)
     return context
+
+
+def last_commit_summary(options: ralphlib.options.RalpherOptions, commands: list[str] | None) -> str:
+    if commands is not None:
+        texts = [*commands, str(options.settings.get('hook_icon', '')), str(options.settings.get('hook_sound', ''))]
+        if not any('last_commit_summary' in text for text in texts):
+            return ''
+    return ralphlib.giter.last_commit_summary()
 
 
 def hook_environment(finalize: collections.abc.Callable[[typing.Any], str] | None = None) -> jinja2.sandbox.SandboxedEnvironment:
@@ -211,6 +220,7 @@ def render_hook_args(cmd: str, context: dict[str, typing.Any]) -> list[str]:
 
 
 def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
+    """Start a hook detached. stdout and stderr both go to `DEVNULL` on purpose: nothing reads a hook's output."""
     try:
         args = shlex.split(cmd) if context is None else render_hook_args(cmd, context)
         subprocess.Popen(  # noqa: S603
@@ -219,5 +229,5 @@ def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except Exception:
-        loguru.logger.exception(f'Exception running hook: "{cmd}"')
+    except ValueError, OSError, jinja2.exceptions.TemplateError:
+        loguru.logger.opt(exception=True).warning(f'Cannot run hook: "{cmd}"')

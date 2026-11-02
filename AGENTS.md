@@ -8,7 +8,12 @@ Run an agent prompt a specified maximum number of times
 
 Show the agent progress in the terminal - parsing streamed json output
 
-Stop when the agent indicates via a completion message
+Stop when the agent indicates via a completion message, and check that claim
+against the tasks file (a verified stop)
+
+Run task queues in worktrees
+
+Fire hooks at the start and end of a run and of each iteration
 
 Record logs
 
@@ -34,28 +39,40 @@ src/
 │   └── verifier.py
 └── tests/                 # Tests mirror source structure
     ├── __init__.py
+    ├── conftest.py
+    ├── fixtures/          # Fake agent used by the tests
     ├── helpers.py
     ├── test_giter.py
     ├── test_hooks.py
     ├── test_iteration.py
     ├── test_logger.py
     ├── test_looper.py
+    ├── test_options.py
     ├── test_printer.py
     ├── test_process_termination.py
     ├── test_settings.py
+    ├── test_shlex.py
     ├── test_signals.py
     ├── test_state.py
     ├── test_templater.py
     └── test_verifier.py
 bin/                       # Entry point scripts
 ├── activate.sh
+├── install-claude.py      # Symlinks the Claude commands into place
 ├── ralpher.py
 ├── ralpher.sh
 ├── ralpherun.sh
+├── rcl.sh
 └── rrq.sh
+agents/                    # Specs, tasks, audit reviews, prompts and test plans
+claude/                    # Claude commands (rrq.md)
 docs/                      # User documentation (MkDocs site)
+img/                       # Images
 mkdocs.yml                 # Site configuration
-logs/                      # Application log output
+ralpher-logs/              # Queue run logs written by bin/rrq.sh (ignored by version control)
+TODO.md                    # Open work
+DONE.md                    # Finished work
+NOTES.md                   # Dated project notes
 ```
 
 ## User documentation
@@ -70,14 +87,22 @@ Check the site with `uv run --group docs mkdocs build --strict`.
 
 ralpher is developed using the following tools and libraries:
 
-- Main programming language: Python version 3.14 <https://docs.python.org/release/3.14.2/>
+- Main programming language: Python 3.14.5 or later <https://docs.python.org/3.14/>
 - Package and virtual environment management: uv <https://docs.astral.sh/uv/>
 - Logging: `loguru` <https://loguru.readthedocs.io/en/stable/overview.html>
 - Command line argument processing: `cappa` <https://cappa.readthedocs.io/en/latest/index.html>
 - Coding standards, quality and lint: ruff <https://docs.astral.sh/ruff/>
-- Containerisation: Docker <https://docs.docker.com/>
-- Testing: `pytest` <https://docs.pytest.org/en/stable/>
+- Repository access: `gitpython` <https://gitpython.readthedocs.io/>
+- Templates: `jinja2` <https://jinja.palletsprojects.com/>
+- Terminal output: `rich` <https://rich.readthedocs.io/>
+- JSON: `orjson` <https://github.com/ijl/orjson>
+- Retries: `tenacity` <https://tenacity.readthedocs.io/>
+- File locks: `filelock` <https://py-filelock.readthedocs.io/>
+- Time zones: `tzlocal` <https://github.com/regebro/tzlocal>
+- Testing: `pytest` <https://docs.pytest.org/en/stable/> with the `pytest-icdiff`, `pytest-instafail` and `pytest-randomly` plugins
 - Property based testing: hypothesis <https://hypothesis.works/>
+- Documentation site: `mkdocs` and `mkdocs-material` <https://www.mkdocs.org/>
+- Commit and push hooks: `pre-commit` <https://pre-commit.com/>
 - Environment variables: `direnv` <https://direnv.net/> read from the `.envrc` file
 
 ### Dependency management

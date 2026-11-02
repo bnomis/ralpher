@@ -42,8 +42,10 @@ ralpher.sh --prompt PROMPT.md --vars area=parser --vars max_files=5
 ```
 
 Each `--vars KEY=VALUE` adds a variable; split at the first `=`, so values can
-contain `=`. A `--vars` value replaces a built-in variable of the same name.
-A value with no `=` stops the run with `Invalid var format`.
+contain `=`. A value with no `=`, or a key that names a built-in variable
+(`iteration`, `iterations`, `task_file`, `task_file_relative_path`, `worktree`,
+`worktree_name`), stops the run before the `start` hook with an error and exit
+status 1.
 
 ## Writing a prompt for a loop
 

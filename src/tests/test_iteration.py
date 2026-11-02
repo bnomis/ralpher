@@ -1,15 +1,22 @@
+import collections.abc
 import io
 import pathlib
+import shlex
 import signal
 import subprocess
 import sys
 import unittest.mock
 
+import hypothesis
+import hypothesis.strategies
+import loguru
 import orjson
 import pytest
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.iteration
+import ralphlib.logger
 import ralphlib.options
 import ralphlib.signals
 import ralphlib.types
@@ -111,26 +118,46 @@ def test_process_line_invalid_json_returns_error() -> None:
     assert message == line
 
 
-def test_process_line_exception_returns_error() -> None:
+@pytest.mark.parametrize('error', [KeyError('k'), TypeError('t'), AttributeError('a')])
+def test_process_line_payload_shape_error_returns_error(error: Exception) -> None:
     options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    payload = {'type': 'assistant'}
-    line = orjson.dumps(payload).decode()
+    line = orjson.dumps({'type': 'assistant'}).decode()
 
-    with unittest.mock.patch.object(
-        ralphlib.iteration,
-        'process_assistant',
-        side_effect=RuntimeError('boom'),
-    ):
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_assistant', side_effect=error):
         message_type, message = ralphlib.iteration.process_line(options, context, line)
         assert message_type == ralphlib.types.MessageType.ERROR
         assert message == line
 
 
-def test_process_result_success_with_is_error_sets_error_flag() -> None:
+def test_process_line_unexpected_exception_propagates() -> None:
     options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    payload = {'type': 'result', 'subtype': 'success', 'is_error': True, 'result': 'something failed'}
+    line = orjson.dumps({'type': 'assistant'}).decode()
+
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_assistant', side_effect=RuntimeError('boom')), pytest.raises(RuntimeError):
+        ralphlib.iteration.process_line(options, context, line)
+
+
+def test_flush_and_close_fd_carries_on_after_os_error() -> None:
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = OSError('disk')
+    ralphlib.iteration.flush_and_close_fd(fd)
+    fd.flush.assert_called_once()
+
+
+def test_flush_and_close_fd_unexpected_error_propagates() -> None:
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = RuntimeError('boom')
+    with pytest.raises(RuntimeError):
+        ralphlib.iteration.flush_and_close_fd(fd)
+
+
+@pytest.mark.parametrize('subtype', ['success', 'error_max_turns', 'error_during_execution'])
+def test_process_result_with_is_error_sets_error_flag(subtype: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': subtype, 'is_error': True, 'result': 'something failed'}
     line = orjson.dumps(payload).decode()
 
     message_type, message = ralphlib.iteration.process_result(options, context, payload, line)
@@ -138,6 +165,18 @@ def test_process_result_success_with_is_error_sets_error_flag() -> None:
     assert message_type == ralphlib.types.MessageType.ERROR
     assert message == 'something failed'
     assert ralphlib.iteration.get_error(context) is True
+
+
+def test_process_result_success_without_is_error_leaves_error_flag_clear() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    payload = {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': 'fine'}
+    line = orjson.dumps(payload).decode()
+
+    message_type, _ = ralphlib.iteration.process_result(options, context, payload, line)
+
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert ralphlib.iteration.get_error(context) is False
 
 
 def test_process_result_with_stop_marker_sets_complete() -> None:
@@ -348,6 +387,26 @@ def test_process_assistant_tool_run_in_background_unknown_tool_logs_warning() ->
         assert 'not in known background tools list' in warning_msg
 
     assert 'tool_xyz' not in context.background_tools
+
+
+def test_process_assistant_warnings_omit_the_raw_payload() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    marker = 'sk-marker-value'
+    payload = {
+        'type': 'assistant',
+        'extra': marker,
+        'message': {'content': [{'type': 'tool_use', 'name': 'UnknownTool', 'input': {}}]},
+    }
+    line = orjson.dumps(payload).decode()
+    warnings: list[str] = []
+    sink_id = loguru.logger.add(warnings.append, level='WARNING')
+    try:
+        ralphlib.iteration.process_assistant(options, context, payload, line)
+    finally:
+        loguru.logger.remove(sink_id)
+    assert warnings
+    assert not any(marker in w for w in warnings)
 
 
 def test_process_assistant_task_output_resolves_background_tool() -> None:
@@ -1227,3 +1286,131 @@ def test_process_fires_agent_process_end_with_exit_code(monkeypatch: pytest.Monk
     assert names == [ralphlib.types.RalpherEventType.AGENT_PROCESS_START, ralphlib.types.RalpherEventType.AGENT_PROCESS_END]
     start, end = (extra for _, extra in events)
     assert end == {'agent_process_id': start['agent_process_id'], 'agent_exit_code': 3}
+
+
+class TestDomainErrors:
+    def test_make_context_translates_log_open_error(self, tmp_path: pathlib.Path) -> None:
+        blocker = tmp_path / 'file'
+        blocker.write_text('x')
+        options = tests.helpers.make_options(stdout='out.log', logdir=str(blocker), quiet=True)
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.iteration.make_context(options, 'prompt', 1)
+
+    def test_process_translates_popen_error(self) -> None:
+        options = tests.helpers.make_plain_options()
+        context = ralphlib.iteration.IterationContext(cmd=['no-such-agent'], iteration=1, prompt='p')
+        popen = unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('missing'))
+        with popen, pytest.raises(ralphlib.exceptions.RalpherError, match='no-such-agent'):
+            ralphlib.iteration.process(options, context)
+
+    def test_stdout_reader_stops_cleanly_on_os_error(self) -> None:
+        options = tests.helpers.make_plain_options(quiet=True)
+        pipe = unittest.mock.MagicMock()
+        pipe.readline.side_effect = OSError('closed')
+        ralphlib.iteration.process_stdout(options, make_context(), pipe)
+
+    def test_stderr_reader_stops_cleanly_on_os_error(self) -> None:
+        options = tests.helpers.make_plain_options(quiet=True)
+        pipe = unittest.mock.MagicMock()
+        pipe.readline.side_effect = OSError('closed')
+        ralphlib.iteration.process_stderr(options, make_context(), pipe)
+
+
+FAKE_AGENT = pathlib.Path(__file__).parent / 'fixtures' / 'fake_agent.py'
+
+
+@pytest.fixture
+def e2e_options(tmp_path: pathlib.Path) -> collections.abc.Iterator[ralphlib.options.RalpherOptions]:
+    ralphlib.logger.log_file_cache.clear()
+    options = tests.helpers.make_options(
+        agent=sys.executable,
+        args=shlex.quote(str(FAKE_AGENT)),
+        iterations=1,
+        logdir=str(tmp_path),
+        stdout='stdout.log',
+        stderr='stderr.log',
+        progress='progress.log',
+        errors='errors.log',
+        state='state.json',
+        quiet=True,
+    )
+    options.stops = ['<promise>COMPLETE</promise>']
+    yield options
+    ralphlib.logger.log_file_cache.clear()
+
+
+def read_log(tmp_path: pathlib.Path, name: str) -> str:
+    return (tmp_path / name).read_text(encoding='utf-8')
+
+
+class TestRunEndToEnd:
+    def test_normal_session(self, e2e_options: ralphlib.options.RalpherOptions, tmp_path: pathlib.Path) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'normal', 1) == (False, False)
+
+        stdout = read_log(tmp_path, 'stdout-1.log')
+        assert 'hello from the agent' in stdout
+        assert stdout.count('\n') == 5
+        assert read_log(tmp_path, 'stderr-1.log') == 'agent warning\n'
+        progress = read_log(tmp_path, 'progress-1.log')
+        assert 'Tools used:\n- Bash\n- Mystery' in progress
+        assert 'Unknown tools used:\n- Mystery' in progress
+        assert read_log(tmp_path, 'errors-1.log') == ''
+        state = orjson.loads(read_log(tmp_path, 'state.json'))
+        assert state['iterations']['1']['tools_used'] == ['Bash', 'Mystery']
+
+    def test_stop_marker_completes(self, e2e_options: ralphlib.options.RalpherOptions) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'stop', 1) == (True, False)
+
+    def test_error_result_is_an_error(self, e2e_options: ralphlib.options.RalpherOptions, tmp_path: pathlib.Path) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'error', 1) == (False, True)
+        assert 'agent failed' in read_log(tmp_path, 'progress-1.log')
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    tid=hypothesis.strategies.integers(min_value=0, max_value=10**6),
+    title=hypothesis.strategies.from_regex(r'[A-Za-z][A-Za-z0-9 ]{0,20}', fullmatch=True),
+    index=hypothesis.strategies.integers(min_value=1, max_value=999),
+    count=hypothesis.strategies.integers(min_value=1, max_value=999),
+    status=hypothesis.strategies.sampled_from(['blocked', 'done', 'operator']),
+)
+def test_process_task_progress_parses_any_well_formed_block(tid: int, title: str, index: int, count: int, status: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True, task_file='agents/tasks/probe/tasks-1.md')
+    block = f'<task>\n<id>{tid}</id>\n<title>{title}</title>\n<index>{index}</index>\n<count>{count}</count>\n<status>{status}</status>\n</task>'
+    message_type, message = ralphlib.iteration.process_task_progress(options, make_context(), {}, block)
+    assert message_type == ralphlib.types.MessageType.PROGRESS
+    assert message == f'\ntask {tid}: {title} {index}/{count} {status}\n'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=hypothesis.strategies.text(alphabet='abc <>/\n', max_size=40))
+def test_process_task_progress_leaves_text_without_a_block_alone(text: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    message_type, message = ralphlib.iteration.process_task_progress(options, make_context(), {}, text)
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == text
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    before=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='abc ', max_size=10), max_size=3),
+    after=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='abc ', max_size=10), max_size=3),
+    pad=hypothesis.strategies.text(alphabet=' \t', max_size=3),
+)
+def test_is_stop_finds_a_stop_line_among_other_lines(before: list[str], after: list[str], pad: str) -> None:
+    options = tests.helpers.make_plain_options()
+    text = '\n'.join([*before, f'{pad}{options.stops[0]}{pad}', *after])
+    assert ralphlib.iteration.is_stop(options, text)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=hypothesis.strategies.text(alphabet='abc \n', max_size=40))
+def test_is_stop_is_false_when_no_line_is_a_stop(text: str) -> None:
+    assert not ralphlib.iteration.is_stop(tests.helpers.make_plain_options(), text)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(s=hypothesis.strategies.text(min_size=1), indent=hypothesis.strategies.text(alphabet=' >', max_size=4))
+def test_indent_lines_prefixes_every_line(s: str, indent: str) -> None:
+    result = ralphlib.iteration.indent_lines(s, indent)
+    assert result.split('\n') == [f'{indent}{line}' for line in s.splitlines()] or not s.splitlines()

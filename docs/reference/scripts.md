@@ -1,7 +1,8 @@
 # Wrapper scripts
 
-All live in ralpher's `bin/`. Each activates ralpher's `.venv` first. The
-queue scripts need `RALPHER_PATH` set to ralpher's checkout.
+All live in ralpher's `bin/`. Each shell wrapper activates ralpher's `.venv` first (`install-claude.py`
+is run with `python3` and does not). `ralpherun.sh` and `rrq.sh` need
+`RALPHER_PATH` set to ralpher's checkout.
 
 ## `ralpher.sh`
 
@@ -28,6 +29,9 @@ Runs a task queue. From your project's root:
 | `--worktree` | on |
 | `--logdir` | `ralpher-logs/SPEC/tasks-INDEX` |
 | `--stdout`, `--stderr`, `--progress`, `--errors`, `--state` | `stdout.jsonl`, `stderr.jsonl`, `progress.log`, `errors.log`, `state.json` |
+
+`SPEC` and `INDEX` must not contain `/` or `..`; `rrq.sh` and `rcl.sh` print
+a usage message and exit otherwise.
 
 Add `ralpher-logs/` to your project's `.gitignore`.
 

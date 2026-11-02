@@ -229,3 +229,26 @@ Note 2026-11-01: since the `--worktree-base-ref` fix, `AGENT_PROCESS_START` is
 sent at `src/ralphlib/iteration.py:450`.
 
 Done: 2026-11-01 - `process` in `src/ralphlib/iteration.py` fires `agent_process_end` after the agent exits, with `agent_process_id` and `agent_exit_code`; `test_process_fires_agent_process_end_with_exit_code` in `src/tests/test_iteration.py` covers it; `docs/guide/hooks.md` and `docs/reference/variables.md` list the event.
+
+## The `--vars` validation from audit review 2 has no tests
+
+Found on 2026-11-02, reviewing `TODO.md` against the queue log for
+`agents/tasks/audit-reviews/tasks-2.md` Task 5 ("Validate `--vars` before the
+loop starts"). The agent reported adding tests for a bad format, each reserved
+key and good vars in `src/tests/test_templater.py`, and looper tests for
+`noequals` and `iteration=3`. Its commit, `a72ca80`, changes no test file, and
+on 2026-11-02 nothing under `src/tests/` names `parse_vars`, a reserved key or
+the loop refusing bad `--vars`. The tests were most likely written in the
+queue's worktree and never staged. The task's subtask to confirm the looper
+test fails against the old code was ticked without being run.
+
+`templater.parse_vars` (`src/ralphlib/templater.py`) raises `InvalidVarFormat`
+for a value without `=` and for a key `render` sets itself; `looper.loop`
+(`src/ralphlib/looper.py`) calls it before the `start` hook.
+
+Fix direction: add the tests the task describes - bad format, each reserved
+key and good vars for `parse_vars`, and a `loop` test asserting no `start`
+hook, no iteration and a `True` (error) return on bad `--vars` - and confirm
+each fails against `a72ca80^`.
+
+Done: 2026-11-02 - tests for `parse_vars` (each built-in key, a value without `=`, good vars) in `src/tests/test_templater.py` and for `loop` refusing bad `--vars` before the `start` hook in `src/tests/test_looper.py`; each targeted test fails with the reserved-key check and the early `parse_vars` call removed.

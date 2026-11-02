@@ -61,6 +61,19 @@ when ralpher passes it, otherwise `worktree.baseRef` from Claude Code's
 settings files (user, project, local and managed). A `--settings` of your
 own in `--args` is not read.
 
+## Precedence between `--args` and ralpher's options
+
+A flag in `--args` wins over the ralpher option that would add the same flag:
+
+| `--args` holds | Wins over | Effect |
+|----------------|-----------|--------|
+| `--worktree` or `-w` | `--worktree` | ralpher adds no worktree name; the agent uses yours |
+| `--settings` | `--worktree-base-ref` | ralpher passes no `baseRef` setting |
+
+ralpher logs a warning at start, naming each value that wins. The tasks file
+ralpher reads for the stop check and for hook prompts is the worktree copy
+only under `--worktree`.
+
 ## After the queue
 
 When a run ends complete, with no error or termination, and used

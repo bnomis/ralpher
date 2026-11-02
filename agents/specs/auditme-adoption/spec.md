@@ -58,8 +58,12 @@ ralpher_event_type_to_str: types.MappingProxyType[RalpherEventType, str]
 
 
 # src/ralphlib/state.py
-def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any] | None: ...
-def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing.Any]) -> None: ...
+def load_state(options: ralphlib.options.RalpherOptions) -> dict[str, typing.Any] | None:
+    """Return the saved state, {} if the file does not exist, None if state is off."""
+
+
+def save_state(options: ralphlib.options.RalpherOptions, state: dict[str, typing.Any]) -> None:
+    """Write the state as JSON; do nothing if state is off."""
 
 
 # src/tests/helpers.py
@@ -106,14 +110,17 @@ Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does:
    `git@github.com:bnomis/agents.git` repo pinned at the agents `main` commit
    on the day of the change (`dddaf02` on 2026-10-31; resolve it again with
    `git ls-remote git@github.com:bnomis/agents.git refs/heads/main`), with
-   hooks `auditme-changed` and `auditme-all` (`stages: [manual, pre-push]`).
+   hooks `auditme-changed` and `auditme-all` (`stages: [manual, pre-push]`),
+   and the `no-project-names` hook with `--allow=ralpher` and
+   `--allow=ralphlib`.
 2. Run `pre-commit install --hook-type pre-commit --hook-type pre-push`.
 3. Write `.github/workflows/ci.yml` from the `project-setup` template: checkout
    without persisted credentials, Python 3.14, uv, `uv sync`, the project's
    `.venv/bin` on `PATH`, `uv run pytest`, the deploy-key step, `pre-commit
    run --all-files`, `pre-commit run auditme-all --hook-stage manual
    --all-files`, and the key removal (`if: always()`). Pin each third-party
-   action to a full commit SHA, with its tag in a comment.
+   action to an exact release tag, as the security rule requires; Dependabot
+   moves the tags.
 4. Create the deploy key and secret with the `project-setup` deploy-key steps:
    a read-only key added to `bnomis/agents`, its private half set as the
    `AGENTS_DEPLOY_KEY` secret on this repository, both files deleted
@@ -146,7 +153,7 @@ Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does:
   commit.
 - `pre-commit`, installed as a uv tool on developer machines and in CI.
 - GitHub Actions: `actions/checkout`, `actions/setup-python`,
-  `astral-sh/setup-uv`, pinned by SHA.
+  `astral-sh/setup-uv`, pinned by release tag.
 
 ## Out of scope
 
@@ -155,7 +162,8 @@ Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does:
 - Changing the checker. The `filesystem-envelope-gap` miss on a named
   exception tuple is raised separately, in the shared repository's auditme
   `requests.md`.
-- Correcting the stale `**Status:** proposed` of the verified-stop spec.
+- Correcting the status of the [verified-stop spec](../verified-stop/spec.md),
+  which now reads `implemented`.
 
 ## Acceptance
 

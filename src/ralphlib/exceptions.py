@@ -1,14 +1,38 @@
-class NoStateFilePath(Exception):
+class RalpherError(Exception):
+    """Base class for every error ralphlib raises for an expected failure."""
+
+
+class GitError(RalpherError):
     pass
 
 
-class ValueNotADict(Exception):
+class InvalidVarFormatError(RalpherError):
     pass
 
 
-class InvalidVarFormat(Exception):
+class LogFileError(RalpherError):
     pass
 
 
-class NoStateLockFilePath(Exception):
+class NoStateFilePathError(RalpherError):
+    pass
+
+
+class NoStateLockFilePathError(RalpherError):
+    pass
+
+
+class SettingsError(RalpherError):
+    pass
+
+
+class StateFileError(RalpherError):
+    pass
+
+
+class TasksFileError(RalpherError):
+    pass
+
+
+class ValueNotADictError(RalpherError):
     pass

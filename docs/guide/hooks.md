@@ -18,6 +18,10 @@ as a list of commands per event:
 }
 ```
 
+!!! warning
+    Hooks run as commands. The `.ralpher/settings.json` in the `--cwd`
+    repository can define them, so run ralpher only on repositories you trust.
+
 ## Events
 
 | Event | When | Extra variables |

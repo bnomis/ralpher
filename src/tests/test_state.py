@@ -1,7 +1,9 @@
 import json
 import pathlib
 
+import filelock
 import pytest
+import tenacity
 
 import ralphlib.exceptions
 import ralphlib.options
@@ -26,6 +28,13 @@ class TestLoadState:
         options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
         result = ralphlib.state.load_state(options)
         assert result == {'foo': 'bar'}
+
+    def test_corrupt_file_raises_naming_path(self, tmp_path: pathlib.Path) -> None:
+        state_path = tmp_path / 'state.json'
+        state_path.write_text('{not json')
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json'):
+            ralphlib.state.load_state(options)
 
 
 class TestSaveState:
@@ -88,6 +97,28 @@ class TestAddToState:
         result = ralphlib.state.load_state(options)
         assert result == {'a': 1, 'b': 2, 'nested': {'c': 3}}
 
+    def test_corrupt_file_is_left_unchanged(self, tmp_path: pathlib.Path) -> None:
+        state_path = tmp_path / 'state.json'
+        state_path.write_bytes(b'{not json\xff')
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json'):
+            ralphlib.state.add_to_state(options, {'new': 'val'})
+        assert state_path.read_bytes() == b'{not json\xff'
+
+    def test_lock_timeout_is_retried_then_raised(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        attempts: list[float] = []
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            attempts.append(timeout)
+            raise filelock.Timeout(str(self.lock_file))
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        monkeypatch.setattr(ralphlib.state.add_to_state_work.retry, 'wait', tenacity.wait_none())
+        with pytest.raises(filelock.Timeout):
+            ralphlib.state.add_to_state(options, {'new': 'val'})
+        assert len(attempts) == 3
+
     def test_noop_when_state_not_set(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state=None, logdir=str(tmp_path))
         ralphlib.state.add_to_state(options, {'data': 'value'})
@@ -96,11 +127,29 @@ class TestAddToState:
     def test_value_not_a_dict_raised_for_key1_non_dict(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
         ralphlib.state.save_state(options, {'key': 'string_not_dict'})
-        with pytest.raises(ralphlib.exceptions.ValueNotADict, match='key'):
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='key'):
             ralphlib.state.add_to_state(options, {'new': 'val'}, key1='key')
 
     def test_value_not_a_dict_raised_for_key1_key2_non_dict(self, tmp_path: pathlib.Path) -> None:
         options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
         ralphlib.state.save_state(options, {'outer': {'inner': 'string_not_dict'}})
-        with pytest.raises(ralphlib.exceptions.ValueNotADict, match='outer/inner'):
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='outer/inner'):
             ralphlib.state.add_to_state(options, {'new': 'val'}, key1='outer', key2='inner')
+
+
+class TestDomainErrors:
+    def test_save_state_translates_os_error(self, tmp_path: pathlib.Path) -> None:
+        (tmp_path / 'state.json').mkdir()
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        with pytest.raises(ralphlib.exceptions.StateFileError):
+            ralphlib.state.save_state(options, {'a': 1})
+
+    def test_lock_os_error_is_translated(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            raise PermissionError('denied')
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        with pytest.raises(ralphlib.exceptions.StateFileError):
+            ralphlib.state.add_to_state(options, {'new': 'val'})

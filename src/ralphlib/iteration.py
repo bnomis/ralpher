@@ -12,8 +12,8 @@ import typing
 
 import loguru
 import orjson
-import rich.console
 
+import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.logger
 import ralphlib.printer
@@ -71,9 +71,6 @@ class IterationContext:
     unknown_ptype_set: set[str] = dataclasses.field(default_factory=set)
 
 
-console = rich.console.Console(highlight=False)
-console_stderr = rich.console.Console(stderr=True, highlight=False)
-
 SUBPROCESS_POLL_INTERVAL = 3
 MAX_KILL_ATTEMPTS = 3
 
@@ -86,12 +83,12 @@ background_task_tool_name = frozenset(['TaskOutput', 'TaskStop'])
 # message types that should trigger a newline before the next message
 newline_types = frozenset(
     [
+        ralphlib.types.MessageType.ALERT,
         ralphlib.types.MessageType.COMPLETE,
         ralphlib.types.MessageType.ERROR,
+        ralphlib.types.MessageType.PROGRESS,
         ralphlib.types.MessageType.SYSTEM,
         ralphlib.types.MessageType.TOOL_USE,
-        ralphlib.types.MessageType.ALERT,
-        ralphlib.types.MessageType.PROGRESS,
     ]
 )
 
@@ -175,7 +172,7 @@ def run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -
 
 
 def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
-    base_ref = options.passed_worktree_base_ref()
+    base_ref = options.passed_worktree_base_ref
     if base_ref:
         cmd.append('--settings')
         cmd.append(orjson.dumps({'worktree': {'baseRef': base_ref}}).decode())
@@ -195,34 +192,62 @@ def add_worktree_arg(options: ralphlib.options.RalpherOptions, cmd: list[str]) -
 
 
 def make_context(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> IterationContext:
+    options.worktree_task_path = None
     cmd = [options.agent]
     cmd.extend(shlex.split(options.args))
     cmd = add_settings(options, cmd)
     cmd = add_worktree_arg(options, cmd)
     cmd.append(prompt)
-    context = IterationContext(
+    opened: list[io.TextIOWrapper] = []
+    try:
+        stdout, stdoutfd = open_log_file(options.stdout, options, iteration, opened)
+        stderr, stderrfd = open_log_file(options.stderr, options, iteration, opened)
+        progress, progressfd = open_log_file(options.progress, options, iteration, opened)
+        errors, errorsfd = open_log_file(options.errors, options, iteration, opened)
+    except Exception:
+        loguru.logger.exception('Exception in make_context')
+        close_all(opened)
+        raise
+    return IterationContext(
         cmd=cmd,
         iteration=iteration,
         prompt=prompt,
+        errors=errors,
+        errorsfd=errorsfd,
+        progress=progress,
+        progressfd=progressfd,
+        stderr=stderr,
+        stderrfd=stderrfd,
+        stdout=stdout,
+        stdoutfd=stdoutfd,
     )
+
+
+def open_log_file(
+    name: str | None,
+    options: ralphlib.options.RalpherOptions,
+    iteration: int,
+    opened: list[io.TextIOWrapper],
+) -> tuple[pathlib.Path | None, io.TextIOWrapper | None]:
+    """Open the iteration log file `name` for appending, recording the handle in `opened` so a later failure can close it.
+
+    Raises:
+        LogFileError: the file cannot be opened.
+    """
+    if not name:
+        return None, None
+    path = ralphlib.logger.log_file(options, name, iteration)
     try:
-        if options.stdout:
-            context.stdout = ralphlib.logger.log_file(options, options.stdout, iteration)
-            context.stdoutfd = context.stdout.open('a', encoding='utf-8')
-        if options.stderr:
-            context.stderr = ralphlib.logger.log_file(options, options.stderr, iteration)
-            context.stderrfd = context.stderr.open('a', encoding='utf-8')
-        if options.progress:
-            context.progress = ralphlib.logger.log_file(options, options.progress, iteration)
-            context.progressfd = context.progress.open('a', encoding='utf-8')
-        if options.errors:
-            context.errors = ralphlib.logger.log_file(options, options.errors, iteration)
-            context.errorsfd = context.errors.open('a', encoding='utf-8')
-    except Exception:
-        loguru.logger.exception('Exception in make_context')
-        unmake_context(context)
-        raise
-    return context
+        fd = path.open('a', encoding='utf-8')
+    except OSError as e:
+        raise ralphlib.exceptions.LogFileError(f'Cannot open the iteration log file {path}') from e
+    opened.append(fd)
+    return path, fd
+
+
+def close_all(fds: list[io.TextIOWrapper]) -> None:
+    for fd in fds:
+        flush_and_close_fd(fd)
 
 
 def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
@@ -230,8 +255,8 @@ def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
         if fd:
             fd.flush()
             fd.close()
-    except Exception:
-        loguru.logger.exception('Exception in flush_and_close_fd')
+    except OSError:
+        loguru.logger.opt(exception=True).warning('Cannot flush and close a log file')
 
 
 def unmake_context(context: IterationContext) -> None:
@@ -277,7 +302,7 @@ def summary(options: ralphlib.options.RalpherOptions, context: IterationContext,
 
     if lines:
         print_progress_lines(options, context, lines)
-        write_progress_lines(options, context, lines)
+        write_progress_lines(context, lines)
 
         ralphlib.state.add_to_state(
             options,
@@ -292,7 +317,7 @@ def print_progress_lines(options: ralphlib.options.RalpherOptions, context: Iter
         return
     with context.gil:
         for line in lines:
-            console.print(line, end='', soft_wrap=True)
+            ralphlib.printer.console.print(line, end='', soft_wrap=True)
 
 
 def print_progress(
@@ -305,86 +330,91 @@ def print_progress(
         return
 
     with context.gil:
-        console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
+        ralphlib.printer.console.print(message, style=ralphlib.printer.type_to_style(options, message_type), end='', soft_wrap=True)
 
 
 def print_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
-        console.print('')
+        ralphlib.printer.console.print('')
 
 
 def print_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
     if options.quiet:
         return
     with context.gil:
-        console_stderr.print(message, style='red', end='', soft_wrap=True)
+        ralphlib.printer.console_stderr.print(
+            message,
+            style=ralphlib.printer.type_to_style(options, ralphlib.types.MessageType.ERROR),
+            end='',
+            soft_wrap=True,
+        )
 
 
 def print_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
     if options.quiet:
         return
     with context.gil:
-        console_stderr.print('\n')
+        ralphlib.printer.console_stderr.print('\n')
 
 
 def log_msg(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
-    write_progress(options, context, msg)
-    write_progress_eol(options, context)
+    write_progress(context, msg)
+    write_progress_eol(context)
 
     print_progress(options, context, ralphlib.types.MessageType.SYSTEM, msg)
     print_progress_eol(options, context)
 
 
 def log_error(options: ralphlib.options.RalpherOptions, context: IterationContext, msg: str) -> None:
-    write_error(options, context, msg)
-    write_error_eol(options, context)
+    write_error(context, msg)
+    write_error_eol(context)
 
     print_error(options, context, msg)
     print_error_eol(options, context)
 
 
-def write_progress(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_progress(context: IterationContext, message: str) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write(message)
 
 
-def write_progress_lines(options: ralphlib.options.RalpherOptions, context: IterationContext, lines: list[str]) -> None:
+def write_progress_lines(context: IterationContext, lines: list[str]) -> None:
     if context.progressfd:
         with context.gil:
             for line in lines:
                 context.progressfd.write(line)
 
 
-def write_progress_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+def write_progress_eol(context: IterationContext) -> None:
     if context.progressfd:
         with context.gil:
             context.progressfd.write('\n')
             context.progressfd.flush()
 
 
-def write_error(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_error(context: IterationContext, message: str) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write(message)
 
 
-def write_error_eol(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+def write_error_eol(context: IterationContext) -> None:
     if context.errorsfd:
         with context.gil:
             context.errorsfd.write('\n')
             context.errorsfd.flush()
 
 
-def write_stdout(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stdout(context: IterationContext, message: str) -> None:
     if context.stdoutfd:
         with context.gil:
             context.stdoutfd.write(message)
 
 
-def write_stderr(options: ralphlib.options.RalpherOptions, context: IterationContext, message: str) -> None:
+def write_stderr(context: IterationContext, message: str) -> None:
     if context.stderrfd:
         with context.gil:
             context.stderrfd.write(message)
@@ -424,6 +454,11 @@ def agent_environment(environ: dict[str, str], venv: pathlib.Path, src: pathlib.
 
 
 def process(options: ralphlib.options.RalpherOptions, context: IterationContext) -> None:
+    """Run the agent and stream its output. stdout and stderr both get `PIPE` on purpose: each is read by its own thread.
+
+    Raises:
+        RalpherError: the agent cannot be started.
+    """
     kwargs = {
         'stdin': subprocess.DEVNULL,
         'stdout': subprocess.PIPE,
@@ -440,10 +475,13 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     context.in_progress_tasks = {t.id for t in read_task_statuses(options) if t.status == 'in-progress'}
 
     # log_msg(options, context, f'Forking subprocess {context.cmd}')
-    proc = subprocess.Popen(  # noqa: S603
-        context.cmd,
-        **kwargs,
-    )
+    try:
+        proc = subprocess.Popen(  # noqa: S603
+            context.cmd,
+            **kwargs,
+        )
+    except OSError as e:
+        raise ralphlib.exceptions.RalpherError(f'Cannot start the agent "{context.cmd[0]}"') from e
     log_msg(options, context, f'Started agent process {proc.pid}')
     ralphlib.hooks.event(
         options,
@@ -536,23 +574,34 @@ def process_stdout(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
+    try:
+        read_stdout(options, context, pipe)
+    except OSError:
+        loguru.logger.exception('I/O error on the agent stdout reader thread')
+
+
+def read_stdout(
+    options: ralphlib.options.RalpherOptions,
+    context: IterationContext,
+    pipe: io.TextIOWrapper,
+) -> None:
     for line in iter(pipe.readline, ''):
         line = line.strip()
         if not line:
             continue
 
-        write_stdout(options, context, line + '\n')
+        write_stdout(context, line + '\n')
 
         message_type, message = process_line(options, context, line)
         if message_type == ralphlib.types.MessageType.NONE:
             continue
 
         if message:
-            write_progress(options, context, message)
+            write_progress(context, message)
             print_progress(options, context, message_type, message)
 
         if newline_required(context, message_type):
-            write_progress_eol(options, context)
+            write_progress_eol(context)
             print_progress_eol(options, context)
 
         append_message_type(context, message_type)
@@ -563,13 +612,16 @@ def process_stderr(
     context: IterationContext,
     pipe: io.TextIOWrapper,
 ) -> None:
-    for line in iter(pipe.readline, ''):
-        line = line.strip()
-        if not line:
-            continue
+    try:
+        for line in iter(pipe.readline, ''):
+            line = line.strip()
+            if not line:
+                continue
 
-        write_stderr(options, context, line + '\n')
-        print_error(options, context, line)
+            write_stderr(context, line + '\n')
+            print_error(options, context, line)
+    except OSError:
+        loguru.logger.exception('I/O error on the agent stderr reader thread')
 
 
 def process_line(
@@ -606,8 +658,8 @@ def process_line(
 
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
         add_unknown_ptype(context, ptype)
-    except Exception as e:
-        loguru.logger.exception('Exception in process_line')
+    except (orjson.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
+        loguru.logger.opt(exception=True).warning('Cannot process an agent output line')
         # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
@@ -624,8 +676,8 @@ def process_system(
         'background_tasks_changed',
         'commands_changed',
         'compat_boundary',
-        'hook_started',
         'hook_progress',
+        'hook_started',
         'hook_response',
         'init',
         'notification',
@@ -720,7 +772,8 @@ def process_assistant(
 
                     tool_name = c.get('name', 'UNKNOWN-TOOL')
                     if tool_name == 'UNKNOWN-TOOL':
-                        loguru.logger.warning(f'Tool use without name: {line}')
+                        loguru.logger.warning(f'Tool use without name: {len(line)} characters')
+                        loguru.logger.debug(f'Tool use without name: {line}')
 
                     add_tool_used(context, tool_name)
                     vals = [tool_name]
@@ -736,7 +789,8 @@ def process_assistant(
                                 if run_in_background:
                                     vals.append('(running in background)')
                     else:
-                        loguru.logger.warning(f'Tool {tool_name} without input: {line}')
+                        loguru.logger.warning(f'Tool {tool_name} without input: {len(line)} characters')
+                        loguru.logger.debug(f'Tool {tool_name} without input: {line}')
                         add_unknown_tool(context, tool_name, c.get('input', {}))
 
                     # catch starting background tool uses
@@ -744,7 +798,8 @@ def process_assistant(
                         if tool_name in background_tools_list:
                             add_background_tool(context, tool_name, tool_input, c.get('id', ''))
                         else:
-                            loguru.logger.warning(f'Tool {tool_name} not in known background tools list: {line}')
+                            loguru.logger.warning(f'Tool {tool_name} not in known background tools list')
+                            loguru.logger.debug(f'Tool {tool_name} not in known background tools list: {line}')
 
                     return ralphlib.types.MessageType.TOOL_USE, '\n'.join(vals)
 
@@ -757,19 +812,14 @@ def process_task_progress(
     payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    try:
-        task = task_progress_re.search(line)
-        if task:
-            tid = task.group('id')
-            status = task.group('status')
-            if status == 'start' and not mark_started(context, tid):
-                return ralphlib.types.MessageType.NONE, line
-            message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
-            return ralphlib.types.MessageType.PROGRESS, message
-    except Exception as e:
-        loguru.logger.exception('Exception in process_task_progress')
-        # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
-        log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
+    task = task_progress_re.search(line)
+    if task:
+        tid = task.group('id')
+        status = task.group('status')
+        if status == 'start' and not mark_started(context, tid):
+            return ralphlib.types.MessageType.NONE, line
+        message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
+        return ralphlib.types.MessageType.PROGRESS, message
     return ralphlib.types.MessageType.NONE, line
 
 
@@ -821,9 +871,9 @@ def announce_started_tasks(options: ralphlib.options.RalpherOptions, context: It
         if not mark_started(context, t.id):
             continue
         message = task_progress(options, t.id, t.title, str(t.index), str(t.count), 'start')
-        write_progress(options, context, message)
+        write_progress(context, message)
         print_progress(options, context, ralphlib.types.MessageType.PROGRESS, message)
-        write_progress_eol(options, context)
+        write_progress_eol(context)
         print_progress_eol(options, context)
         append_message_type(context, ralphlib.types.MessageType.PROGRESS)
 
@@ -889,12 +939,10 @@ def process_result(
     payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    subtype = payload.get('subtype', '')
     is_error = payload.get('is_error', False)
     result = payload.get('result', '')
 
-    # errors
-    if subtype == 'success' and is_error:
+    if is_error:
         set_error(context, True)
         return ralphlib.types.MessageType.ERROR, result
 
