@@ -25,7 +25,7 @@ files it names.
 
 ## Task 1: A state-lock timeout is reported as a ralpher error
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 1
@@ -34,20 +34,20 @@ files it names.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_state.py` that holds the lock (patch `filelock.FileLock.acquire` to raise `filelock.Timeout`) and asserts `add_to_state` raises `ralphlib.exceptions.StateFileError` naming the lock file; confirm it fails before the fix
-- [ ] In `ralphlib.state.add_to_state`, translate the `filelock.Timeout` that leaves the tenacity retry into `StateFileError` (`raise ... from e`), keeping the retry in `add_to_state_work`
-- [ ] Update `test_lock_timeout_is_retried_then_raised` in `src/tests/test_state.py` if it asserts the old exception type, keeping its check that the retry ran three times
+- [x] Add a test to `src/tests/test_state.py` that holds the lock (patch `filelock.FileLock.acquire` to raise `filelock.Timeout`) and asserts `add_to_state` raises `ralphlib.exceptions.StateFileError` naming the lock file; confirm it fails before the fix
+- [x] In `ralphlib.state.add_to_state`, translate the `filelock.Timeout` that leaves the tenacity retry into `StateFileError` (`raise ... from e`), keeping the retry in `add_to_state_work`
+- [x] Update `test_lock_timeout_is_retried_then_raised` in `src/tests/test_state.py` if it asserts the old exception type, keeping its check that the retry ran three times
 
 **Acceptance Criteria:**
 
-- [ ] A held lock makes `add_to_state` raise `StateFileError` after three attempts
-- [ ] `bin/ralpher.py` prints `Error: ...` for it, since `StateFileError` is a `RalpherError`
+- [x] A held lock makes `add_to_state` raise `StateFileError` after three attempts
+- [x] `bin/ralpher.py` prints `Error: ...` for it, since `StateFileError` is a `RalpherError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_state.py`
-- [ ] `uv run pytest src/tests/test_state.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_state.py`
+- [x] `uv run pytest src/tests/test_state.py` passes
 
 **Notes:**
 

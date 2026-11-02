@@ -11,6 +11,7 @@ import pytest
 import tenacity
 
 import ralphlib.exceptions
+import ralphlib.logger
 import ralphlib.options
 import ralphlib.state
 import tests.helpers
@@ -120,8 +121,10 @@ class TestAddToState:
 
         monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
         monkeypatch.setattr(ralphlib.state.add_to_state_work.retry, 'wait', tenacity.wait_none())
-        with pytest.raises(filelock.Timeout):
+        with pytest.raises(ralphlib.exceptions.StateFileError) as excinfo:
             ralphlib.state.add_to_state(options, {'new': 'val'})
+        assert isinstance(excinfo.value.__cause__, filelock.Timeout)
+        assert str(ralphlib.logger.state_lock_file(options)) in str(excinfo.value)
         assert len(attempts) == 3
 
     def test_noop_when_state_not_set(self, tmp_path: pathlib.Path) -> None:
