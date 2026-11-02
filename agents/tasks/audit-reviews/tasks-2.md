@@ -300,7 +300,7 @@ every test file that imports a module this list changed.
 
 ## Task 9: End-to-end test of an iteration
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 10 (T1, T3)
@@ -309,18 +309,18 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Add a fixture script under `src/tests/fixtures/` that prints a short stream-JSON session (system, assistant text, a tool use, a tool use with no input, a `result`) and one stderr line
-- [ ] Add tests to `src/tests/test_iteration.py` that run `iteration.run` with `--agent` pointing at it: assert `(complete, error)`, the contents of the stdout, stderr, progress and errors log files, and the summary lines (tools used, unknown tools)
-- [ ] Add a variant that emits the stop marker and asserts `complete`, and one that emits an `is_error` result and asserts `error`
+- [x] Add a fixture script under `src/tests/fixtures/` that prints a short stream-JSON session (system, assistant text, a tool use, a tool use with no input, a `result`) and one stderr line
+- [x] Add tests to `src/tests/test_iteration.py` that run `iteration.run` with `--agent` pointing at it: assert `(complete, error)`, the contents of the stdout, stderr, progress and errors log files, and the summary lines (tools used, unknown tools)
+- [x] Add a variant that emits the stop marker and asserts `complete`, and one that emits an `is_error` result and asserts `error`
 
 **Acceptance Criteria:**
 
-- [ ] `run`, `make_context`, `unmake_context`, `summary`, `add_unknown_tool`, `write_stdout` and `write_stderr` each run in at least one test
+- [x] `run`, `make_context`, `unmake_context`, `summary`, `add_unknown_tool`, `write_stdout` and `write_stderr` each run in at least one test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 
 **Notes:**
 

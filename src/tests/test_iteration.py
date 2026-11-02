@@ -1,5 +1,7 @@
+import collections.abc
 import io
 import pathlib
+import shlex
 import signal
 import subprocess
 import sys
@@ -11,6 +13,7 @@ import pytest
 import ralphlib.exceptions
 import ralphlib.hooks
 import ralphlib.iteration
+import ralphlib.logger
 import ralphlib.options
 import ralphlib.signals
 import ralphlib.types
@@ -1288,3 +1291,53 @@ class TestDomainErrors:
         pipe = unittest.mock.MagicMock()
         pipe.readline.side_effect = OSError('closed')
         ralphlib.iteration.process_stderr(options, make_context(), pipe)
+
+
+FAKE_AGENT = pathlib.Path(__file__).parent / 'fixtures' / 'fake_agent.py'
+
+
+@pytest.fixture
+def e2e_options(tmp_path: pathlib.Path) -> collections.abc.Iterator[ralphlib.options.RalpherOptions]:
+    ralphlib.logger.log_file_cache.clear()
+    options = tests.helpers.make_options(
+        agent=sys.executable,
+        args=shlex.quote(str(FAKE_AGENT)),
+        iterations=1,
+        logdir=str(tmp_path),
+        stdout='stdout.log',
+        stderr='stderr.log',
+        progress='progress.log',
+        errors='errors.log',
+        state='state.json',
+        quiet=True,
+    )
+    options.stops = ['<promise>COMPLETE</promise>']
+    yield options
+    ralphlib.logger.log_file_cache.clear()
+
+
+def read_log(tmp_path: pathlib.Path, name: str) -> str:
+    return (tmp_path / name).read_text(encoding='utf-8')
+
+
+class TestRunEndToEnd:
+    def test_normal_session(self, e2e_options: ralphlib.options.RalpherOptions, tmp_path: pathlib.Path) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'normal', 1) == (False, False)
+
+        stdout = read_log(tmp_path, 'stdout-1.log')
+        assert 'hello from the agent' in stdout
+        assert stdout.count('\n') == 5
+        assert read_log(tmp_path, 'stderr-1.log') == 'agent warning\n'
+        progress = read_log(tmp_path, 'progress-1.log')
+        assert 'Tools used:\n- Bash\n- Mystery' in progress
+        assert 'Unknown tools used:\n- Mystery' in progress
+        assert read_log(tmp_path, 'errors-1.log') == ''
+        state = orjson.loads(read_log(tmp_path, 'state.json'))
+        assert state['iterations']['1']['tools_used'] == ['Bash', 'Mystery']
+
+    def test_stop_marker_completes(self, e2e_options: ralphlib.options.RalpherOptions) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'stop', 1) == (True, False)
+
+    def test_error_result_is_an_error(self, e2e_options: ralphlib.options.RalpherOptions, tmp_path: pathlib.Path) -> None:
+        assert ralphlib.iteration.run(e2e_options, 'error', 1) == (False, True)
+        assert 'agent failed' in read_log(tmp_path, 'progress-1.log')
