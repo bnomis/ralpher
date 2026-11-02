@@ -1,4 +1,5 @@
 import dataclasses
+import pathlib
 import shlex
 import typing
 
@@ -131,11 +132,25 @@ class RalpherOptions:
     current_iteration: int = dataclasses.field(init=False, default=0)
     iteration_count: int = dataclasses.field(init=False, default=0)
 
-    def passed_worktree_base_ref(self) -> str | None:
-        """`--worktree-base-ref`, unless `--args` holds its own `--settings`, which then wins."""
-        if '--settings' in shlex.split(self.args):
-            return None
-        return self.worktree_base_ref
+    passed_worktree_base_ref: str | None = dataclasses.field(init=False, default=None)
+    """`--worktree-base-ref`, unless `--args` holds its own `--settings`, which then wins."""
+    worktree_task_path: pathlib.Path | None = dataclasses.field(init=False, default=None)
+    """The tasks file inside the agent's worktree, cached once found; cleared at the start of each iteration."""
+
+    def __post_init__(self) -> None:
+        args = shlex.split(self.args)
+        if '--settings' not in args:
+            self.passed_worktree_base_ref = self.worktree_base_ref
+
+    def args_override_warnings(self) -> list[str]:
+        """Describe each ralpher option that a flag in `--args` overrides."""
+        args = shlex.split(self.args)
+        warnings = []
+        if self.worktree and ('--worktree' in args or '-w' in args):
+            warnings.append('--args holds --worktree/-w: it wins, and ralpher adds no worktree name')
+        if self.worktree_base_ref and '--settings' in args:
+            warnings.append('--args holds --settings: it wins, and --worktree-base-ref is not passed')
+        return warnings
 
 
 def parse_options() -> RalpherOptions:

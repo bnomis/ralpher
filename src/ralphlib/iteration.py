@@ -176,7 +176,7 @@ def run(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -
 
 
 def add_settings(options: ralphlib.options.RalpherOptions, cmd: list[str]) -> list[str]:
-    base_ref = options.passed_worktree_base_ref()
+    base_ref = options.passed_worktree_base_ref
     if base_ref:
         cmd.append('--settings')
         cmd.append(orjson.dumps({'worktree': {'baseRef': base_ref}}).decode())
@@ -196,6 +196,7 @@ def add_worktree_arg(options: ralphlib.options.RalpherOptions, cmd: list[str]) -
 
 
 def make_context(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> IterationContext:
+    options.worktree_task_path = None
     cmd = [options.agent]
     cmd.extend(shlex.split(options.args))
     cmd = add_settings(options, cmd)

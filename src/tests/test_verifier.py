@@ -1,4 +1,5 @@
 import pathlib
+import unittest.mock
 
 import git
 import hypothesis
@@ -6,6 +7,7 @@ import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
+import ralphlib.iteration
 import ralphlib.options
 import ralphlib.verifier
 
@@ -206,3 +208,21 @@ def test_agent_task_file_worktree_not_found_raises_tasks_file_error(tmp_path: pa
     repo = make_repo(tmp_path)
     with pytest.raises(ralphlib.exceptions.TasksFileError):
         ralphlib.verifier.agent_task_file(make_options(repo))
+
+
+def test_worktree_task_file_runs_git_worktree_list_once(tmp_path: pathlib.Path) -> None:
+    repo = make_repo(tmp_path)
+    wt = (tmp_path / 'wt').resolve()
+    run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
+    options = make_options(repo)
+    with unittest.mock.patch.object(ralphlib.verifier, 'parse_worktrees', wraps=ralphlib.verifier.parse_worktrees) as parse:
+        for _ in range(5):
+            assert ralphlib.verifier.worktree_task_file(options) == wt / TASK_FILE
+    assert parse.call_count == 1
+
+
+def test_make_context_clears_the_cached_worktree_path() -> None:
+    options = ralphlib.options.RalpherOptions(prompt='p', quiet=True)
+    options.worktree_task_path = pathlib.Path('/stale')
+    ralphlib.iteration.make_context(options, 'prompt', 1)
+    assert options.worktree_task_path is None

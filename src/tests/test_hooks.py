@@ -1,11 +1,14 @@
+import pathlib
 import unittest.mock
 
 import pytest
 
 import ralphlib.exceptions
+import ralphlib.giter
 import ralphlib.hooks
 import ralphlib.options
 import ralphlib.types
+import ralphlib.verifier
 import tests.helpers
 
 
@@ -216,3 +219,39 @@ class TestMakeContextDomainErrors:
         options = tests.helpers.make_options_with_settings()
         with unittest.mock.patch('tzlocal.get_localzone', side_effect=LookupError('no zone')), pytest.raises(ralphlib.exceptions.RalpherError):
             ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+
+
+class TestTaskFileChoice:
+    def test_unblock_prompt_uses_the_verifier_choice_without_worktree(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=False)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=pathlib.Path('/wt/tasks-1.md')) as wt:
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in task file tasks-1.md'
+        wt.assert_not_called()
+
+    def test_unblock_prompt_uses_the_worktree_copy_under_worktree(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=pathlib.Path('/wt/tasks-1.md')):
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file /wt/tasks-1.md'
+
+    def test_unblock_prompt_falls_back_when_the_worktree_is_missing(self) -> None:
+        options = tests.helpers.make_plain_options(task_file='tasks-1.md', worktree=True)
+        with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file', return_value=None):
+            assert ralphlib.hooks.unblock_prompt(options, '4') == 'unblock task 4 in worktree task file tasks-1.md'
+
+    def test_duplicate_event_runs_no_git(self) -> None:
+        options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo dup']}}, worktree=True, task_file='t.md')
+        with unittest.mock.patch.object(ralphlib.hooks, 'run_hook'):
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            with unittest.mock.patch.object(ralphlib.verifier, 'worktree_task_file') as wt:
+                ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+        wt.assert_not_called()
+
+    def test_last_commit_summary_looked_up_only_when_named(self) -> None:
+        with unittest.mock.patch.object(ralphlib.giter, 'last_commit_summary', return_value='s') as summary:
+            options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo plain']}})
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            summary.assert_not_called()
+            ralphlib.hooks.processed_hooks.clear()
+            options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo {{ last_commit_summary }}']}})
+            ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
+            summary.assert_called_once()

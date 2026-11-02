@@ -225,7 +225,7 @@ def get_current_branch(repo: git.Repo) -> str | None:
 
 def worktree_base_ref(options: ralphlib.options.RalpherOptions, repo: git.Repo) -> str:
     """The ref the agent's worktrees branch from: `--worktree-base-ref` if passed, else Claude Code's settings."""
-    return options.passed_worktree_base_ref() or claude_worktree_base_ref(repo)
+    return options.passed_worktree_base_ref or claude_worktree_base_ref(repo)
 
 
 def claude_worktree_base_ref(repo: git.Repo) -> str:

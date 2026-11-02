@@ -89,6 +89,8 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
     ralphlib.printer.prt(options, f'Start at {now}\n\n', 0)
     ralphlib.printer.prt(options, f'Agent:\n{options.agent}\n\n', 0)
     ralphlib.printer.prt(options, f'Args:\n{options.args}\n\n', 0)
+    for warning in options.args_override_warnings():
+        loguru.logger.warning(warning)
     ralphlib.printer.prt(options, f'Prompt:\n{content}\n\n', 0)
     ralphlib.printer.prt(options, f'Iterations: {options.iterations}\n\n', 0)
 

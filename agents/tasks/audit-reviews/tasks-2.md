@@ -262,7 +262,7 @@ every test file that imports a module this list changed.
 
 ## Task 8: One resolver for the tasks file, worktree and base ref, resolved once
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Source Reference:** Findings 8 and 9 (A5, A14, A24, P2, P3)
@@ -271,25 +271,25 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Make `verifier.agent_task_file` the only function that chooses the tasks file; have `hooks.event` (line 44) call it, so the worktree copy is used only under `--worktree`
-- [ ] Move the duplicate-event check in `hooks.event` before any git call
-- [ ] Cache the worktree path once it is found during an iteration (on `IterationContext`, or with a per-iteration memo cleared by `make_context`), so the poll loop (`iteration.py:484`, `:817`) and hook events reuse it
-- [ ] Have `giter.last_commit_summary` computed once per hook event at most, and not on events whose hooks do not use templates
-- [ ] Compute `options.passed_worktree_base_ref` once (in `parse_options`) and read the stored value in `giter.py:87`, `:163` and `iteration.py:178`
-- [ ] When `--args` holds `--worktree`/`-w` or `--settings`, log a warning at start naming which value wins, and document the precedence in `docs/guide/worktrees.md`
-- [ ] Add tests: `hooks.event` uses the same tasks file as the verifier with and without `--worktree`; `git worktree list` runs once per iteration in a poll-loop test (count subprocess calls); a duplicate event runs no git
+- [x] Make `verifier.agent_task_file` the only function that chooses the tasks file; have `hooks.event` (line 44) call it, so the worktree copy is used only under `--worktree`
+- [x] Move the duplicate-event check in `hooks.event` before any git call
+- [x] Cache the worktree path once it is found during an iteration (on `IterationContext`, or with a per-iteration memo cleared by `make_context`), so the poll loop (`iteration.py:484`, `:817`) and hook events reuse it
+- [x] Have `giter.last_commit_summary` computed once per hook event at most, and not on events whose hooks do not use templates
+- [x] Compute `options.passed_worktree_base_ref` once (in `parse_options`) and read the stored value in `giter.py:87`, `:163` and `iteration.py:178`
+- [x] When `--args` holds `--worktree`/`-w` or `--settings`, log a warning at start naming which value wins, and document the precedence in `docs/guide/worktrees.md`
+- [x] Add tests: `hooks.event` uses the same tasks file as the verifier with and without `--worktree`; `git worktree list` runs once per iteration in a poll-loop test (count subprocess calls); a duplicate event runs no git
 
 **Acceptance Criteria:**
 
-- [ ] One function chooses the tasks file
-- [ ] `git worktree list` runs at most once per iteration after the worktree is found
-- [ ] The precedence between `--args` and ralpher's own options is documented
+- [x] One function chooses the tasks file
+- [x] `git worktree list` runs at most once per iteration after the worktree is found
+- [x] The precedence between `--args` and ralpher's own options is documented
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_giter.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_verifier.py src/tests/test_iteration.py src/tests/test_giter.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

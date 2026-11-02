@@ -85,10 +85,13 @@ def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path
     """Return the path of the tasks file inside the agent's worktree.
 
     The worktree is the entry whose branch is `refs/heads/worktree-<slug>`.
-    Returns None if there is no repository or no such worktree.
+    Returns None if there is no repository or no such worktree. A path found
+    is cached on `options.worktree_task_path`; `iteration.make_context` clears it.
     `git.GitCommandError` propagates, and `ValueError` when the tasks file
     is outside the repository.
     """
+    if options.worktree_task_path is not None:
+        return options.worktree_task_path
     repo = ralphlib.giter.discover_repo_path(options.cwd)
     if repo is None or repo.working_tree_dir is None or not options.task_file:
         return None
@@ -99,7 +102,8 @@ def worktree_task_file(options: ralphlib.options.RalpherOptions) -> pathlib.Path
         task_file = task_file.relative_to(pathlib.Path(repo.working_tree_dir).resolve())
     for path, entry_branch in parse_worktrees(repo.git.worktree('list', '--porcelain')):
         if entry_branch == branch:
-            return path / task_file
+            options.worktree_task_path = path / task_file
+            return options.worktree_task_path
     return None
 
 
