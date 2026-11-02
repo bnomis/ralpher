@@ -27,6 +27,29 @@ def task_file_slug(task_file: str) -> str:
     return slugify(slug)
 
 
+BUILTIN_VARS = (
+    'iteration',
+    'iterations',
+    'task_file',
+    'task_file_relative_path',
+    'worktree',
+    'worktree_name',
+)
+
+
+def parse_vars(options: ralphlib.options.RalpherOptions) -> dict[str, str]:
+    """Split the KEY=VALUE entries of --vars, rejecting a bad format or a built-in name."""
+    parsed: dict[str, str] = {}
+    for var in options.vars:
+        if '=' not in var:
+            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var format: '{var}', expected key=value")
+        key, value = var.split('=', 1)
+        if key in BUILTIN_VARS:
+            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var: '{key}' is a built-in template variable")
+        parsed[key] = value
+    return parsed
+
+
 def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> str:
     context: dict[str, str | bool] = {
         'iteration': str(iteration),
@@ -53,11 +76,7 @@ def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int
         if options.task_file:
             context['worktree_name'] = task_file_slug(options.task_file)
 
-    for var in options.vars:
-        if '=' not in var:
-            raise ralphlib.exceptions.InvalidVarFormat(f"Invalid var format: '{var}', expected key=value")
-        key, value = var.split('=', 1)
-        context[key] = value
+    context.update(parse_vars(options))
 
     template = jinja2.Template(prompt)
     prompt = template.render(**context)

@@ -7,6 +7,7 @@ import typing
 
 import loguru
 
+import ralphlib.exceptions
 import ralphlib.giter
 import ralphlib.hooks
 import ralphlib.iteration
@@ -67,6 +68,12 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         options.task_file = str(task_path)
 
     ralphlib.logger.init(options)
+
+    try:
+        ralphlib.templater.parse_vars(options)
+    except ralphlib.exceptions.InvalidVarFormat as e:
+        ralphlib.printer.prt(options, '\nError: ' + str(e) + '\n', 0)
+        return True
 
     start = datetime.datetime.now()
     now = start.isoformat()

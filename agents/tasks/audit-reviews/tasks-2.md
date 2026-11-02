@@ -152,7 +152,7 @@ every test file that imports a module this list changed.
 
 ## Task 5: Validate `--vars` before the loop starts
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 5
@@ -161,21 +161,21 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Add `templater.parse_vars(options) -> dict[str, str]`, which raises `InvalidVarFormat` for a value without `=` and for a key that names a built-in template variable (the keys `render` sets itself)
-- [ ] Call it in `looper.loop` before the `start` hook, print the error and return `True` (error) without starting an iteration; have `render` use the parsed dict
-- [ ] Add tests to `src/tests/test_templater.py` (bad format, reserved key, good vars) and to `src/tests/test_looper.py` (no `start` hook and no iteration on bad vars)
-- [ ] Check `docs/reference/exit-statuses.md:11` and the `--vars` entry in `docs/reference/cli.md` describe the behaviour, including the reserved keys
+- [x] Add `templater.parse_vars(options) -> dict[str, str]`, which raises `InvalidVarFormat` for a value without `=` and for a key that names a built-in template variable (the keys `render` sets itself)
+- [x] Call it in `looper.loop` before the `start` hook, print the error and return `True` (error) without starting an iteration; have `render` use the parsed dict
+- [x] Add tests to `src/tests/test_templater.py` (bad format, reserved key, good vars) and to `src/tests/test_looper.py` (no `start` hook and no iteration on bad vars)
+- [x] Check `docs/reference/exit-statuses.md:11` and the `--vars` entry in `docs/reference/cli.md` describe the behaviour, including the reserved keys
 
 **Acceptance Criteria:**
 
-- [ ] Bad `--vars` exits non-zero before the `start` hook, with no traceback
-- [ ] A `--vars` key cannot replace a built-in variable
+- [x] Bad `--vars` exits non-zero before the `start` hook, with no traceback
+- [x] A `--vars` key cannot replace a built-in variable
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_templater.py src/tests/test_looper.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
