@@ -4,19 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The audit summary still lists the findings tasks-2 fixed as unresolved
-
-Found on 2026-11-02, after `agents/tasks/audit-reviews/tasks-2.md` shipped in
-merge `8d320ce`. The auditme skill's step 8b says that once a review's task
-list ships, `agents/audit-reviews/summary.md` moves the resolved findings from
-Unresolved to Recently resolved, and the list's Task 14 Notes repeat it. The
-Task 14 agent left it for the merge, and nothing did it.
-
-Fix direction: re-check each Unresolved finding in `summary.md` against the
-code (the review-2 locations), move the fixed ones to Recently resolved with
-review-2 as the review that raised them, and keep the rest, including the
-property-test gaps in the next item.
-
 ## Seven functions from audit review 2's property-test gaps have no property test
 
 Found on 2026-11-02 in the queue log for

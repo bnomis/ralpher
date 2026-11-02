@@ -252,3 +252,18 @@ hook, no iteration and a `True` (error) return on bad `--vars` - and confirm
 each fails against `a72ca80^`.
 
 Done: 2026-11-02 - tests for `parse_vars` (each built-in key, a value without `=`, good vars) in `src/tests/test_templater.py` and for `loop` refusing bad `--vars` before the `start` hook in `src/tests/test_looper.py`; each targeted test fails with the reserved-key check and the early `parse_vars` call removed.
+
+## The audit summary still lists the findings tasks-2 fixed as unresolved
+
+Found on 2026-11-02, after `agents/tasks/audit-reviews/tasks-2.md` shipped in
+merge `8d320ce`. The auditme skill's step 8b says that once a review's task
+list ships, `agents/audit-reviews/summary.md` moves the resolved findings from
+Unresolved to Recently resolved, and the list's Task 14 Notes repeat it. The
+Task 14 agent left it for the merge, and nothing did it.
+
+Fix direction: re-check each Unresolved finding in `summary.md` against the
+code (the review-2 locations), move the fixed ones to Recently resolved with
+review-2 as the review that raised them, and keep the rest, including the
+property-test gaps in the next item.
+
+Done: 2026-11-02 - `agents/audit-reviews/summary.md` re-checked against the code: every review-2 finding fixed by `agents/tasks/audit-reviews/tasks-2.md` moved to Recently resolved; the property-test gaps (Finding 18) and the D2 plugin dependencies (Finding 19) stay unresolved.
