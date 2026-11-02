@@ -112,20 +112,39 @@ def test_process_line_invalid_json_returns_error() -> None:
     assert message == line
 
 
-def test_process_line_exception_returns_error() -> None:
+@pytest.mark.parametrize('error', [KeyError('k'), TypeError('t'), AttributeError('a')])
+def test_process_line_payload_shape_error_returns_error(error: Exception) -> None:
     options = tests.helpers.make_plain_options(quiet=True)
     context = make_context()
-    payload = {'type': 'assistant'}
-    line = orjson.dumps(payload).decode()
+    line = orjson.dumps({'type': 'assistant'}).decode()
 
-    with unittest.mock.patch.object(
-        ralphlib.iteration,
-        'process_assistant',
-        side_effect=RuntimeError('boom'),
-    ):
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_assistant', side_effect=error):
         message_type, message = ralphlib.iteration.process_line(options, context, line)
         assert message_type == ralphlib.types.MessageType.ERROR
         assert message == line
+
+
+def test_process_line_unexpected_exception_propagates() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    line = orjson.dumps({'type': 'assistant'}).decode()
+
+    with unittest.mock.patch.object(ralphlib.iteration, 'process_assistant', side_effect=RuntimeError('boom')), pytest.raises(RuntimeError):
+        ralphlib.iteration.process_line(options, context, line)
+
+
+def test_flush_and_close_fd_carries_on_after_os_error() -> None:
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = OSError('disk')
+    ralphlib.iteration.flush_and_close_fd(fd)
+    fd.flush.assert_called_once()
+
+
+def test_flush_and_close_fd_unexpected_error_propagates() -> None:
+    fd = unittest.mock.MagicMock()
+    fd.flush.side_effect = RuntimeError('boom')
+    with pytest.raises(RuntimeError):
+        ralphlib.iteration.flush_and_close_fd(fd)
 
 
 @pytest.mark.parametrize('subtype', ['success', 'error_max_turns', 'error_during_execution'])

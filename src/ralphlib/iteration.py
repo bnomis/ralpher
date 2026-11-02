@@ -235,8 +235,8 @@ def flush_and_close_fd(fd: io.TextIOWrapper | None) -> None:
         if fd:
             fd.flush()
             fd.close()
-    except Exception:
-        loguru.logger.exception('Exception in flush_and_close_fd')
+    except OSError:
+        loguru.logger.opt(exception=True).warning('Cannot flush and close a log file')
 
 
 def unmake_context(context: IterationContext) -> None:
@@ -628,8 +628,8 @@ def process_line(
 
         log_error(options, context, f'\nprocess_line: unknown ptype: {ptype}\n{line}\n')
         add_unknown_ptype(context, ptype)
-    except Exception as e:
-        loguru.logger.exception('Exception in process_line')
+    except (orjson.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
+        loguru.logger.opt(exception=True).warning('Cannot process an agent output line')
         # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
         log_error(options, context, f'\nprocess_line: exception: {e}\n{line}\n')
         return ralphlib.types.MessageType.ERROR, line
@@ -779,19 +779,14 @@ def process_task_progress(
     payload: dict[str, typing.Any],
     line: str,
 ) -> tuple[ralphlib.types.MessageType, str]:
-    try:
-        task = task_progress_re.search(line)
-        if task:
-            tid = task.group('id')
-            status = task.group('status')
-            if status == 'start' and not mark_started(context, tid):
-                return ralphlib.types.MessageType.NONE, line
-            message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
-            return ralphlib.types.MessageType.PROGRESS, message
-    except Exception as e:
-        loguru.logger.exception('Exception in process_task_progress')
-        # auditme: accept[except-interpolation] the message goes to the session error log, which has no traceback
-        log_error(options, context, f'\nprocess_task_progress: exception: {e}\n{line}\n')
+    task = task_progress_re.search(line)
+    if task:
+        tid = task.group('id')
+        status = task.group('status')
+        if status == 'start' and not mark_started(context, tid):
+            return ralphlib.types.MessageType.NONE, line
+        message = task_progress(options, tid, task.group('title'), task.group('index'), task.group('count'), status)
+        return ralphlib.types.MessageType.PROGRESS, message
     return ralphlib.types.MessageType.NONE, line
 
 

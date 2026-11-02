@@ -185,19 +185,30 @@ class TestRunHook:
         assert mock_popen.call_args[0][0] == ['echo', "it's here"]
 
     @unittest.mock.patch('subprocess.Popen')
-    def test_logs_exception_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
-        with unittest.mock.patch('loguru.logger.exception') as mock_log:
+    def test_warns_on_unbalanced_quotes_in_template(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
             ralphlib.hooks.run_hook("echo 'unclosed", {})
             mock_popen.assert_not_called()
-            mock_log.assert_called_once()
+            mock_opt.return_value.warning.assert_called_once()
+
+    @unittest.mock.patch('subprocess.Popen')
+    def test_warns_on_template_error(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
+            ralphlib.hooks.run_hook('echo {{ unclosed', {})
+            mock_popen.assert_not_called()
+            mock_opt.return_value.warning.assert_called_once()
 
     @unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('not found'))
-    def test_logs_exception_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
-        with unittest.mock.patch('loguru.logger.exception') as mock_log:
+    def test_warns_on_subprocess_failure(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
             ralphlib.hooks.run_hook('nonexistent_cmd')
-            mock_log.assert_called_once()
-            log_msg = mock_log.call_args[0][0]
-            assert 'nonexistent_cmd' in log_msg
+            mock_opt.return_value.warning.assert_called_once()
+            assert 'nonexistent_cmd' in mock_opt.return_value.warning.call_args[0][0]
+
+    @unittest.mock.patch('subprocess.Popen', side_effect=RuntimeError('boom'))
+    def test_unexpected_error_propagates(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with pytest.raises(RuntimeError):
+            ralphlib.hooks.run_hook('echo hi')
 
 
 class TestMakeContextDomainErrors:

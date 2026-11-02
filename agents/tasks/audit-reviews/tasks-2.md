@@ -228,7 +228,7 @@ every test file that imports a module this list changed.
 
 ## Task 7: Narrow the broad graceful-degradation handlers
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** Finding 7 (A19)
@@ -237,21 +237,21 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] `hooks.run_hook`: catch the expected failures (`ValueError` from `shlex.split`, `OSError` from `Popen`, `jinja2.TemplateError`) and log them with `warning`; let anything else propagate
-- [ ] `iteration.flush_and_close_fd`: catch `OSError` only
-- [ ] `iteration.process_line`: catch the JSON decode error and the payload-shape errors (`KeyError`, `TypeError`, `AttributeError`) only
-- [ ] `iteration.process_task_progress`: catch only what its parsing can raise
-- [ ] Add or adjust tests in `src/tests/test_hooks.py` and `src/tests/test_iteration.py`: each expected failure is logged and carries on, and an unexpected one propagates
+- [x] `hooks.run_hook`: catch the expected failures (`ValueError` from `shlex.split`, `OSError` from `Popen`, `jinja2.TemplateError`) and log them with `warning`; let anything else propagate
+- [x] `iteration.flush_and_close_fd`: catch `OSError` only
+- [x] `iteration.process_line`: catch the JSON decode error and the payload-shape errors (`KeyError`, `TypeError`, `AttributeError`) only
+- [x] `iteration.process_task_progress`: catch only what its parsing can raise
+- [x] Add or adjust tests in `src/tests/test_hooks.py` and `src/tests/test_iteration.py`: each expected failure is logged and carries on, and an unexpected one propagates
 
 **Acceptance Criteria:**
 
-- [ ] None of the four handlers catches `Exception`
-- [ ] The auditme sweep still has no unaccepted hits
+- [x] None of the four handlers catches `Exception`
+- [x] The auditme sweep still has no unaccepted hits
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_iteration.py` passes
 
 **Notes:**
 

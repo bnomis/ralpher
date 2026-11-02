@@ -6,6 +6,7 @@ import subprocess
 import time
 import typing
 
+import jinja2.exceptions
 import jinja2.sandbox
 import loguru
 import tzlocal
@@ -223,5 +224,5 @@ def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except Exception:
-        loguru.logger.exception(f'Exception running hook: "{cmd}"')
+    except ValueError, OSError, jinja2.exceptions.TemplateError:
+        loguru.logger.opt(exception=True).warning(f'Cannot run hook: "{cmd}"')
