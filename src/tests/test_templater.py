@@ -99,3 +99,19 @@ def test_task_file_slug_with_multipart_path_uses_parent_stem() -> None:
 def test_task_file_slug_with_single_part_path_uses_stem_only() -> None:
     result = ralphlib.templater.task_file_slug('my_task.md')
     assert result == 'my-task'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    parent=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+    stem=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+)
+def test_task_file_slug_joins_parent_and_stem(parent: str, stem: str) -> None:
+    assert ralphlib.templater.task_file_slug(f'x/{parent}/{stem}.md') == f'{parent}-{stem}'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(path=hypothesis.strategies.text(alphabet='abcXY_ -./', min_size=1, max_size=30))
+def test_task_file_slug_is_a_safe_name(path: str) -> None:
+    slug = ralphlib.templater.task_file_slug(path)
+    assert all(c.islower() or c.isdigit() or c == '-' for c in slug)

@@ -256,3 +256,18 @@ class TestDomainErrors:
         options = ralphlib.options.RalpherOptions(prompts='p', task_file=str(tasks), cwd=str(tmp_path), skip_git_check=True)
         with pytest.raises(ralphlib.exceptions.TasksFileError):
             ralphlib.looper.loop(options)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    parent=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+    stem=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+    worktree=hypothesis.strategies.booleans(),
+)
+def test_cleanup_cmds_name_the_branch_only_with_a_worktree(parent: str, stem: str, worktree: bool) -> None:
+    options = ralphlib.options.RalpherOptions(task_file=f'x/{parent}/{stem}.md', worktree=worktree)
+    cmds = ralphlib.looper.cleanup_cmds(options)
+    if worktree:
+        assert f'git branch -D worktree-{parent}-{stem}' in cmds
+    else:
+        assert cmds == []

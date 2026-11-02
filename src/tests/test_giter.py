@@ -16,6 +16,8 @@ import ralphlib.types
 import tests.helpers
 
 README_FILES = ('README.md',)
+# auditme: accept[non-alphabetical-literal] (base ref, short name): the order is the meaning
+ORIGIN_MAIN = ('origin/main', 'main')
 
 
 class TestDiscoverRepoPath:
@@ -213,7 +215,7 @@ class TestWorktreeBaseRef:
 class TestCheckDivergence:
     def diverge(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """origin/HEAD points at main while a feature branch is checked out, and the prompt answers yes."""
-        monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: ('origin/main', 'main'))
+        monkeypatch.setattr(ralphlib.giter, 'get_origin', lambda repo: ORIGIN_MAIN)
         monkeypatch.setattr(ralphlib.giter, 'get_current_branch', lambda repo: 'feature')
         monkeypatch.setattr(ralphlib.giter.YNConfirm, 'ask', lambda *args, **kwargs: True)
 
@@ -387,3 +389,37 @@ class TestDomainErrors:
         repo.remotes.origin.url = 'https://example.com/org/repo.git'
         repo.remotes.origin.fetch.side_effect = OSError('no FETCH_HEAD')
         assert ralphlib.giter.has_unpushed_commits(repo) is None
+
+
+class TestYNConfirmMakePrompt:
+    def test_default_yes_capitalises_y(self) -> None:
+        assert ralphlib.giter.YNConfirm('Exit now?').make_prompt(True).plain == 'Exit now? [Y/n] '
+
+    def test_default_no_capitalises_n(self) -> None:
+        assert ralphlib.giter.YNConfirm('Exit now?').make_prompt(False).plain == 'Exit now? [y/N] '
+
+
+class TestGetOrigin:
+    def test_no_origin_head_gives_none(self, tmp_path: pathlib.Path) -> None:
+        repo = git.Repo.init(str(tmp_path))
+        repo.create_remote('origin', 'https://example.invalid/probe.git')
+        assert ralphlib.giter.get_origin(repo) == (None, None)
+
+    def test_origin_head_gives_base_and_short_name(self, tmp_path: pathlib.Path) -> None:
+        repo = git.Repo.init(str(tmp_path))
+        (tmp_path / 'README.md').write_text('hello')
+        repo.index.add(list(README_FILES))
+        commit = repo.index.commit('initial')
+        repo.create_remote('origin', 'https://example.invalid/probe.git')
+        git.Reference.create(repo, 'refs/remotes/origin/main', commit.hexsha)
+        repo.git.symbolic_ref('refs/remotes/origin/HEAD', 'refs/remotes/origin/main')
+        assert ralphlib.giter.get_origin(repo) == ORIGIN_MAIN
+
+
+class TestGetCurrentBranch:
+    def test_detached_head_gives_none(self, tmp_path: pathlib.Path) -> None:
+        repo = git.Repo.init(str(tmp_path))
+        (tmp_path / 'README.md').write_text('hello')
+        repo.index.add(list(README_FILES))
+        repo.head.reference = repo.index.commit('initial')  # type: ignore[assignment]
+        assert ralphlib.giter.get_current_branch(repo) is None

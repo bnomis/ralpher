@@ -471,7 +471,7 @@ every test file that imports a module this list changed.
 
 ## Task 14: Property tests for parsers and formatters, then the whole-tree gates
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** Finding 18 (T1, T2)
@@ -480,23 +480,23 @@ every test file that imports a module this list changed.
 
 **Subtasks:**
 
-- [ ] Hypothesis tests (`@hypothesis.settings(max_examples=20, deadline=10000)`), at least for: `hooks.render_hook_args` (an arbitrary value round-trips through `shlex.split` as one argument), `verifier.parse_worktrees`, `iteration.process_task_progress`, `iteration.is_stop`, `iteration.indent_lines`, `templater.task_file_slug`, `logger.iteration_to_str` and `looper.cleanup_cmds`
-- [ ] Example tests for `verifier.parse_worktrees` (porcelain output with and without a branch, bare and detached) and for `bin/install-claude.py` (`symlink_file`, `find_dangling_symlinks`) in `tmp_path`
-- [ ] Tests for `giter.YNConfirm.make_prompt`, `get_origin` with no `origin/HEAD`, and `get_current_branch` on a detached HEAD
-- [ ] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
-- [ ] Run every test file that imports a module this list changed; the list changed nearly every `ralphlib` module, so that is every file in `src/tests/` that imports `ralphlib`
+- [x] Hypothesis tests (`@hypothesis.settings(max_examples=20, deadline=10000)`), at least for: `hooks.render_hook_args` (an arbitrary value round-trips through `shlex.split` as one argument), `verifier.parse_worktrees`, `iteration.process_task_progress`, `iteration.is_stop`, `iteration.indent_lines`, `templater.task_file_slug`, `logger.iteration_to_str` and `looper.cleanup_cmds`
+- [x] Example tests for `verifier.parse_worktrees` (porcelain output with and without a branch, bare and detached) and for `bin/install-claude.py` (`symlink_file`, `find_dangling_symlinks`) in `tmp_path`
+- [x] Tests for `giter.YNConfirm.make_prompt`, `get_origin` with no `origin/HEAD`, and `get_current_branch` on a detached HEAD
+- [x] Run `pre-commit run --all-files` and `pre-commit run --hook-stage pre-push auditme-all --all-files`
+- [x] Run every test file that imports a module this list changed; the list changed nearly every `ralphlib` module, so that is every file in `src/tests/` that imports `ralphlib`
 
 **Acceptance Criteria:**
 
-- [ ] Every function in review-2 T2 has a property test, or the task notes why one does not fit
-- [ ] Every remaining T1 function in review-2 has a test
+- [x] Every function in review-2 T2 has a property test, or the task notes why one does not fit
+- [x] Every remaining T1 function in review-2 has a test
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_process_termination.py src/tests/test_settings.py src/tests/test_shlex.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` plus any test file this list added passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_printer.py src/tests/test_process_termination.py src/tests/test_settings.py src/tests/test_shlex.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_templater.py src/tests/test_verifier.py` plus any test file this list added passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

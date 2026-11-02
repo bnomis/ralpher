@@ -288,3 +288,10 @@ class TestTaskFileChoice:
             options = tests.helpers.make_options_with_settings(settings={'hooks': {'start': ['echo {{ last_commit_summary }}']}})
             ralphlib.hooks.event(options, ralphlib.types.RalpherEventType.START, {})
             summary.assert_called_once()
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(value=hypothesis.strategies.text())
+def test_render_hook_args_round_trips_any_value_as_one_argument(value: str) -> None:
+    args = ralphlib.hooks.render_hook_args('notify --message {{ value }} --end', {'value': value})
+    assert args == ['notify', '--message', value.replace(ralphlib.hooks.HOOK_VALUE_SENTINEL, ''), '--end']

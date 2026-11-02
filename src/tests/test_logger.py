@@ -1,5 +1,7 @@
 import pathlib
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
@@ -122,3 +124,12 @@ class TestDomainErrors:
         options = tests.helpers.make_plain_options(logdir=str(blocker / 'logs'))
         with pytest.raises(ralphlib.exceptions.LogFileError):
             ralphlib.logger.init(options)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(iterations=hypothesis.strategies.integers(min_value=1, max_value=10**6), data=hypothesis.strategies.data())
+def test_iteration_to_str_has_a_fixed_width_and_round_trips(iterations: int, data: hypothesis.strategies.DataObject) -> None:
+    iteration = data.draw(hypothesis.strategies.integers(min_value=1, max_value=iterations))
+    result = ralphlib.logger.iteration_to_str(tests.helpers.make_plain_options(iterations=iterations), iteration)
+    assert len(result) == len(str(iterations))
+    assert int(result) == iteration

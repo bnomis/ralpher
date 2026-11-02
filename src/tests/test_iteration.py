@@ -7,6 +7,8 @@ import subprocess
 import sys
 import unittest.mock
 
+import hypothesis
+import hypothesis.strategies
 import loguru
 import orjson
 import pytest
@@ -1362,3 +1364,53 @@ class TestRunEndToEnd:
     def test_error_result_is_an_error(self, e2e_options: ralphlib.options.RalpherOptions, tmp_path: pathlib.Path) -> None:
         assert ralphlib.iteration.run(e2e_options, 'error', 1) == (False, True)
         assert 'agent failed' in read_log(tmp_path, 'progress-1.log')
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    tid=hypothesis.strategies.integers(min_value=0, max_value=10**6),
+    title=hypothesis.strategies.from_regex(r'[A-Za-z][A-Za-z0-9 ]{0,20}', fullmatch=True),
+    index=hypothesis.strategies.integers(min_value=1, max_value=999),
+    count=hypothesis.strategies.integers(min_value=1, max_value=999),
+    status=hypothesis.strategies.sampled_from(['blocked', 'done', 'operator']),
+)
+def test_process_task_progress_parses_any_well_formed_block(tid: int, title: str, index: int, count: int, status: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True, task_file='agents/tasks/probe/tasks-1.md')
+    block = f'<task>\n<id>{tid}</id>\n<title>{title}</title>\n<index>{index}</index>\n<count>{count}</count>\n<status>{status}</status>\n</task>'
+    message_type, message = ralphlib.iteration.process_task_progress(options, make_context(), {}, block)
+    assert message_type == ralphlib.types.MessageType.PROGRESS
+    assert message == f'\ntask {tid}: {title} {index}/{count} {status}\n'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=hypothesis.strategies.text(alphabet='abc <>/\n', max_size=40))
+def test_process_task_progress_leaves_text_without_a_block_alone(text: str) -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    message_type, message = ralphlib.iteration.process_task_progress(options, make_context(), {}, text)
+    assert message_type == ralphlib.types.MessageType.NONE
+    assert message == text
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(
+    before=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='abc ', max_size=10), max_size=3),
+    after=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='abc ', max_size=10), max_size=3),
+    pad=hypothesis.strategies.text(alphabet=' \t', max_size=3),
+)
+def test_is_stop_finds_a_stop_line_among_other_lines(before: list[str], after: list[str], pad: str) -> None:
+    options = tests.helpers.make_plain_options()
+    text = '\n'.join([*before, f'{pad}{options.stops[0]}{pad}', *after])
+    assert ralphlib.iteration.is_stop(options, text)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(text=hypothesis.strategies.text(alphabet='abc \n', max_size=40))
+def test_is_stop_is_false_when_no_line_is_a_stop(text: str) -> None:
+    assert not ralphlib.iteration.is_stop(tests.helpers.make_plain_options(), text)
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(s=hypothesis.strategies.text(min_size=1), indent=hypothesis.strategies.text(alphabet=' >', max_size=4))
+def test_indent_lines_prefixes_every_line(s: str, indent: str) -> None:
+    result = ralphlib.iteration.indent_lines(s, indent)
+    assert result.split('\n') == [f'{indent}{line}' for line in s.splitlines()] or not s.splitlines()
