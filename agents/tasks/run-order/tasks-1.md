@@ -15,7 +15,7 @@ and the docs build.
 
 ## Task 1: Check the starting point
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Module location; API
@@ -25,17 +25,17 @@ earlier attempt is overwritten.
 
 **Subtasks:**
 
-- [ ] Check that the new names do not exist in the package: `grep -rnwE 'read_order|next_step|check_test_log|set_status|decisions_since|OrderSettings|ListRow|CheckpointRow|OrderFormatError|WaitsForUnmetError|LogVerdict' src/ralphlib` prints nothing; if it prints a line, stop as `operator`, naming it
-- [ ] Check that `src/ralphlib/order.py`, `bin/rro.py`, `claude/commands/rro.md` and `docs/run-order.md` do not exist; if one does, stop as `operator`, naming it
-- [ ] Check that `bin/install-claude.py` links every file in `claude/commands/` (it calls `symlink_dir` on that directory), so `rro.md` needs no installer change; if it links named files only, stop as `operator`, quoting the call
+- [x] Check that the new names do not exist in the package: `grep -rnwE 'read_order|next_step|check_test_log|set_status|decisions_since|OrderSettings|ListRow|CheckpointRow|OrderFormatError|WaitsForUnmetError|LogVerdict' src/ralphlib` prints nothing; if it prints a line, stop as `operator`, naming it
+- [x] Check that `src/ralphlib/order.py`, `bin/rro.py`, `claude/commands/rro.md` and `docs/run-order.md` do not exist; if one does, stop as `operator`, naming it
+- [x] Check that `bin/install-claude.py` links every file in `claude/commands/` (it calls `symlink_dir` on that directory), so `rro.md` needs no installer change; if it links named files only, stop as `operator`, quoting the call
 
 **Acceptance Criteria:**
 
-- [ ] None of the names or files exists, and the installer links the whole commands directory
+- [x] None of the names or files exists, and the installer links the whole commands directory
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
