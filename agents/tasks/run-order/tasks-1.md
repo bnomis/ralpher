@@ -116,7 +116,7 @@ resumes an order without remembering anything.
 
 ## Task 4: Check a test log and write a status
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`check_test_log`, `LogVerdict`, `set_status`); Settings (`test log`, `test pass line`, `test fail pattern`); Error handling (test gate failure)
@@ -126,20 +126,20 @@ function, so the command never parses a log or edits a table by hand.
 
 **Subtasks:**
 
-- [ ] Add the frozen dataclass `LogVerdict(passed: bool, path: pathlib.Path, fail_lines: tuple[str, ...], has_pass_line: bool)`
-- [ ] Implement `check_test_log(order, row, root)`: fill `{spec}` and `{index}` in `test_log`, resolve against `root`; a missing file is `passed=False` with no lines; strip ANSI colour codes before matching; `passed` only when the pass line is present and no line matches `fail_pattern`; `fail_lines` holds every matching line
-- [ ] Implement `set_status(path, label, status)`: rewrite only the Status cell of the row with that label (or of the implicit checkpoint line for that label), keeping every other byte of the file, line endings included; raise `OrderFormatError` if the label is not found
-- [ ] Add tests: pass, missing log, no pass line, a fail match, a log with colour codes, and `set_status` changing one cell and no other byte (compare the file before and after with that cell masked)
+- [x] Add the frozen dataclass `LogVerdict(passed: bool, path: pathlib.Path, fail_lines: tuple[str, ...], has_pass_line: bool)`
+- [x] Implement `check_test_log(order, row, root)`: fill `{spec}` and `{index}` in `test_log`, resolve against `root`; a missing file is `passed=False` with no lines; strip ANSI colour codes before matching; `passed` only when the pass line is present and no line matches `fail_pattern`; `fail_lines` holds every matching line
+- [x] Implement `set_status(path, label, status)`: rewrite only the Status cell of the row with that label (or of the implicit checkpoint line for that label), keeping every other byte of the file, line endings included; raise `OrderFormatError` if the label is not found
+- [x] Add tests: pass, missing log, no pass line, a fail match, a log with colour codes, and `set_status` changing one cell and no other byte (compare the file before and after with that cell masked)
 
 **Acceptance Criteria:**
 
-- [ ] A log passes only with its pass line and no fail match
-- [ ] `set_status` changes exactly one cell
+- [x] A log passes only with its pass line and no fail match
+- [x] `set_status` changes exactly one cell
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
