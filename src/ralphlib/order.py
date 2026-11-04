@@ -2,6 +2,8 @@ import dataclasses
 import pathlib
 import re
 
+import git
+
 import ralphlib.exceptions
 
 SETTINGS_HEADER = ['Setting', 'Value']
@@ -12,7 +14,11 @@ TASK_LIST = re.compile(r'^([^/\s]+)/tasks-([^/\s]+)\.md$')
 SEPARATOR_CELL = re.compile(r'^:?-+:?$')
 DEFAULT_CHECKPOINT_EVERY = 3
 DEFAULT_TEST_LOG = 'ralpher-logs/{spec}/tasks-{index}/final-tests.log'
+DEFAULT_BRANCH = 'main'
 DEFAULT_FAIL_PATTERN = 'FAILED'
+DECISION_TRAILER = 'Queue-decision'
+FIELD_SEPARATOR = '\x1f'
+RECORD_SEPARATOR = '\x1e'
 REQUIRED_SETTINGS = ('checkpoint command', 'test pass line')
 KNOWN_SETTINGS = (
     'always wait for',
@@ -273,3 +279,49 @@ def next_step(order: Order) -> Step:
             return Resume(CheckpointRow(final=final, status=status))
         return RunCheckpoint(position, final, row.label)
     return Finished()
+
+
+@dataclasses.dataclass(frozen=True)
+class Decision:
+    commit: str
+    date: str
+    subject: str
+    body: str
+    task: str
+
+
+def default_branch(repo: git.Repo) -> str:
+    """The branch origin/HEAD points at, or main when it is unset."""
+    try:
+        return repo.git.symbolic_ref('--short', 'refs/remotes/origin/HEAD').removeprefix('origin/')
+    except git.GitCommandError:
+        return DEFAULT_BRANCH
+
+
+def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
+    """Commits on the default branch since ref carrying a Queue-decision trailer, oldest first.
+
+    Raises:
+        GitError: root is not a repository or ref does not resolve.
+    """
+    try:
+        repo = git.Repo(root)
+        repo.git.rev_parse('--verify', '--quiet', f'{ref}^{{commit}}')
+    except git.GitError as e:
+        raise ralphlib.exceptions.GitError(f'Cannot resolve {ref} in {root}') from e
+    # auditme: accept[legacy-formatting-percent] git log placeholders, not Python formatting
+    fields = ('%H', '%as', '%s', '%b', f'%(trailers:key={DECISION_TRAILER},valueonly,separator=%x2c)')
+    text = repo.git.log(
+        '--reverse',
+        f'--format={FIELD_SEPARATOR.join(fields)}{RECORD_SEPARATOR}',
+        f'--grep=^{DECISION_TRAILER}:',
+        f'{ref}..{default_branch(repo)}',
+    )
+    decisions = []
+    for record in text.split(RECORD_SEPARATOR):
+        if not record.strip():
+            continue
+        commit, date, subject, body, task = record.strip('\n').split(FIELD_SEPARATOR)
+        if task.strip():
+            decisions.append(Decision(commit=commit, date=date, subject=subject, body=body.strip(), task=task.strip()))
+    return decisions

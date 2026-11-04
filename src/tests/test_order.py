@@ -1,5 +1,6 @@
 import pathlib
 
+import git
 import pytest
 
 import ralphlib.exceptions
@@ -253,3 +254,50 @@ def test_implicit_counter_restarts_after_a_passed_checkpoint(project: pathlib.Pa
 def test_all_merged_with_explicit_checkpoints_passed_is_finished(project: pathlib.Path) -> None:
     rows = [L1.format('merged a1'), CP.format('passed 1'), L2.format('merged b2'), FINAL.format('passed 2')]
     assert ralphlib.order.next_step(order_with(project, rows)) == ralphlib.order.Finished()
+
+
+def git_commit(repo: git.Repo, name: str, message: str) -> str:
+    target = pathlib.Path(repo.working_dir) / name
+    target.write_text(message)
+    repo.git.add(name)
+    repo.git.commit('-m', message)
+    return repo.head.commit.hexsha
+
+
+@pytest.fixture
+def repo(tmp_path: pathlib.Path) -> git.Repo:
+    repo = git.Repo.init(tmp_path / 'repo', initial_branch='main')
+    repo.git.config('user.name', 'Probe')
+    repo.git.config('user.email', 'probe@example.com')
+    return repo
+
+
+def test_decisions_since_filters_and_orders(repo: git.Repo) -> None:
+    base = git_commit(repo, 'a', 'base\n\nQueue-decision: old')
+    plain = git_commit(repo, 'b', 'plain change\n\nno trailer here')
+    first = git_commit(repo, 'c', 'first stop\n\nWhy it was chosen.\n\nQueue-decision: parser 3')
+    git_commit(repo, 'd', 'another plain')
+    second = git_commit(repo, 'e', 'second stop\n\nQueue-decision: report 1')
+    decisions = ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), base)
+    assert [d.commit for d in decisions] == [first, second]
+    assert plain not in [d.commit for d in decisions]
+    assert [d.task for d in decisions] == ['parser 3', 'report 1']
+    assert decisions[0].subject == 'first stop'
+    assert 'Why it was chosen.' in decisions[0].body
+
+
+def test_decisions_since_includes_merged_branch(repo: git.Repo) -> None:
+    base = git_commit(repo, 'a', 'base')
+    repo.git.checkout('-b', 'feature')
+    stop = git_commit(repo, 'b', 'on branch\n\nQueue-decision: lexicon 2')
+    repo.git.checkout('main')
+    git_commit(repo, 'c', 'on main')
+    repo.git.merge('--no-ff', 'feature', '-m', 'merge feature')
+    decisions = ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), base)
+    assert [d.commit for d in decisions] == [stop]
+
+
+def test_decisions_since_unknown_ref(repo: git.Repo) -> None:
+    git_commit(repo, 'a', 'base')
+    with pytest.raises(ralphlib.exceptions.GitError):
+        ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), 'no-such-ref')

@@ -149,7 +149,7 @@ function, so the command never parses a log or edits a table by hand.
 
 ## Task 5: List the decided stops since a commit
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** API (`decisions_since`); Implementation 4
@@ -160,18 +160,18 @@ list.
 
 **Subtasks:**
 
-- [ ] Add the frozen dataclass `Decision(commit: str, date: str, subject: str, body: str, task: str)`, where `task` is the trailer's value
-- [ ] Implement `decisions_since(root, ref)`: the commits reachable from the default branch and not from `ref` whose message has a `Queue-decision:` trailer, oldest first, through `ralphlib.giter` or `gitpython` as the package already does; raise `GitError` if `ref` does not resolve
-- [ ] Add tests in a temporary repository: commits with and without the trailer, a trailer in a merged branch, and an unknown `ref`
+- [x] Add the frozen dataclass `Decision(commit: str, date: str, subject: str, body: str, task: str)`, where `task` is the trailer's value
+- [x] Implement `decisions_since(root, ref)`: the commits reachable from the default branch and not from `ref` whose message has a `Queue-decision:` trailer, oldest first, through `ralphlib.giter` or `gitpython` as the package already does; raise `GitError` if `ref` does not resolve
+- [x] Add tests in a temporary repository: commits with and without the trailer, a trailer in a merged branch, and an unknown `ref`
 
 **Acceptance Criteria:**
 
-- [ ] Only trailer-carrying commits after `ref` are returned, oldest first, with the trailer value parsed
+- [x] Only trailer-carrying commits after `ref` are returned, oldest first, with the trailer value parsed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
