@@ -213,7 +213,7 @@ JSON per call, so the routine reads results without parsing prose.
 
 ## Task 7: The `/rro` command
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation 1-7; Error handling; External dependencies
@@ -223,23 +223,23 @@ task lists, so that a session runs it unattended the same way in any project.
 
 **Subtasks:**
 
-- [ ] Write `claude/commands/rro.md` in the voice of `rrq.md`, invoked as `/rro <order file>`, with a section for each of the spec's Implementation steps: Start, A list, Merge, A checkpoint, Progress page, Resume, Finish
-- [ ] In "A list", run the list exactly as `/rrq --decide` does by pointing at `rrq.md`'s steps rather than copying them, and say that a stop named in the row's `Stops for you` cell or in an `always wait for` rule file waits for the operator (`set-status ... "waiting: <stop>"`)
-- [ ] In "Merge", name each check in order: every task `done`; `bin/rro.py check-log`; on a failure, the serial rerun of the directories the log names, then `waiting: test gate`; `git merge --no-ff`; `pre-commit run --all-files --hook-stage pre-push`; push; remove the worktree and branch; `set-status ... "merged <hash>"`; commit and push the order file. Never force, never `--no-verify`
-- [ ] In "A checkpoint", say: one test run on the machine at a time as the project's own rules say; the command in the background from the main checkout; `passed <counts>` or `failed <counts>`; on a failure, list the lists merged since the last passing checkpoint, newest first, and stop; on a pass, `bin/rro.py decisions --since <previous checkpoint commit>`, the review document `agents/reviews/queue-decisions-<n>.md` with a recommendation per item, and its page as the shared reviews rule requires (approve or flag, accept-all, answers saved to the artifact database), then the next list without waiting
-- [ ] In "Progress page", say the page's data is rebuilt from the order file at every list start, stop, merge and checkpoint, and its URL is written to the `progress page` setting on first publish
-- [ ] Say what is reported to the operator at each event, in the relay format of `rrq.md`, and that state claims carry the time of the check they come from
-- [ ] Add a worked example order file at `agents/tasks/run-order/example-order.md` that `read_order` accepts, and a test in `src/tests/test_order.py` that reads it
+- [x] Write `claude/commands/rro.md` in the voice of `rrq.md`, invoked as `/rro <order file>`, with a section for each of the spec's Implementation steps: Start, A list, Merge, A checkpoint, Progress page, Resume, Finish
+- [x] In "A list", run the list exactly as `/rrq --decide` does by pointing at `rrq.md`'s steps rather than copying them, and say that a stop named in the row's `Stops for you` cell or in an `always wait for` rule file waits for the operator (`set-status ... "waiting: <stop>"`)
+- [x] In "Merge", name each check in order: every task `done`; `bin/rro.py check-log`; on a failure, the serial rerun of the directories the log names, then `waiting: test gate`; `git merge --no-ff`; `pre-commit run --all-files --hook-stage pre-push`; push; remove the worktree and branch; `set-status ... "merged <hash>"`; commit and push the order file. Never force, never `--no-verify`
+- [x] In "A checkpoint", say: one test run on the machine at a time as the project's own rules say; the command in the background from the main checkout; `passed <counts>` or `failed <counts>`; on a failure, list the lists merged since the last passing checkpoint, newest first, and stop; on a pass, `bin/rro.py decisions --since <previous checkpoint commit>`, the review document `agents/reviews/queue-decisions-<n>.md` with a recommendation per item, and its page as the shared reviews rule requires (approve or flag, accept-all, answers saved to the artifact database), then the next list without waiting
+- [x] In "Progress page", say the page's data is rebuilt from the order file at every list start, stop, merge and checkpoint, and its URL is written to the `progress page` setting on first publish
+- [x] Say what is reported to the operator at each event, in the relay format of `rrq.md`, and that state claims carry the time of the check they come from
+- [x] Add a worked example order file at `agents/tasks/run-order/example-order.md` that `read_order` accepts, and a test in `src/tests/test_order.py` that reads it
 
 **Acceptance Criteria:**
 
-- [ ] `rro.md` covers every Implementation step and every Error handling case of the spec
-- [ ] The example order file parses
+- [x] `rro.md` covers every Implementation step and every Error handling case of the spec
+- [x] The example order file parses
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
