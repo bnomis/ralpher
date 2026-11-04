@@ -282,7 +282,7 @@ without reading the spec.
 
 ## Task 9: Whole-tree checks and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests; the whole spec
@@ -292,19 +292,19 @@ spec says it is built.
 
 **Subtasks:**
 
-- [ ] Run the checks below and fix anything they find
-- [ ] Set the spec's `**Status:**` to `implemented`
+- [x] Run the checks below and fix anything they find
+- [x] Set the spec's `**Status:**` to `implemented`
 
 **Acceptance Criteria:**
 
-- [ ] Every check below passes on the branch
+- [x] Every check below passes on the branch
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_install_claude.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_install_claude.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
