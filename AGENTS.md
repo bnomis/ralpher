@@ -30,6 +30,7 @@ src/
 │   ├── logger.py
 │   ├── looper.py
 │   ├── options.py
+│   ├── order.py
 │   ├── printer.py
 │   ├── settings.py
 │   ├── signals.py
@@ -49,8 +50,10 @@ src/
     ├── test_logger.py
     ├── test_looper.py
     ├── test_options.py
+    ├── test_order.py
     ├── test_printer.py
     ├── test_ralpher.py
+    ├── test_rro.py
     ├── test_settings.py
     ├── test_signals.py
     ├── test_state.py
@@ -63,9 +66,11 @@ bin/                       # Entry point scripts
 ├── ralpher.sh
 ├── ralpherun.sh
 ├── rcl.sh
+├── rro.py
+├── rro.sh
 └── rrq.sh
 agents/                    # Specs, tasks, audit reviews, prompts and test plans
-claude/commands/           # Claude commands (rrq.md)
+claude/commands/           # Claude commands (rrq.md, rro.md)
 docs/                      # User documentation (MkDocs site)
 img/                       # Images
 mkdocs.yml                 # Site configuration

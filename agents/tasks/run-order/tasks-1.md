@@ -250,7 +250,7 @@ task lists, so that a session runs it unattended the same way in any project.
 
 ## Task 8: User guide
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Module location (`docs/run-order.md`); The order file; Settings
@@ -261,18 +261,18 @@ without reading the spec.
 
 **Subtasks:**
 
-- [ ] Write `docs/run-order.md`: what an order is and why (one paragraph), a working example order file first, every setting with its default and trade-off, what `/rro` does at each step, what stops for the operator, how to resume, and the convention that a list's last task saves its final test log at the `test log` path
-- [ ] Add it to `mkdocs.yml` under User guide, and link it from `docs/guide/claude-code.md` beside `/rrq`
-- [ ] Add `claude/commands/rro.md`, `bin/rro.py`, `src/ralphlib/order.py` and their tests to the project structure in `AGENTS.md`
+- [x] Write `docs/run-order.md`: what an order is and why (one paragraph), a working example order file first, every setting with its default and trade-off, what `/rro` does at each step, what stops for the operator, how to resume, and the convention that a list's last task saves its final test log at the `test log` path
+- [x] Add it to `mkdocs.yml` under User guide, and link it from `docs/guide/claude-code.md` beside `/rrq`
+- [x] Add `claude/commands/rro.md`, `bin/rro.py`, `src/ralphlib/order.py` and their tests to the project structure in `AGENTS.md`
 
 **Acceptance Criteria:**
 
-- [ ] The guide's example order file is the one Task 7 tests, or matches it
+- [x] The guide's example order file is the one Task 7 tests, or matches it
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
