@@ -45,7 +45,7 @@ earlier attempt is overwritten.
 
 ## Task 2: Read an order file
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** The order file; Settings; API (`OrderSettings`, `ListRow`, `CheckpointRow`, `Order`, `read_order`); Error handling (`OrderFormatError`)
@@ -55,22 +55,22 @@ settings, and refuses a malformed file before anything runs.
 
 **Subtasks:**
 
-- [ ] Add `OrderFormatError` and `WaitsForUnmetError` to `src/ralphlib/exceptions.py`, subclassing `RalpherError`
-- [ ] Write `src/ralphlib/order.py` with the frozen dataclasses `OrderSettings`, `ListRow` (with `spec` and `index` properties parsed from `<spec>/tasks-<index>.md`), `CheckpointRow` and `Order`, as the spec's API gives them
-- [ ] Implement `read_order(path)`: find the settings table (first table whose header is `Setting | Value`) and the order table (header `# | Task list | Waits for | Stops for you | Status`); keep free text untouched; strip backticks from values; apply the defaults in the spec's Settings table; split `always wait for` on commas
-- [ ] Raise `OrderFormatError`, naming the line number, for: no settings table, a missing required setting (`checkpoint command`, `test pass line`), an unknown setting, a non-integer or non-positive `checkpoint every`, a duplicate label, a label with spaces, a task list path not of the form `<spec>/tasks-<index>.md` or not existing under `agents/tasks/` beside the order file's project root, a `Waits for` label not in the table
-- [ ] Read `**Checkpoint**` and `**Final checkpoint**` rows as `CheckpointRow` (`final` true for the second)
-- [ ] Write `src/tests/test_order.py` covering each valid shape (explicit checkpoints, none, a `3a` label, free text before, between and after the tables) and each `OrderFormatError` case above
+- [x] Add `OrderFormatError` and `WaitsForUnmetError` to `src/ralphlib/exceptions.py`, subclassing `RalpherError`
+- [x] Write `src/ralphlib/order.py` with the frozen dataclasses `OrderSettings`, `ListRow` (with `spec` and `index` properties parsed from `<spec>/tasks-<index>.md`), `CheckpointRow` and `Order`, as the spec's API gives them
+- [x] Implement `read_order(path)`: find the settings table (first table whose header is `Setting | Value`) and the order table (header `# | Task list | Waits for | Stops for you | Status`); keep free text untouched; strip backticks from values; apply the defaults in the spec's Settings table; split `always wait for` on commas
+- [x] Raise `OrderFormatError`, naming the line number, for: no settings table, a missing required setting (`checkpoint command`, `test pass line`), an unknown setting, a non-integer or non-positive `checkpoint every`, a duplicate label, a label with spaces, a task list path not of the form `<spec>/tasks-<index>.md` or not existing under `agents/tasks/` beside the order file's project root, a `Waits for` label not in the table
+- [x] Read `**Checkpoint**` and `**Final checkpoint**` rows as `CheckpointRow` (`final` true for the second)
+- [x] Write `src/tests/test_order.py` covering each valid shape (explicit checkpoints, none, a `3a` label, free text before, between and after the tables) and each `OrderFormatError` case above
 
 **Acceptance Criteria:**
 
-- [ ] Every valid shape in the spec parses to the expected rows and settings, defaults included
-- [ ] Each malformed case raises `OrderFormatError` with its line number in the message
+- [x] Every valid shape in the spec parses to the expected rows and settings, defaults included
+- [x] Each malformed case raises `OrderFormatError` with its line number in the message
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
