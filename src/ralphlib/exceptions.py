@@ -30,6 +30,10 @@ class NoStateLockFilePathError(RalpherError):
     pass
 
 
+class OrderFormatError(RalpherError):
+    pass
+
+
 class PromptTemplateError(RalpherError):
     pass
 
@@ -47,4 +51,8 @@ class TasksFileError(RalpherError):
 
 
 class ValueNotADictError(RalpherError):
+    pass
+
+
+class WaitsForUnmetError(RalpherError):
     pass

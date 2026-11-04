@@ -1,7 +1,7 @@
 # Run order
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-04
 **Review page:** https://claude.ai/artifact/3a2sGJiXFLn78YeDsixi2G (every section approved by the operator, 2026-11-04 08:29 UTC)
 

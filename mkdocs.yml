@@ -60,6 +60,7 @@ nav:
       - Terminal output: guide/terminal.md
       - Stopping a run: guide/stopping.md
       - Driving ralpher from Claude Code: guide/claude-code.md
+      - Running an order of task lists: run-order.md
   - Reference:
       - Command line: reference/cli.md
       - Settings: reference/settings.md

@@ -27,6 +27,9 @@ The session:
 `/rrq --decide <spec> <n>` lets the session settle an `operator` stop
 itself, rather than stopping for you.
 
+`/rro <order file>` runs several task lists in a set order, merging each and
+checking in between; see [Running an order of task lists](../run-order.md).
+
 The command file is `claude/commands/rrq.md` in ralpher's checkout. Read it
 before you rely on it; edit it to change what the session relays.
 
