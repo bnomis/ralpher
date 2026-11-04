@@ -11,6 +11,8 @@ SETTINGS_HEADER = ['Setting', 'Value']
 ORDER_HEADER = ['#', 'Task list', 'Waits for', 'Stops for you', 'Status']
 IMPLICIT_CHECKPOINT = re.compile(r'^Checkpoint after (\S+): (.+?)\s*$')
 TASK_LIST = re.compile(r'^([^/\s]+)/tasks-([^/\s]+)\.md$')
+ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
+UNESCAPED_BAR = re.compile(r'(?<!\\)\|')
 SEPARATOR_CELL = re.compile(r'^:?-+:?$')
 DEFAULT_CHECKPOINT_EVERY = 3
 DEFAULT_TEST_LOG = 'ralpher-logs/{spec}/tasks-{index}/final-tests.log'
@@ -279,6 +281,95 @@ def next_step(order: Order) -> Step:
             return Resume(CheckpointRow(final=final, status=status))
         return RunCheckpoint(position, final, row.label)
     return Finished()
+
+
+@dataclasses.dataclass(frozen=True)
+class LogVerdict:
+    passed: bool
+    path: pathlib.Path
+    fail_lines: tuple[str, ...]
+    has_pass_line: bool
+
+
+def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
+    """Judge the final test log a list saved: it passes with its pass line and no fail match."""
+    path = root / order.settings.test_log.format(spec=row.spec, index=row.index)
+    if not path.is_file():
+        return LogVerdict(passed=False, path=path, fail_lines=(), has_pass_line=False)
+    fail = re.compile(order.settings.fail_pattern)
+    lines = [ANSI_ESCAPE.sub('', line) for line in path.read_text(encoding='utf-8', errors='replace').splitlines()]
+    has_pass_line = any(order.settings.pass_line in line for line in lines)
+    fail_lines = tuple(line for line in lines if fail.search(line))
+    return LogVerdict(passed=has_pass_line and not fail_lines, path=path, fail_lines=fail_lines, has_pass_line=has_pass_line)
+
+
+def replace_cell(line: str, index: int, text: str) -> str:
+    """Replace the text of one table cell, keeping its padding and every other byte."""
+    bars = [m.start() for m in UNESCAPED_BAR.finditer(line)]
+    start, end = bars[index] + 1, bars[index + 1]
+    cell = line[start:end]
+    lead = cell[: len(cell) - len(cell.lstrip())] or ' '
+    trail = cell[len(cell.rstrip()) :] or ' '
+    escaped = text.replace('|', '\\|')
+    return f'{line[:start]}{lead}{escaped}{trail}{line[end:]}'
+
+
+def strip_ending(line: str) -> tuple[str, str]:
+    body = line.rstrip('\r\n')
+    return body, line[len(body) :]
+
+
+def set_status(path: pathlib.Path, label: str, status: str) -> None:
+    """Rewrite one Status cell, leaving every other byte of the file unchanged.
+
+    `label` is a list's label; `checkpoint:<n>` for the nth checkpoint row in
+    the table; or `Checkpoint after <label>` for an implicit checkpoint's line,
+    which is added below the order table the first time it is set.
+
+    Raises:
+        OrderFormatError: no row or line has that label.
+    """
+    lines = path.read_bytes().decode('utf-8').splitlines(keepends=True)
+    nth = 0
+    in_order = False
+    last_table_line = -1
+    target = -1
+    for number, line in enumerate(lines):
+        body, ending = strip_ending(line)
+        if not body.lstrip().startswith('|'):
+            in_order = False
+            match = IMPLICIT_CHECKPOINT.match(body.strip())
+            if match and label == f'Checkpoint after {match.group(1)}':
+                lines[number] = f'{label}: {status}{ending}'
+                path.write_bytes(''.join(lines).encode('utf-8'))
+                return
+            continue
+        cells = split_cells(body)
+        if cells == ORDER_HEADER:
+            in_order = True
+            continue
+        if not in_order or all(SEPARATOR_CELL.match(cell) for cell in cells):
+            continue
+        last_table_line = number
+        if len(cells) != len(ORDER_HEADER):
+            continue
+        if is_checkpoint(cells):
+            nth += 1
+            if label == f'checkpoint:{nth}':
+                target = number
+        elif cells[0] == label:
+            target = number
+    if target >= 0:
+        body, ending = strip_ending(lines[target])
+        lines[target] = replace_cell(body, 4, status) + ending
+    elif label.startswith('Checkpoint after ') and last_table_line >= 0:
+        body, ending = strip_ending(lines[last_table_line])
+        ending = ending or '\n'
+        lines[last_table_line] = body + ending
+        lines.insert(last_table_line + 1, f'{ending}{label}: {status}{ending}')
+    else:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: no row labelled {label!r}')
+    path.write_bytes(''.join(lines).encode('utf-8'))
 
 
 @dataclasses.dataclass(frozen=True)

@@ -301,3 +301,84 @@ def test_decisions_since_unknown_ref(repo: git.Repo) -> None:
     git_commit(repo, 'a', 'base')
     with pytest.raises(ralphlib.exceptions.GitError):
         ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), 'no-such-ref')
+
+
+def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ralphlib.order.LogVerdict:
+    extra = ''.join(f'| {name} | {value} |\n' for name, value in settings.items())
+    path = write_order(project, SETTINGS + extra + ORDER_HEADER + L1.format('todo'))
+    order = ralphlib.order.read_order(path)
+    row = order.rows[0]
+    assert isinstance(row, ralphlib.order.ListRow)
+    if text is not None:
+        log = project / 'ralpher-logs' / 'parser' / 'tasks-1' / 'final-tests.log'
+        log.parent.mkdir(parents=True)
+        log.write_text(text)
+    return ralphlib.order.check_test_log(order, row, project)
+
+
+def test_log_passes_with_pass_line_and_no_fail(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, 'a\nall passed\n')
+    assert verdict.passed
+    assert verdict.has_pass_line
+    assert verdict.fail_lines == ()
+    assert verdict.path == project / 'ralpher-logs' / 'parser' / 'tasks-1' / 'final-tests.log'
+
+
+def test_log_missing(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, None)
+    assert not verdict.passed
+    assert verdict.fail_lines == ()
+    assert not verdict.has_pass_line
+
+
+def test_log_without_pass_line(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, 'nothing here\n')
+    assert not verdict.passed
+    assert not verdict.has_pass_line
+
+
+def test_log_with_fail_match(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, 'FAILED a\nall passed\nFAILED b\n')
+    assert not verdict.passed
+    assert verdict.has_pass_line
+    assert verdict.fail_lines == ('FAILED a', 'FAILED b')
+
+
+def test_log_with_colour_codes(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, '\x1b[32mall passed\x1b[0m\n\x1b[31mFAILED x\x1b[0m\n')
+    assert verdict.has_pass_line
+    assert verdict.fail_lines == ('FAILED x',)
+
+
+def test_log_path_uses_the_test_log_setting(project: pathlib.Path) -> None:
+    verdict = log_verdict(project, None, **{'test log': 'out/{spec}-{index}.log'})
+    assert verdict.path == project / 'out' / 'parser-1.log'
+
+
+def test_set_status_changes_one_cell(project: pathlib.Path) -> None:
+    rows = [L1.format('todo'), L2.format('todo'), CP.format('todo')]
+    path = write_order(project, '# x\r\n' + SETTINGS + ORDER_HEADER + ''.join(rows).replace('\n', '\r\n') + 'tail\n')
+    before = path.read_bytes()
+    ralphlib.order.set_status(path, '2', 'merged abc1234')
+    after = path.read_bytes()
+    assert after.replace(b'merged abc1234', b'todo', 1) == before
+    assert b'| 2 | lexicon/tasks-1.md | 1 | - | merged abc1234 |\r\n' in after
+    ralphlib.order.set_status(path, 'checkpoint:1', 'passed 90')
+    assert b'| | **Checkpoint** | | | passed 90 |\r\n' in path.read_bytes()
+    assert ralphlib.order.read_order(path).rows[2].status == 'passed 90'
+
+
+def test_set_status_unknown_label(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    with pytest.raises(ralphlib.exceptions.OrderFormatError):
+        ralphlib.order.set_status(path, '9', 'running')
+
+
+def test_set_status_implicit_checkpoint_line(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('merged a1') + '\nafter\n')
+    ralphlib.order.set_status(path, 'Checkpoint after 1', 'running')
+    assert ralphlib.order.read_order(path).implicit == (('1', 'running'),)
+    ralphlib.order.set_status(path, 'Checkpoint after 1', 'passed 5')
+    order = ralphlib.order.read_order(path)
+    assert order.implicit == (('1', 'passed 5'),)
+    assert path.read_text().endswith('after\n')
