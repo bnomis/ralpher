@@ -182,7 +182,7 @@ list.
 
 ## Task 6: The `bin/rro.py` front end
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`bin/rro.py` subcommands)
@@ -192,18 +192,18 @@ JSON per call, so the routine reads results without parsing prose.
 
 **Subtasks:**
 
-- [ ] Write `bin/rro.py` with the subcommands `next <order>`, `check-log <order> <label>`, `set-status <order> <label> <status>` and `decisions <order> --since <ref>`, using `cappa` as the project's other entry points do
-- [ ] Print one line of JSON per call (`orjson`): the step's kind and row for `next`, the `LogVerdict` fields for `check-log`, `{"ok": true}` for `set-status`, a list of decisions for `decisions`; on a `RalpherError` print `{"error": "<class>", "message": "..."}` to stdout and exit 2
-- [ ] Write `src/tests/test_rro.py`, loading the script as `test_install_claude.py` loads its script, covering each subcommand's JSON on a fixture order and the error line for a malformed one
+- [x] Write `bin/rro.py` with the subcommands `next <order>`, `check-log <order> <label>`, `set-status <order> <label> <status>` and `decisions <order> --since <ref>`, using `cappa` as the project's other entry points do
+- [x] Print one line of JSON per call (`orjson`): the step's kind and row for `next`, the `LogVerdict` fields for `check-log`, `{"ok": true}` for `set-status`, a list of decisions for `decisions`; on a `RalpherError` print `{"error": "<class>", "message": "..."}` to stdout and exit 2
+- [x] Write `src/tests/test_rro.py`, loading the script as `test_install_claude.py` loads its script, covering each subcommand's JSON on a fixture order and the error line for a malformed one
 
 **Acceptance Criteria:**
 
-- [ ] Each subcommand prints exactly one line of valid JSON, and an expected error exits 2 with its class named
+- [x] Each subcommand prints exactly one line of valid JSON, and an expected error exits 2 with its class named
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_rro.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_rro.py` passes
 
 **Notes:**
 
