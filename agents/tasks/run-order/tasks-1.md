@@ -82,7 +82,7 @@ settings, and refuses a malformed file before anything runs.
 
 ## Task 3: Choose the next step
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`next_step`, `Step`); Error handling (`WaitsForUnmetError`); Implementation 1, 6
@@ -92,21 +92,21 @@ resumes an order without remembering anything.
 
 **Subtasks:**
 
-- [ ] Add the step types `RunList(row)`, `RunCheckpoint(position, final)`, `Resume(row)` and `Finished()` to `order.py`, and `Step` as their union
-- [ ] Implement `next_step(order)`: walk the rows in order; a list or checkpoint whose status is `running` or starts with `waiting:` is `Resume`; the first list not `merged ...` is `RunList`, unless its `waits_for` names a label not merged, which raises `WaitsForUnmetError` naming both labels; an explicit checkpoint row not `passed ...` is `RunCheckpoint` once every list above it is merged; a checkpoint with status `failed ...` is `Resume`
-- [ ] With no checkpoint rows in the table, return `RunCheckpoint` after every `checkpoint_every` merged lists counted since the last passed implicit checkpoint, and after the last list; record implicit checkpoints as their own lines below the table (`Checkpoint after <label>: <status>`), and read them back
-- [ ] Return `Finished` when every list is merged and the final checkpoint (explicit or implicit) has passed
-- [ ] Add tests to `src/tests/test_order.py`: each step for each state, an implicit checkpoint after the third merge, a resume of a running list and of a waiting list, a failed checkpoint, a `WaitsForUnmetError`, and `Finished`
+- [x] Add the step types `RunList(row)`, `RunCheckpoint(position, final)`, `Resume(row)` and `Finished()` to `order.py`, and `Step` as their union
+- [x] Implement `next_step(order)`: walk the rows in order; a list or checkpoint whose status is `running` or starts with `waiting:` is `Resume`; the first list not `merged ...` is `RunList`, unless its `waits_for` names a label not merged, which raises `WaitsForUnmetError` naming both labels; an explicit checkpoint row not `passed ...` is `RunCheckpoint` once every list above it is merged; a checkpoint with status `failed ...` is `Resume`
+- [x] With no checkpoint rows in the table, return `RunCheckpoint` after every `checkpoint_every` merged lists counted since the last passed implicit checkpoint, and after the last list; record implicit checkpoints as their own lines below the table (`Checkpoint after <label>: <status>`), and read them back
+- [x] Return `Finished` when every list is merged and the final checkpoint (explicit or implicit) has passed
+- [x] Add tests to `src/tests/test_order.py`: each step for each state, an implicit checkpoint after the third merge, a resume of a running list and of a waiting list, a failed checkpoint, a `WaitsForUnmetError`, and `Finished`
 
 **Acceptance Criteria:**
 
-- [ ] For every state in the tests, `next_step` returns the step the spec's Implementation section names
-- [ ] A row is never skipped: an unmet `Waits for` raises rather than moving on
+- [x] For every state in the tests, `next_step` returns the step the spec's Implementation section names
+- [x] A row is never skipped: an unmet `Waits for` raises rather than moving on
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 

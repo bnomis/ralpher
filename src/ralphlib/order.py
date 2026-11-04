@@ -7,6 +7,7 @@ import ralphlib.exceptions
 SETTINGS_HEADER = ['Setting', 'Value']
 # auditme: accept[non-alphabetical-literal] column order is the table's meaning
 ORDER_HEADER = ['#', 'Task list', 'Waits for', 'Stops for you', 'Status']
+IMPLICIT_CHECKPOINT = re.compile(r'^Checkpoint after (\S+): (.+?)\s*$')
 TASK_LIST = re.compile(r'^([^/\s]+)/tasks-([^/\s]+)\.md$')
 SEPARATOR_CELL = re.compile(r'^:?-+:?$')
 DEFAULT_CHECKPOINT_EVERY = 3
@@ -63,6 +64,39 @@ class CheckpointRow:
 class Order:
     settings: OrderSettings
     rows: tuple[ListRow | CheckpointRow, ...]
+    implicit: tuple[tuple[str, str], ...] = ()
+
+
+@dataclasses.dataclass(frozen=True)
+class RunList:
+    row: ListRow
+
+
+@dataclasses.dataclass(frozen=True)
+class RunCheckpoint:
+    """A checkpoint is due.
+
+    `position` is the index in `Order.rows` of the explicit checkpoint row, or
+    of the list row the implicit checkpoint follows; `after` is the label of
+    the last list the checkpoint covers.
+    """
+
+    position: int
+    final: bool
+    after: str
+
+
+@dataclasses.dataclass(frozen=True)
+class Resume:
+    row: ListRow | CheckpointRow
+
+
+@dataclasses.dataclass(frozen=True)
+class Finished:
+    pass
+
+
+Step = RunList | RunCheckpoint | Resume | Finished
 
 
 def split_cells(line: str) -> list[str]:
@@ -182,8 +216,60 @@ def read_order(path: pathlib.Path) -> Order:
             if wait not in labels:
                 raise ralphlib.exceptions.OrderFormatError(f'{path}:{number}: `Waits for` label `{wait}` is not in the table')
         rows.append(ListRow(cells[0], task_list, waits, cells[3], cells[4]))
-    return Order(settings=settings, rows=tuple(rows))
+    implicit = tuple((match.group(1), match.group(2)) for line in text.splitlines() if (match := IMPLICIT_CHECKPOINT.match(line.strip())))
+    return Order(settings=settings, rows=tuple(rows), implicit=implicit)
 
 
 def is_checkpoint(cells: list[str]) -> bool:
     return unquote(cells[1]).replace('*', '').strip().lower() in ('checkpoint', 'final checkpoint')
+
+
+def is_merged(row: ListRow | CheckpointRow) -> bool:
+    return row.status.startswith('merged')
+
+
+def is_open(status: str) -> bool:
+    return status == 'running' or status.startswith(('failed', 'waiting:'))
+
+
+def next_step(order: Order) -> Step:
+    """The first row not yet merged or passed, in table order.
+
+    Raises:
+        WaitsForUnmetError: the next list waits for a list that is not merged.
+    """
+    lists = [row for row in order.rows if isinstance(row, ListRow)]
+    explicit = len(lists) != len(order.rows)
+    implicit = dict(order.implicit)
+    merged = {row.label for row in lists if is_merged(row)}
+    since_checkpoint = 0
+    last_label = ''
+    for position, row in enumerate(order.rows):
+        if isinstance(row, CheckpointRow):
+            if row.status.startswith('passed'):
+                continue
+            if is_open(row.status):
+                return Resume(row)
+            return RunCheckpoint(position, row.final, last_label)
+        last_label = row.label
+        if is_open(row.status):
+            return Resume(row)
+        if not is_merged(row):
+            for label in row.waits_for:
+                if label not in merged:
+                    raise ralphlib.exceptions.WaitsForUnmetError(f'list {row.label} waits for list {label}, which is not merged')
+            return RunList(row)
+        if explicit:
+            continue
+        since_checkpoint += 1
+        final = row is lists[-1]
+        if since_checkpoint < order.settings.checkpoint_every and not final:
+            continue
+        status = implicit.get(row.label, 'todo')
+        if status.startswith('passed'):
+            since_checkpoint = 0
+            continue
+        if is_open(status):
+            return Resume(CheckpointRow(final=final, status=status))
+        return RunCheckpoint(position, final, row.label)
+    return Finished()
