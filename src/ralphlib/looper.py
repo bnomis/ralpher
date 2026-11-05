@@ -302,7 +302,10 @@ def cleanup_cmds(options: ralphlib.options.RalpherOptions) -> list[str]:
     if options.worktree and options.task_file:
         worktree = ralphlib.templater.task_file_slug(options.task_file)
         branch = f'worktree-{worktree}'
-        cmds = [f'git merge --no-ff --no-edit {branch}']
+        cmds = []
+        if options.cwd:
+            cmds.append(f'cd {options.cwd}')
+        cmds.append(f'git merge --no-ff --no-edit {branch}')
         cmds.append(f'(git worktree unlock {worktree} 2>/dev/null || true)')
         cmds.append(f'git worktree remove --force {worktree}')
         # -D, not -d: a branch pushed for CI whose upstream is behind it is refused
