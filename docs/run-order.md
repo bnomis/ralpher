@@ -97,8 +97,13 @@ error before anything runs.
    the batch review `agents/reviews/queue-decisions-<n>.md` from the decisions
    since the previous checkpoint, publishes its page, and goes on to the next
    list without waiting for your answers.
-5. **Progress page.** One page per order, rebuilt from the order file at every
-   list start, stop, merge and checkpoint.
+5. **Progress page.** One page per order, from the template
+   `claude/templates/order-progress.html`, rebuilt from the order file at every
+   list start, task start and finish, stop, merge and checkpoint. Beside the
+   order's rows and checkpoints it shows the running list: which task of how
+   many is running, how many are done, the time spent so far, and an ETA for
+   the list and for the order from the average minutes per task of the lists
+   already merged.
 6. **Finish.** After the final checkpoint, reports the merged lists, the
    checkpoints and the decisions awaiting review.
 

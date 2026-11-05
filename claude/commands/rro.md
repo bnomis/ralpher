@@ -97,12 +97,29 @@ was published, and go on.
 
 ## Progress page
 
-Publish one page per order at the start. Build its data from the order file
-(`bin/rro.py next` and the table's rows), never from memory: each row's
-label, list, status and the time of the last change. Republish it at every
-list start, stop, merge and checkpoint. On the first publish, write its URL
-to the order file's `progress page` setting, commit and push. The file stays
-the record; the page never disagrees with it.
+Publish one page per order at the start, built from
+`$RALPHER_PATH/claude/templates/order-progress.html`: copy it once into the
+scratchpad, set its `<title>`, and on every update rewrite only the block
+between its `DATA START` and `DATA END` markers, so the layout stays the
+template's. Build the data from the order file (`bin/rro.py next` and the
+table's rows), never from memory:
+
+- `SEQ`, `STATUS` and `CKSTATUS`: each row's label, list, task count,
+  waits-for, stops for the operator and status, and each checkpoint's result;
+- `RUN`, for the list now running (else `null`): every task's title and
+  status from its tasks file in the list's worktree, and the time each
+  finished from that task's commit (`git log --format='%cI %s' <default
+  branch>..<list branch>`); a stop shows as `stop`;
+- `ORDER.pace`: each merged list's task count and wall-clock minutes from its
+  start to its merge, which the page averages for its list and order ETAs;
+  `ORDER.checkpointMinutes`, the last checkpoint's run time;
+- `ORDER.updated` and the `meta` line: the time of the check the data comes
+  from.
+
+Republish it at every list start, task start and finish, stop, merge and
+checkpoint. On the first publish, write its URL to the order file's
+`progress page` setting, commit and push. The file stays the record; the
+page never disagrees with it.
 
 ## Resume
 

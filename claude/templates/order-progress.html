@@ -1,0 +1,285 @@
+<title>Example Order</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one numbered queue, broken by correctness checkpoints; a side track for the irony gold set; dependencies light up on tap. */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --ink: #1b2230; --muted: #5b6577; --line: #dde1e8;
+  --l1: #0f7b78; --l1-soft: #e2f3f2; --l2: #6a4fb3; --l2-soft: #eeeafa; --l3: #b0640a; --l3-soft: #fbf0e1;
+  --fill: #3d4f6e; --fill-soft: #e8ecf3; --stop: #a3322b; --stop-soft: #fbe9e7; --hl: #fff3b0;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1a1f29; --ink: #e6e9ef; --muted: #9aa3b4; --line: #2c3340;
+  --l1: #4cc3bd; --l1-soft: #143331; --l2: #a990ef; --l2-soft: #251f3d; --l3: #e6a24f; --l3-soft: #33250f;
+  --fill: #9fb3d6; --fill-soft: #212a3a; --stop: #f08a80; --stop-soft: #3a1d1b; --hl: #4a4220; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a1f29; --ink: #e6e9ef; --muted: #9aa3b4; --line: #2c3340;
+  --l1: #4cc3bd; --l1-soft: #143331; --l2: #a990ef; --l2-soft: #251f3d; --l3: #e6a24f; --l3-soft: #33250f;
+  --fill: #9fb3d6; --fill-soft: #212a3a; --stop: #f08a80; --stop-soft: #3a1d1b; --hl: #4a4220; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(26px, 4vw, 36px); }
+h2 { font-size: 21px; }
+p { margin: 0; max-width: 68ch; }
+.meta { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.intro { display: grid; gap: 10px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.note { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; min-width: 0; }
+.note h3 { font-size: 15px; }
+.note p { color: var(--muted); font-size: 14px; }
+.start { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
+.cmds { display: flex; flex-wrap: wrap; gap: 8px; }
+.cmd { font: 500 13px var(--mono); background: var(--fill-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.cmd:hover, .cmd:focus-visible { border-color: var(--fill); outline: none; }
+.cmd .ok { color: var(--l1); margin-left: 6px; }
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .board { grid-template-columns: 1fr; } }
+.lane { display: grid; gap: 8px; min-width: 0; }
+.lane-head { display: grid; gap: 2px; padding: 0 2px 6px; border-bottom: 3px solid var(--c); }
+.lane-head h2 { color: var(--c); }
+.lane-head span { color: var(--muted); font-size: 13px; }
+.item { --c: var(--fill); --soft: var(--fill-soft); position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: pointer; text-align: left; font: inherit; color: inherit; width: 100%; }
+.item:focus-visible { outline: 2px solid var(--c); outline-offset: 1px; }
+.item .id { font: 500 12.5px var(--mono); color: var(--c); background: var(--soft); border-radius: 5px; height: 26px; display: grid; place-items: center; }
+.item .name { font: 500 13.5px var(--mono); overflow-wrap: anywhere; }
+.item .sub { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.chip { font: 500 11.5px var(--mono); border-radius: 999px; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); }
+.chip.dep { cursor: inherit; }
+.chip.stop { color: var(--stop); background: var(--stop-soft); border-color: transparent; }
+.why { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.item.is-dep { background: var(--hl); }
+.item.is-sel { border-color: var(--c); box-shadow: 0 0 0 1px var(--c); }
+.item.is-after { border-style: dashed; border-color: var(--c); }
+.l1 { --c: var(--l1); --soft: var(--l1-soft); }
+.l2 { --c: var(--l2); --soft: var(--l2-soft); }
+.l3 { --c: var(--l3); --soft: var(--l3-soft); }
+.lf { --c: var(--fill); --soft: var(--fill-soft); }
+.lane-head.l1, .lane-head.l2, .lane-head.l3, .lane-head.lf { --c: inherit; }
+.lane-head.l1 { border-color: var(--l1); } .lane-head.l1 h2 { color: var(--l1); }
+.lane-head.l2 { border-color: var(--l2); } .lane-head.l2 h2 { color: var(--l2); }
+.lane-head.l3 { border-color: var(--l3); } .lane-head.l3 h2 { color: var(--l3); }
+.lane-head.lf { border-color: var(--fill); } .lane-head.lf h2 { color: var(--fill); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); align-items: center; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 5px; border: 1px solid var(--line); }
+.extra { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .extra { grid-template-columns: 1fr; } }
+ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+li { max-width: 72ch; }
+code { font: 13px var(--mono); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+@media (prefers-reduced-motion: no-preference) { .item { transition: background .15s, border-color .15s; } }
+
+.seq { display: grid; gap: 8px; max-width: 860px; }
+.ckpt { display: flex; align-items: center; gap: 10px; font: 600 12.5px var(--mono); color: var(--l3); letter-spacing: .04em; text-transform: uppercase; padding: 4px 2px; }
+.ckpt::before, .ckpt::after { content: ""; flex: 1; border-top: 2px dashed var(--l3); opacity: .6; }
+.side { border-left: 4px solid var(--l2); padding-left: 10px; }
+.item.st-done { opacity: .62; }
+.item.st-done .id { background: var(--l1); color: var(--surface); }
+.item.st-run { border-color: var(--l3); box-shadow: 0 0 0 1px var(--l3); }
+.chip.st { border-color: transparent; }
+.chip.st.done { color: var(--l1); background: var(--l1-soft); }
+.chip.st.run { color: var(--l3); background: var(--l3-soft); }
+.chip.st.stop { color: var(--stop); background: var(--stop-soft); }
+.item.st-stop { border-color: var(--stop); box-shadow: 0 0 0 1px var(--stop); }
+.ckpt.ck-done { color: var(--l1); }
+.ckpt.ck-done::before, .ckpt.ck-done::after { border-color: var(--l1); }
+.ckpt.ck-fail { color: var(--stop); }
+.ckpt.ck-fail::before, .ckpt.ck-fail::after { border-color: var(--stop); }
+.progress { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
+.bar { height: 10px; border-radius: 999px; background: var(--fill-soft); overflow: hidden; display: flex; }
+.bar span { display: block; height: 100%; }
+.stats { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13.5px; color: var(--muted); }
+.stats b { font: 600 20px var(--display); color: var(--ink); margin-right: 4px; }
+.side-label { font-size: 12.5px; color: var(--l2); font-weight: 600; margin-bottom: 4px; }
+</style>
+<style>
+.now { background: var(--surface); border: 1px solid var(--l3); box-shadow: 0 0 0 1px var(--l3); border-radius: 8px; padding: 16px; display: grid; gap: 12px; }
+.now h2 { color: var(--l3); }
+.now .head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
+.now .list { font: 500 14px var(--mono); overflow-wrap: anywhere; }
+.tasks { display: grid; gap: 4px; }
+.task { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.task .n { font: 500 12px var(--mono); color: var(--muted); text-align: right; }
+.task .t { min-width: 0; overflow-wrap: anywhere; }
+.task .s { font: 500 11.5px var(--mono); color: var(--muted); white-space: nowrap; }
+.task.done .t { color: var(--muted); }
+.task.done .s { color: var(--l1); }
+.task.run .t { font-weight: 600; }
+.task.run .s { color: var(--l3); }
+.task.stop .s { color: var(--stop); }
+.eta { font-size: 13px; color: var(--muted); }
+</style>
+<div class="wrap">
+  <header class="intro">
+    <div class="meta" id="meta"></div>
+    <h1 id="title"></h1>
+    <p id="intro"></p>
+  </header>
+
+  <section class="progress">
+    <h2>Progress</h2>
+    <div class="bar" id="bar"></div>
+    <div class="stats" id="stats"></div>
+    <p class="meta" id="eta-order"></p>
+  </section>
+
+  <section class="now" id="now" hidden>
+    <div class="head"><h2>Running now</h2><span class="list" id="now-list"></span></div>
+    <div class="bar" id="now-bar"></div>
+    <div class="stats" id="now-stats"></div>
+    <div class="tasks" id="now-tasks"></div>
+    <p class="eta" id="now-eta"></p>
+  </section>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--hl)"></span>waits for this</span>
+    <span><span class="sw" style="border:1px dashed var(--ink)"></span>waits on the selected list</span>
+    <span><span class="chip stop">stop</span> pauses for you</span>
+    <span><span class="chip st done">merged</span> done</span>
+    <span><span class="chip st run">running</span> queue running now</span>
+    <span><span class="chip st stop">waiting</span> stopped, waiting for you</span>
+  </div>
+  <section class="seq" id="seq"></section>
+  <section class="extra">
+    <div class="panel"><h2>Notes</h2><ul id="notes"></ul></div>
+    <div class="panel"><h2>Record</h2><ul id="record"></ul></div>
+  </section>
+</div>
+<script>
+// ===== DATA START: the only part rewritten on each update; build it from the order file and the running list's tasks file =====
+// Example data: /rro replaces everything between DATA START and DATA END, and the <title> tag, on every publish.
+const ORDER = {
+  pageTitle: 'Example Order',
+  title: 'example order',
+  meta: 'project \u00b7 planned 2026-01-01 \u00b7 progress as of 2026-01-02 10:00 UTC \u00b7 main abc1234',
+  intro: 'The task lists of this order, run one queue at a time with /rro, with checkpoints between them. Tap a list to highlight what it waits for (yellow) and what waits for it (dashed).',
+  updated: '2026-01-02T10:00:00Z',
+  notes: ['Queues run as /rrq --decide: stops for your input are decided by Claude and collected for your review at each checkpoint.'],
+  record: ['Order file: agents/tasks/order-example.md.'],
+  // Wall-clock minutes per merged list, stops included: [tasks, minutes]. The ETAs use their average per task.
+  pace: [[6, 80]],
+  checkpointMinutes: 30,
+};
+// Rows in table order: [label, task list, task count, labels it waits for, stop for you], or 'ck' / 'final' for a checkpoint.
+const SEQ = [
+  ['1', 'parser/tasks-1', 6, [], ''],
+  ['2', 'lexicon/tasks-1', 5, [], 'the verdicts on the new entries (Task 3)'],
+  'ck',
+  ['3', 'report/tasks-2', 4, ['1'], ''],
+  'final',
+];
+// Checkpoint number (or 'final') -> ['done' | 'run' | 'fail', text].
+const CKSTATUS = {};
+// Row label -> ['done' | 'run' | 'stop', text], from the order file's Status cell.
+const STATUS = {
+  '1': ['done', 'merged def5678'],
+  '2': ['run', 'running \u00b7 task 3 of 5'],
+};
+// The running list, or null: each task's title, state ('done' | 'run' | 'stop' | 'todo') and when it finished (UTC).
+const RUN = {
+  label: '2', list: 'lexicon/tasks-1', startedAt: '2026-01-02T09:20:00Z',
+  tasks: [
+    ['Check the starting point', 'done', '09:24'],
+    ['Add the entries, tests first', 'done', '09:41'],
+    ['Write the review, then stop', 'run', 'since 09:41'],
+    ['Apply the answers', 'todo', ''],
+    ['Run the whole-tree checks and close', 'todo', ''],
+  ],
+};
+// ===== DATA END =====
+
+document.title = ORDER.pageTitle;
+document.getElementById('title').textContent = ORDER.title;
+document.getElementById('meta').textContent = ORDER.meta;
+document.getElementById('intro').textContent = ORDER.intro;
+for (const [id, items] of [['notes', ORDER.notes], ['record', ORDER.record]]) for (const t of items) { const li = document.createElement('li'); li.textContent = t; document.getElementById(id).appendChild(li); }
+
+const ALL = {};
+const root = document.getElementById('seq');
+let n = 0;
+for (const row of SEQ) {
+  if (typeof row === 'string') {
+    n += 1;
+    const c = document.createElement('div'); c.className = 'ckpt';
+    c.textContent = row === 'final' ? 'Final checkpoint: make test-correctness' : 'Checkpoint ' + n + ': make test-correctness on main';
+    const ck = CKSTATUS[row === 'final' ? 'final' : n];
+    if (ck) { c.textContent += ' · ' + ck[1]; if (ck[0] !== 'run') c.classList.add('ck-' + ck[0]); }
+    root.appendChild(c); continue;
+  }
+  const [id, name, tasks, deps, stop, why] = row;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'item l1';
+  const idEl = document.createElement('span'); idEl.className = 'id'; idEl.textContent = id;
+  const body = document.createElement('span');
+  const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = name;
+  const sub = document.createElement('div'); sub.className = 'sub';
+  const t = document.createElement('span'); t.textContent = tasks + ' tasks'; sub.appendChild(t);
+  if (deps.length) { const w = document.createElement('span'); w.textContent = 'waits for'; sub.appendChild(w); for (const d of deps) { const c = document.createElement('span'); c.className = 'chip dep'; c.textContent = d; sub.appendChild(c); } }
+  if (stop) { const s = document.createElement('span'); s.className = 'chip stop'; s.textContent = stop; sub.appendChild(s); }
+  const st = STATUS[id];
+  if (st) { const s = document.createElement('span'); s.className = 'chip st ' + st[0]; s.textContent = st[1]; sub.appendChild(s); b.classList.add('st-' + st[0]); }
+  body.append(nm, sub);
+  if (why) { const y = document.createElement('div'); y.className = 'why'; y.textContent = why; body.appendChild(y); }
+  b.append(idEl, body);
+  b.addEventListener('click', () => select(id));
+  root.appendChild(b);
+  ALL[id] = { deps, el: b, tasks };
+}
+let current = null;
+function select(id) {
+  current = current === id ? null : id;
+  for (const [k, v] of Object.entries(ALL)) {
+    v.el.classList.toggle('is-sel', k === current);
+    v.el.classList.toggle('is-dep', !!current && ALL[current].deps.includes(k));
+    v.el.classList.toggle('is-after', !!current && v.deps.includes(current));
+  }
+}
+function fill(barId, parts, total) { const bar = document.getElementById(barId); for (const [w, c] of parts) { const s = document.createElement('span'); s.style.width = (100 * w / total) + '%'; s.style.background = c; bar.appendChild(s); } }
+function stat(boxId, pairs) { const box = document.getElementById(boxId); for (const [v, l] of pairs) { const d = document.createElement('span'); const bb = document.createElement('b'); bb.textContent = v; d.append(bb, l); box.appendChild(d); } }
+function hm(date) { return date.toISOString().slice(11, 16) + ' UTC'; }
+function dur(min) { min = Math.round(min); return min >= 60 ? Math.floor(min / 60) + ' h ' + (min % 60) + ' min' : min + ' min'; }
+
+const lists = Object.keys(ALL);
+const nDone = lists.filter(k => STATUS[k] && STATUS[k][0] === 'done').length;
+const nRun = lists.filter(k => STATUS[k] && STATUS[k][0] !== 'done').length;
+fill('bar', [[nDone, 'var(--l1)'], [nRun, 'var(--l3)']], lists.length);
+stat('stats', [[nDone, 'done'], [nRun, 'running or stopped'], [lists.length - nDone - nRun, 'to go'], [lists.length, 'lists in all']]);
+
+const paceTasks = ORDER.pace.reduce((a, p) => a + p[0], 0), paceMin = ORDER.pace.reduce((a, p) => a + p[1], 0);
+const perTask = paceTasks ? paceMin / paceTasks : null;
+const updated = new Date(ORDER.updated);
+let left = 0;
+if (RUN) {
+  document.getElementById('now').hidden = false;
+  document.getElementById('now-list').textContent = 'row ' + RUN.label + ' · ' + RUN.list;
+  const total = RUN.tasks.length;
+  const done = RUN.tasks.filter(t => t[1] === 'done').length;
+  const runIdx = RUN.tasks.findIndex(t => t[1] === 'run' || t[1] === 'stop');
+  fill('now-bar', [[done, 'var(--l1)'], [runIdx >= 0 ? 1 : 0, RUN.tasks[runIdx] && RUN.tasks[runIdx][1] === 'stop' ? 'var(--stop)' : 'var(--l3)']], total);
+  const elapsed = (updated - new Date(RUN.startedAt)) / 60000;
+  stat('now-stats', [[runIdx >= 0 ? (runIdx + 1) + ' / ' + total : '-', runIdx >= 0 && RUN.tasks[runIdx][1] === 'stop' ? 'stopped at' : 'running'], [done, 'done'], [total - done, 'left'], [dur(elapsed), 'on this list']]);
+  RUN.tasks.forEach((t, i) => {
+    const r = document.createElement('div'); r.className = 'task ' + t[1];
+    const nn = document.createElement('span'); nn.className = 'n'; nn.textContent = i + 1;
+    const tt = document.createElement('span'); tt.className = 't'; tt.textContent = t[0];
+    const ss = document.createElement('span'); ss.className = 's'; ss.textContent = t[1] === 'todo' ? t[2] : (t[1] + (t[2] ? ' ' + t[2] : ''));
+    r.append(nn, tt, ss); document.getElementById('now-tasks').appendChild(r);
+  });
+  left = total - done;
+  if (perTask) document.getElementById('now-eta').textContent = 'ETA for this list: about ' + hm(new Date(updated.getTime() + left * perTask * 60000)) + ' (' + left + ' tasks at ' + Math.round(perTask) + ' min a task, the average of the lists merged so far, stops included; measurement tasks run longer, file-only tasks shorter).';
+}
+if (perTask) {
+  let rest = left * perTask, ck = 0;
+  for (const row of SEQ) {
+    if (typeof row === 'string') { const k = row === 'final' ? 'final' : null; continue; }
+    const st = STATUS[row[0]]; if (!st) rest += row[2] * perTask;
+  }
+  const doneCk = Object.keys(CKSTATUS).length, allCk = SEQ.filter(r => typeof r === 'string').length;
+  rest += (allCk - doneCk) * ORDER.checkpointMinutes;
+  document.getElementById('eta-order').textContent = 'Order ETA: about ' + hm(new Date(updated.getTime() + rest * 60000)) + ', if no stop waits for you (' + dur(rest) + ' from the last update: lists at ' + Math.round(perTask) + ' min a task, checkpoints at ' + ORDER.checkpointMinutes + ' min).';
+}
+</script>
