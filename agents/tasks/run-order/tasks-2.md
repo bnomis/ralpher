@@ -301,7 +301,7 @@ passes.
 
 **Subtasks:**
 
-- [ ] The audit reports `.pre-commit-config.yaml:4 ruff-version-drift`: the
+- [x] The audit reports `.pre-commit-config.yaml:4 ruff-version-drift`: the
       ruff in the project environment (0.17.1) differs from the
       `ruff-pre-commit` rev (v0.17.3). Make them agree; this needs an edit to
       `.pre-commit-config.yaml` or `uv.lock`, both under "Do not modify" in
@@ -314,3 +314,8 @@ passes.
   passed: `pre-commit run --all-files`, the three test files, the docs
   build, and `verify_bodies.py`. The spec status and the `TODO.md` to
   `DONE.md` move are already made
+- Decided by the operator, 2026-11-06: use ruff 0.17.2 in both places.
+  0.17.3 is newer than the project's 14-day `exclude-newer` window allows
+  until 2026-11-10. `pyproject.toml` and `uv.lock` (through `uv add --dev
+  ruff==0.17.2`) and the `ruff-pre-commit` rev now all say 0.17.2; the
+  pre-push audit passes
