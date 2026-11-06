@@ -205,7 +205,7 @@ failed.
 
 ## Task 5: Update the command and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Module location; Implementation (Start, A checkpoint, Progress page)
@@ -217,30 +217,30 @@ table by hand.
 
 **Subtasks:**
 
-- [ ] In `claude/commands/rro.md`: say to run the script as
+- [x] In `claude/commands/rro.md`: say to run the script as
       `"$RALPHER_PATH/bin/rro.sh"`, and replace every `bin/rro.py` with
       `bin/rro.sh`
-- [ ] In `rro.md` (A checkpoint, step 3, and Resume): pass the step's or
+- [x] In `rro.md` (A checkpoint, step 3, and Resume): pass the step's or
       row's `label` from `next` to `set-status` unchanged, and never build a
       label
-- [ ] In `rro.md` (Progress page): write the URL with
+- [x] In `rro.md` (Progress page): write the URL with
       `bin/rro.sh set-setting <order> "progress page" <url>`, then commit
       and push
-- [ ] In `docs/run-order.md`: replace `bin/rro.py` with `bin/rro.sh` in the
+- [x] In `docs/run-order.md`: replace `bin/rro.py` with `bin/rro.sh` in the
       prose and the examples, add a `set-setting` example, and say that
       `next` returns each checkpoint's `label` and what its two forms are
-- [ ] Grep both files for `rro.py` afterwards; the only remaining mention
+- [x] Grep both files for `rro.py` afterwards; the only remaining mention
       may be the guide's note that `rro.sh` runs it
 
 **Acceptance Criteria:**
 
-- [ ] `grep -n 'bin/rro.py' claude/commands/rro.md` finds nothing
-- [ ] Both files name `set-setting` and the checkpoint `label`
+- [x] `grep -n 'bin/rro.py' claude/commands/rro.md` finds nothing
+- [x] Both files name `set-setting` and the checkpoint `label`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

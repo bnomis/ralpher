@@ -82,7 +82,7 @@ error before anything runs.
 ## What `/rro` does
 
 1. **Start.** Checks it is in the main checkout on the default branch, clean
-   and level with its remote, then asks `bin/rro.py next` for the next step.
+   and level with its remote, then asks `bin/rro.sh next` for the next step.
    A malformed order file or an unmet `Waits for` stops here, before anything
    runs.
 2. **A list.** Sets the row to `running`, commits the order file, and runs the
@@ -141,14 +141,21 @@ file:
 
 ## The script
 
-`/rro` calls `bin/rro.py`, which prints one line of JSON per call:
+`/rro` calls `bin/rro.sh`, which prints one line of JSON per call:
 
 ```shell
-bin/rro.py next agents/tasks/order-example.md
-bin/rro.py check-log agents/tasks/order-example.md 1
-bin/rro.py set-status agents/tasks/order-example.md 1 running
-bin/rro.py decisions agents/tasks/order-example.md --since <ref>
+bin/rro.sh next agents/tasks/order-example.md
+bin/rro.sh check-log agents/tasks/order-example.md 1
+bin/rro.sh set-status agents/tasks/order-example.md 1 running
+bin/rro.sh decisions agents/tasks/order-example.md --since <ref>
+bin/rro.sh set-setting agents/tasks/order-example.md "progress page" <url>
 ```
+
+`next` returns a `label` on every checkpoint step and row, and `set-status`
+takes it unchanged. An explicit checkpoint row's label is `checkpoint:<n>`,
+counting checkpoint rows from 1; an implicit checkpoint's is
+`Checkpoint after <label>`, naming the list it follows. `set-setting` writes
+one setting's value and refuses a name that is not a known setting.
 
 An expected error prints `{"error": "<class>", "message": "..."}` and exits 2.
 The command is installed by `bin/install-claude.py` beside `/rrq`.
