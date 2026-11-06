@@ -1,9 +1,10 @@
 # Run order
 
-**Version:** 1.0
-**Status:** implemented
-**Date:** 2026-11-04
-**Review page:** https://claude.ai/artifact/3a2sGJiXFLn78YeDsixi2G (every section approved by the operator, 2026-11-04 08:29 UTC)
+**Version:** 1.1
+**Status:** approved (1.0 implemented; the 1.1 amendment approved 2026-11-06, not yet implemented)
+**Date:** 2026-11-06 (1.0: 2026-11-04)
+**Review page:** https://claude.ai/artifact/3a2sGJiXFLn78YeDsixi2G (1.0: every section approved by the operator, 2026-11-04 08:29 UTC)
+**Review page (1.1):** https://claude.ai/artifact/3Nk6F46yV929P4TZTPxv8F (review document: `agents/specs/run-order/review-1.1.md`)
 
 `/rrq --decide` runs one task list as a queue and decides the stops it may
 decide. A larger piece of work is several task lists run in a set order: each
@@ -21,6 +22,34 @@ operator was asked only for labelling, file copies into a data directory, and
 the batch reviews. The operator asked for
 the same way of working in other projects on 2026-11-04.
 
+### Amendment 1.1 (2026-11-06)
+
+`/rro` ran an order in another project on 2026-11-06, and three of its steps
+failed or had no supported route, each a gap between what `rro.md` tells the
+session to do and what `bin/rro.py` offers:
+
+- `rro.md` said to run `"$RALPHER_PATH/bin/rro.py"`. Run that way from
+  another project's directory it stopped at once with
+  `ModuleNotFoundError: No module named 'cappa'`: its `#!/usr/bin/env python`
+  runs whatever `python` is first on the caller's `PATH`. `bin/rro.sh`, which
+  sources `bin/activate.sh` first, ran every subcommand.
+- `rro.md` says to write the progress page's URL to the `progress page`
+  setting and never to edit a table by hand, but no subcommand writes a
+  setting, so the session edited the settings table with `sed`.
+- On an order with one list and no checkpoint row, `next` returned
+  `{"kind":"run-checkpoint","position":0,"final":true,"after":"1"}`.
+  `set-status <order> final ...` failed with `OrderFormatError: no row
+  labelled 'final'`; `set-status <order> "Checkpoint after 1" ...` worked.
+  The label `set-status` takes for a checkpoint was stated only in
+  `set_status`'s docstring, so the session had to build it.
+
+The amendment makes the command and the script name the same things: the
+command runs `bin/rro.sh`; every step and row `next` returns carries the
+exact label `set-status` takes; a new `set-setting` subcommand writes one
+setting cell. Running through the wrapper follows the project's rule that
+every `bin/` script has a `.sh` wrapper that activates the venv, as `/rrq`
+already does with `bin/rrq.sh`.
+
 Operator decisions, 2026-11-04: the command lives in ralpher beside `/rrq`;
 each order file carries its settings; a checkpoint publishes its batch review
 and the order keeps going without waiting for the answers; a list's final
@@ -32,7 +61,8 @@ test run is checked from a log its last task saves at a set path, not rerun.
   like `rrq.md`)
 - `src/ralphlib/order.py` - reading the order file, choosing the next step,
   checking a test log, writing a status back
-- `bin/rro.py` - the command-line front end the command calls
+- `bin/rro.py` - the command-line front end; the command calls it through
+  `bin/rro.sh`, which activates ralpher's venv first
 - `src/tests/test_order.py`, `src/tests/test_rro.py`
 - `docs/run-order.md` - user guide page, linked from `mkdocs.yml`
 
@@ -122,6 +152,7 @@ class ListRow:
 
 @dataclass(frozen=True)
 class CheckpointRow:
+    label: str  # the label set_status takes: 'checkpoint:<n>' or 'Checkpoint after <label>'
     final: bool
     status: str
 
@@ -130,6 +161,29 @@ class CheckpointRow:
 class Order:
     settings: OrderSettings
     rows: tuple[ListRow | CheckpointRow, ...]
+    implicit: tuple[tuple[str, str], ...] = ()  # (after label, status) per implicit checkpoint line
+
+
+@dataclass(frozen=True)
+class RunList:
+    row: ListRow
+
+
+@dataclass(frozen=True)
+class RunCheckpoint:
+    label: str  # the label set_status takes
+    position: int  # index in Order.rows of the checkpoint row, or of the list it follows
+    final: bool
+    after: str  # label of the last list the checkpoint covers
+
+
+@dataclass(frozen=True)
+class Resume:
+    row: ListRow | CheckpointRow
+
+
+@dataclass(frozen=True)
+class Finished: ...
 
 
 def read_order(path: pathlib.Path) -> Order:
@@ -154,7 +208,21 @@ def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict
 
 
 def set_status(path: pathlib.Path, label: str, status: str) -> None:
-    """Rewrite one row's Status cell in place, leaving every other byte unchanged."""
+    """Rewrite one row's Status cell in place, leaving every other byte unchanged.
+
+    label is a list's label, 'checkpoint:<n>' for the nth checkpoint row, or
+    'Checkpoint after <label>' for an implicit checkpoint's line below the
+    order table, added the first time it is set.
+    """
+
+
+def set_setting(path: pathlib.Path, name: str, value: str) -> None:
+    """Rewrite one setting's Value cell in place, leaving every other byte unchanged.
+
+    A known setting with no row is added as the last row of the settings
+    table. Raises OrderFormatError for an unknown name, and for a value that
+    makes the file fail read_order, in which case the file is left as it was.
+    """
 
 
 def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
@@ -163,13 +231,31 @@ def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
 
 `bin/rro.py` exposes them as subcommands, each printing one line of JSON:
 `next <order>`, `check-log <order> <label>`, `set-status <order> <label>
-<status>`, `decisions <order> --since <ref>`.
+<status>`, `set-setting <order> <name> <value>`, `decisions <order> --since
+<ref>`. `bin/rro.sh` is the entry point the command and the user guide name.
+
+Labels in `next`'s output: a `run-checkpoint` step carries `label`, and every
+row it returns (`run-list` and `resume`) carries `label` too, whether a list
+or a checkpoint row. That string is passed to `set-status` unchanged; the
+command never builds a label itself. For example, on an order with one list
+and no checkpoint row, after the list is merged:
+
+```json
+{"kind":"run-checkpoint","label":"Checkpoint after 1","position":0,"final":true,"after":"1"}
+```
+
+and for the second `**Checkpoint**` row in the table, `"label":"checkpoint:2"`.
+`set-setting` prints `{"ok": true}` as `set-status` does.
 
 ## Error handling
 
 - `OrderFormatError`: missing or unknown settings, a duplicate label, a
   task list path that does not exist, a `Waits for` label not in the table.
   Raised by `read_order`; the command stops before any run and quotes it.
+  Also raised by `set_status` for a label no row has, and by `set_setting`
+  for an unknown setting name or a value the file then fails to parse with
+  (for example `checkpoint every` set to `x`); `set_setting` restores the
+  file's original bytes before raising.
 - `WaitsForUnmetError`: the next row waits for a row that is not merged;
   the command stops and names both. It is never skipped over, since the
   table order is the operator's.
@@ -190,7 +276,8 @@ script can decide, so the routine never parses a table by hand.
 
 1. **Start.** Invoke as `/rro <order file>`. Check the working directory is
    the main checkout on the default branch, clean, and level with its
-   remote. Run `bin/rro.py next`.
+   remote. Run `"$RALPHER_PATH/bin/rro.sh" next`; every call in the command
+   goes through `bin/rro.sh`, never `bin/rro.py` directly.
 2. **A list.** Set its status to `running`, commit the order file, and run
    it exactly as `/rrq --decide <spec> <index>` does (background run,
    monitor, relayed lines). Stops listed in its `Stops for you` cell or in
@@ -209,9 +296,12 @@ script can decide, so the routine never parses a table by hand.
    recommendation per item, publish its page (approve or flag, an
    accept-all button, answers saved to the artifact database), and go on
    to the next list without waiting. When the operator says the page is
-   answered, copy the answers into the document and commit it.
+   answered, copy the answers into the document and commit it. The status
+   is written with `set-status <order> <label>`, where `<label>` is the
+   step's `label` exactly as `next` returned it.
 5. **Progress page.** Publish one page per order at the first step,
-   record its URL in the settings, and republish it at every list start,
+   record its URL with `set-setting <order> "progress page" <url>`, and
+   republish it at every list start,
    stop, merge and checkpoint: each row's status and the time of the last
    change. Its data is built from the order file, so the file stays the
    record and the page never disagrees with it.
@@ -236,9 +326,26 @@ third merge and a resume; `check_test_log` for pass, missing log, missing
 pass line and a fail match; `set_status` changes one cell and no other
 byte. `test_rro.py`: each subcommand's JSON on a fixture order.
 
+Added in 1.1:
+
+- the label round trip: for each checkpoint `next_step` can return
+  (explicit, explicit final, implicit, implicit final on a one-list order,
+  and a `Resume` of each kind), passing the returned `label` to
+  `set_status` succeeds and the next `next_step` moves past it;
+- `set_setting`: writing an empty `progress page` cell changes that cell and
+  no other byte; a missing known row is added to the settings table; an
+  unknown name raises `OrderFormatError`; an invalid `checkpoint every`
+  raises and leaves the file byte-identical; a value holding `|` round-trips
+  through `read_order`;
+- `test_rro.py`: `set-setting`'s JSON, and `label` in `next`'s JSON;
+- `bin/rro.sh next <order>` run from a directory outside the repository
+  with a `PATH` whose `python` lacks `cappa` succeeds (the regression for
+  the first finding).
+
 ## External dependencies
 
 - `/rrq` and `bin/rrq.sh` (this repository).
+- `bin/activate.sh` (this repository), which `bin/rro.sh` sources.
 - `git`, and the project's `pre-commit` hooks.
 - The Claude Code Artifact tool, for the progress page and batch reviews; without
   it the command writes the review document and reports that no page was

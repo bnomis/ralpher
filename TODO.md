@@ -20,6 +20,8 @@ every `run-checkpoint` and checkpoint `resume`, the exact label `set-status`
 takes, with `rro.md` saying to pass it unchanged. Update `docs/run-order.md`
 in the same commit.
 
+Spec: `agents/specs/run-order/spec.md` (amendment 1.1, approved 2026-11-06); tasks: `agents/tasks/run-order/tasks-2.md`.
+
 ### `bin/rro.py` fails when run as the command says
 
 Found on 2026-11-06. `rro.md` says "Run the script as
