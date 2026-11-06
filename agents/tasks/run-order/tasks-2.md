@@ -21,7 +21,7 @@ docs build.
 
 ## Task 1: Check the starting point
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Amendment 1.1
@@ -31,21 +31,21 @@ does not build over work already done.
 
 **Subtasks:**
 
-- [ ] Run `grep -rnwE 'set_setting|SetSetting|set-setting' src/ralphlib bin/rro.py`
+- [x] Run `grep -rnwE 'set_setting|SetSetting|set-setting' src/ralphlib bin/rro.py`
       and confirm no match
-- [ ] Confirm `CheckpointRow` and `RunCheckpoint` in `src/ralphlib/order.py`
+- [x] Confirm `CheckpointRow` and `RunCheckpoint` in `src/ralphlib/order.py`
       have no `label` field
-- [ ] If either check finds the work already present, stop the task as
+- [x] If either check finds the work already present, stop the task as
       `blocked` and name what was found
 
 **Acceptance Criteria:**
 
-- [ ] Both checks ran, and their result is recorded in the task's commit
+- [x] Both checks ran, and their result is recorded in the task's commit
       message
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
