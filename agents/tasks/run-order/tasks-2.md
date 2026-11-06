@@ -155,7 +155,7 @@ command never edits the settings table by hand.
 
 ## Task 4: Expose `set-setting` and the label in `bin/rro.py`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (subcommands, labels in `next`'s output); Tests (`test_rro.py`, `bin/rro.sh`)
@@ -166,7 +166,7 @@ failed.
 
 **Subtasks:**
 
-- [ ] Write the failing tests first in `src/tests/test_rro.py`:
+- [x] Write the failing tests first in `src/tests/test_rro.py`:
   - `set-setting <order> "progress page" <url>` prints `{"ok":true}` and
     the order file then holds the URL;
   - `set-setting` with an unknown name prints the `OrderFormatError` JSON
@@ -177,21 +177,21 @@ failed.
   - `bin/rro.sh next <order>`, run with the working directory outside the
     repository and a `PATH` whose first `python` is a stub that cannot
     import `cappa`, exits 0 and prints the step JSON
-- [ ] Add a `SetSetting` cappa subcommand (`order`, `name`, `value`) to
+- [x] Add a `SetSetting` cappa subcommand (`order`, `name`, `value`) to
       `bin/rro.py`, add it to `Rro.command`'s union in alphabetical place
       where the project's ordering rule applies, and dispatch it in `run`
       to `ralphlib.order.set_setting`, returning `{'ok': True}`
 
 **Acceptance Criteria:**
 
-- [ ] Every test above passes; the `set-setting` and label tests fail
+- [x] Every test above passes; the `set-setting` and label tests fail
       before the change
-- [ ] `bin/rro.sh` itself is not changed
+- [x] `bin/rro.sh` itself is not changed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_rro.py src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_rro.py src/tests/test_order.py` passes
 
 **Notes:**
 
