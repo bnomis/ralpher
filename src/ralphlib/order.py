@@ -64,6 +64,7 @@ class ListRow:
 
 @dataclasses.dataclass(frozen=True)
 class CheckpointRow:
+    label: str
     final: bool
     status: str
 
@@ -84,11 +85,14 @@ class RunList:
 class RunCheckpoint:
     """A checkpoint is due.
 
-    `position` is the index in `Order.rows` of the explicit checkpoint row, or
-    of the list row the implicit checkpoint follows; `after` is the label of
-    the last list the checkpoint covers.
+    `label` is the exact label `set_status` takes for this checkpoint:
+    `checkpoint:<n>` for an explicit row, `Checkpoint after <label>` for an
+    implicit one. `position` is the index in `Order.rows` of the explicit
+    checkpoint row, or of the list row the implicit checkpoint follows; `after`
+    is the label of the last list the checkpoint covers.
     """
 
+    label: str
     position: int
     final: bool
     after: str
@@ -210,9 +214,11 @@ def read_order(path: pathlib.Path) -> Order:
             raise ralphlib.exceptions.OrderFormatError(f'{path}:{number}: duplicate label `{label}`')
         labels.add(label)
     rows: list[ListRow | CheckpointRow] = []
+    checkpoints = 0
     for number, cells in raw_rows:
         if is_checkpoint(cells):
-            rows.append(CheckpointRow(final='final' in unquote(cells[1]).lower(), status=cells[4]))
+            checkpoints += 1
+            rows.append(CheckpointRow(label=f'checkpoint:{checkpoints}', final='final' in unquote(cells[1]).lower(), status=cells[4]))
             continue
         task_list = unquote(cells[1])
         if not TASK_LIST.match(task_list):
@@ -258,7 +264,7 @@ def next_step(order: Order) -> Step:
                 continue
             if is_open(row.status):
                 return Resume(row)
-            return RunCheckpoint(position, row.final, last_label)
+            return RunCheckpoint(row.label, position, row.final, last_label)
         last_label = row.label
         if is_open(row.status):
             return Resume(row)
@@ -277,9 +283,10 @@ def next_step(order: Order) -> Step:
         if status.startswith('passed'):
             since_checkpoint = 0
             continue
+        label = f'Checkpoint after {row.label}'
         if is_open(status):
-            return Resume(CheckpointRow(final=final, status=status))
-        return RunCheckpoint(position, final, row.label)
+            return Resume(CheckpointRow(label=label, final=final, status=status))
+        return RunCheckpoint(label, position, final, row.label)
     return Finished()
 
 
@@ -370,6 +377,54 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no row labelled {label!r}')
     path.write_bytes(''.join(lines).encode('utf-8'))
+
+
+def set_setting(path: pathlib.Path, name: str, value: str) -> None:
+    """Rewrite one setting's Value cell in place, leaving every other byte unchanged.
+
+    A known setting with no row is added as the last row of the settings
+    table. Raises OrderFormatError for an unknown name, and for a value that
+    makes the file fail read_order, in which case the file is left as it was.
+    """
+    if name not in KNOWN_SETTINGS:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: unknown setting `{name}`')
+    original = path.read_bytes()
+    lines = original.decode('utf-8').splitlines(keepends=True)
+    in_settings = False
+    last_table_line = -1
+    target = -1
+    for number, line in enumerate(lines):
+        body, _ = strip_ending(line)
+        if not body.lstrip().startswith('|'):
+            in_settings = False
+            continue
+        cells = split_cells(body)
+        if cells == SETTINGS_HEADER:
+            in_settings = True
+            last_table_line = number
+            continue
+        if not in_settings:
+            continue
+        last_table_line = number
+        if cells[0] == name and len(cells) == len(SETTINGS_HEADER):
+            target = number
+    if target >= 0:
+        body, ending = strip_ending(lines[target])
+        lines[target] = replace_cell(body, 1, value) + ending
+    elif last_table_line >= 0:
+        body, ending = strip_ending(lines[last_table_line])
+        ending = ending or '\n'
+        lines[last_table_line] = body + ending
+        escaped = value.replace('|', '\\|')
+        lines.insert(last_table_line + 1, f'| {name} | {escaped} |{ending}')
+    else:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: no settings table (header `Setting | Value`)')
+    path.write_bytes(''.join(lines).encode('utf-8'))
+    try:
+        read_order(path)
+    except ralphlib.exceptions.OrderFormatError:
+        path.write_bytes(original)
+        raise
 
 
 @dataclasses.dataclass(frozen=True)

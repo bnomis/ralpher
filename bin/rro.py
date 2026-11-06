@@ -42,6 +42,15 @@ class SetStatus:
 
 
 @dataclasses.dataclass
+class SetSetting:
+    """Write one setting's Value cell"""
+
+    order: Order
+    name: typing.Annotated[str, cappa.Arg(help="A setting's name, such as `progress page`")]
+    value: typing.Annotated[str, cappa.Arg(help='The new value')]
+
+
+@dataclasses.dataclass
 class Decisions:
     """List the decided stops since a commit"""
 
@@ -51,7 +60,7 @@ class Decisions:
 
 @dataclasses.dataclass
 class Rro:
-    command: cappa.Subcommands[Next | CheckLog | SetStatus | Decisions]
+    command: cappa.Subcommands[Next | CheckLog | SetStatus | SetSetting | Decisions]
 
 
 def row_json(row: ralphlib.order.ListRow | ralphlib.order.CheckpointRow) -> dict[str, typing.Any]:
@@ -80,7 +89,7 @@ def check_log(command: CheckLog, root: pathlib.Path) -> dict[str, typing.Any]:
     raise ralphlib.exceptions.OrderFormatError(f'{command.order}: no list labelled {command.label!r}')
 
 
-def run(command: Next | CheckLog | SetStatus | Decisions) -> typing.Any:
+def run(command: Next | CheckLog | SetStatus | SetSetting | Decisions) -> typing.Any:
     root = ralphlib.order.find_root(command.order)
     match command:
         case Next():
@@ -89,6 +98,9 @@ def run(command: Next | CheckLog | SetStatus | Decisions) -> typing.Any:
             return check_log(command, root)
         case SetStatus():
             ralphlib.order.set_status(command.order, command.label, command.status)
+            return {'ok': True}
+        case SetSetting():
+            ralphlib.order.set_setting(command.order, command.name, command.value)
             return {'ok': True}
         case Decisions():
             return [dataclasses.asdict(d) for d in ralphlib.order.decisions_since(root, command.since)]

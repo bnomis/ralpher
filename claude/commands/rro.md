@@ -3,10 +3,10 @@ before the next starts, a slower whole-project check runs at checkpoints, and
 the stops you decided are reviewed by the operator in batches.
 
 Invoke as `/rro <order file>`. The order file is the only state: everything
-a script can decide is decided by `bin/rro.py`, so never read or edit a
+a script can decide is decided by `bin/rro.sh`, so never read or edit a
 table by hand. Every call prints one line of JSON; on an error it prints
 `{"error": "<class>", "message": "..."}` and exits 2. Quote the message to
-the operator and stop. Run the script as `"$RALPHER_PATH/bin/rro.py"`.
+the operator and stop. Run the script as `"$RALPHER_PATH/bin/rro.sh"`.
 
 Report each event to the operator in the relay format of `rrq.md` (`▶`
 start, `✓` done, `✗` blocked, `?` needs the operator), one short line each.
@@ -18,7 +18,7 @@ time of the check it comes from (run `date -u +%H:%M:%S` with the check).
 1. Check, from the main checkout (not a worktree): it is on the default
    branch, the tree is clean, and it is level with its remote
    (`git status -sb`). If not, stop and say which.
-2. Run `bin/rro.py next <order>`. An `OrderFormatError` or a
+2. Run `bin/rro.sh next <order>`. An `OrderFormatError` or a
    `WaitsForUnmetError` stops the order before anything runs: quote it and
    name the row it concerns. Never skip over a row, since the table order is
    the operator's.
@@ -31,7 +31,7 @@ checkpoint, run `next` again and act on the new step.
 
 ## A list
 
-1. `bin/rro.py set-status <order> <label> running`, commit the order file
+1. `bin/rro.sh set-status <order> <label> running`, commit the order file
    and push it.
 2. Run the list exactly as `/rrq --decide <spec> <index>` does: follow the
    steps in `rrq.md` (background run, monitor, relayed lines, deciding
@@ -39,7 +39,7 @@ checkpoint, run `next` again and act on the new step.
    rather than any copy here.
 3. A stop named in the row's `Stops for you` cell, or in a rule file listed
    in the `always wait for` setting, is never decided: run
-   `bin/rro.py set-status <order> <label> "waiting: <the stop>"`, commit the
+   `bin/rro.sh set-status <order> <label> "waiting: <the stop>"`, commit the
    order file, ask the operator, and wait. Anything else `rrq.md` says to
    wait for waits as well.
 4. Update the progress page at the list's start and at every stop.
@@ -50,18 +50,18 @@ When the queue reports every task done, check in this order, stopping at the
 first that fails:
 
 1. Every task in the list's tasks file has status `done`.
-2. `bin/rro.py check-log <order> <label>` returns `"passed": true`.
+2. `bin/rro.sh check-log <order> <label>` returns `"passed": true`.
    On a failure (a missing log, no pass line, or a fail-pattern match), do
    not merge. If the log names failing test directories, rerun those
    serially from the list's worktree; merge only if they pass, and record
    that in the status (`merged <hash>, after serial rerun`). Otherwise run
-   `bin/rro.py set-status <order> <label> "waiting: test gate"`, commit the
+   `bin/rro.sh set-status <order> <label> "waiting: test gate"`, commit the
    order file, report the `fail_lines`, and stop for the operator.
 3. `git merge --no-ff` the list's branch into the default branch.
 4. `pre-commit run --all-files --hook-stage pre-push`.
 5. Push the default branch.
 6. Remove the list's worktree and branch.
-7. `bin/rro.py set-status <order> <label> "merged <short hash>"`, commit
+7. `bin/rro.sh set-status <order> <label> "merged <short hash>"`, commit
    the order file and push it.
 
 A merge conflict, a rejected push or a failing pre-push hook stops the order:
@@ -75,11 +75,13 @@ Update the progress page, then take the next step.
    rules say: wait for any other to finish first.
 2. Run the `checkpoint command` setting in the background from the main
    checkout, on the default branch, and wait for it to exit.
-3. On a pass, `bin/rro.py set-status <order> <label> "passed <counts>"`.
-   On a failure, set `failed <counts>`, list the lists merged since the last
+3. On a pass, `bin/rro.sh set-status <order> <label> "passed <counts>"`,
+   where `<label>` is the `label` of the `RunCheckpoint` step that `next`
+   returned, passed unchanged: never build one.
+   On a failure, set `failed <counts>` with the same label, list the lists merged since the last
    passing checkpoint, newest first, as the suspects, report them and stop.
    Commit and push the order file either way.
-4. After a pass, run `bin/rro.py decisions <order> --since <the previous
+4. After a pass, run `bin/rro.sh decisions <order> --since <the previous
    checkpoint's commit>` (the order's first commit for the first checkpoint).
    If it lists any, write the batch review document
    `agents/reviews/queue-decisions-<n>.md` with one item per decision, each
@@ -101,7 +103,7 @@ Publish one page per order at the start, built from
 `$RALPHER_PATH/claude/templates/order-progress.html`: copy it once into the
 scratchpad, set its `<title>`, and on every update rewrite only the block
 between its `DATA START` and `DATA END` markers, so the layout stays the
-template's. Build the data from the order file (`bin/rro.py next` and the
+template's. Build the data from the order file (`bin/rro.sh next` and the
 table's rows), never from memory:
 
 - `SEQ`, `STATUS` and `CKSTATUS`: each row's label, list, task count,
@@ -117,14 +119,14 @@ table's rows), never from memory:
   from.
 
 Republish it at every list start, task start and finish, stop, merge and
-checkpoint. On the first publish, write its URL to the order file's
-`progress page` setting, commit and push. The file stays the record; the
+checkpoint. On the first publish, write its URL with
+`bin/rro.sh set-setting <order> "progress page" <url>`, then commit and push. The file stays the record; the
 page never disagrees with it.
 
 ## Resume
 
 The order file is the state. A new session given the same file continues
-from `bin/rro.py next`:
+from `bin/rro.sh next`:
 
 - `Resume` of a `running` list: check whether its queue is still running
   (`ps -o comm=`, by name, never `pkill -f`). If not, run `/rrq --decide` on
@@ -132,6 +134,8 @@ from `bin/rro.py next`:
 - `Resume` of a `waiting: ...` row: ask the operator about the stop it
   names, then continue.
 - `Resume` of a `failed` checkpoint: tell the operator and wait.
+- `Resume` of a checkpoint row that is `running`: run the checkpoint again,
+  and set its status with the `label` the `Resume` step carries, unchanged.
 
 ## Finish
 

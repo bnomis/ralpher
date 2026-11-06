@@ -1,12 +1,15 @@
 import importlib.util
+import os
 import pathlib
+import subprocess
 import types
 
 import git
 import orjson
 import pytest
 
-SCRIPT = pathlib.Path(__file__).resolve().parents[2] / 'bin' / 'rro.py'
+BIN = pathlib.Path(__file__).resolve().parents[2] / 'bin'
+SCRIPT = BIN / 'rro.py'
 
 ORDER = """| Setting | Value |
 |---|---|
@@ -121,3 +124,58 @@ def test_malformed_order_is_an_error_line(rro: types.ModuleType, order: pathlib.
     assert code == 2
     assert result['error'] == 'OrderFormatError'
     assert 'label' in result['message']
+
+
+def test_next_checkpoint_carries_its_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_text(ORDER.replace('| todo |', '| merged abc |'))
+    result, code = call(rro, capsys, 'next', str(order))
+    assert code == 0
+    assert result == {'kind': 'run-checkpoint', 'label': 'Checkpoint after b', 'position': 1, 'final': True, 'after': 'b'}
+
+
+def test_next_resume_of_a_checkpoint_carries_its_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_text(ORDER.replace('| todo |', '| merged abc |'))
+    step, _ = call(rro, capsys, 'next', str(order))
+    assert isinstance(step, dict)
+    result, code = call(rro, capsys, 'set-status', str(order), str(step['label']), 'running')
+    assert (result, code) == ({'ok': True}, 0)
+    result, _ = call(rro, capsys, 'next', str(order))
+    assert isinstance(result, dict)
+    assert result['kind'] == 'resume'
+    assert result['row']['type'] == 'checkpoint'
+    assert result['row']['label'] == step['label']
+
+
+def test_set_setting_writes_the_value(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    result, code = call(rro, capsys, 'set-setting', str(order), 'progress page', 'https://example.com/p')
+    assert (result, code) == ({'ok': True}, 0)
+    assert '| progress page | https://example.com/p |' in order.read_text()
+
+
+def test_set_setting_unknown_name_is_an_error_line(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    before = order.read_bytes()
+    result, code = call(rro, capsys, 'set-setting', str(order), 'no such setting', 'x')
+    assert code == 2
+    assert isinstance(result, dict)
+    assert result['error'] == 'OrderFormatError'
+    assert order.read_bytes() == before
+
+
+def test_wrapper_runs_outside_the_repo_past_a_stub_python(order: pathlib.Path, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    stubs = tmp_path / 'stubs'
+    stubs.mkdir()
+    stub = stubs / 'python'
+    stub.write_text('#!/bin/sh\nexit 1\n')
+    stub.chmod(0o755)
+    elsewhere = tmp_path / 'elsewhere'
+    elsewhere.mkdir()
+    monkeypatch.setenv('PATH', f'{stubs}:{os.environ["PATH"]}')
+    done = subprocess.run(  # noqa: S603
+        [str(BIN / 'rro.sh'), 'next', str(order)],
+        cwd=elsewhere,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr
+    assert orjson.loads(done.stdout)['kind'] == 'run-list'

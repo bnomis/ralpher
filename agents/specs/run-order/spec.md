@@ -1,7 +1,7 @@
 # Run order
 
 **Version:** 1.1
-**Status:** approved (1.0 implemented; the 1.1 amendment approved 2026-11-06, not yet implemented)
+**Status:** implemented
 **Date:** 2026-11-06 (1.0: 2026-11-04)
 **Review page:** https://claude.ai/artifact/3a2sGJiXFLn78YeDsixi2G (1.0: every section approved by the operator, 2026-11-04 08:29 UTC)
 **Review page (1.1):** https://claude.ai/artifact/3Nk6F46yV929P4TZTPxv8F (review document: `agents/specs/run-order/review-1.1.md`)
