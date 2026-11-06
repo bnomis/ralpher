@@ -251,7 +251,7 @@ table by hand.
 
 ## Task 6: Whole-tree checks, close the spec and the TODO item
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests; the whole amendment
@@ -286,3 +286,31 @@ spec says it is built, and the `TODO.md` item moves to `DONE.md`.
 **Notes:**
 
 - Depends on Task 5
+
+---
+
+## Task 7: Resolve the ruff version drift the pre-push audit reports
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** none (found by Task 6)
+
+**Technical Goal:** `pre-commit run --hook-stage pre-push auditme-all --all-files`
+passes.
+
+**Subtasks:**
+
+- [ ] The audit reports `.pre-commit-config.yaml:4 ruff-version-drift`: the
+      ruff in the project environment (0.17.1) differs from the
+      `ruff-pre-commit` rev (v0.17.3). Make them agree; this needs an edit to
+      `.pre-commit-config.yaml` or `uv.lock`, both under "Do not modify" in
+      `AGENTS.md`, so the operator must approve it
+- [ ] Re-run the Task 6 checks and finish Task 6
+
+**Notes:**
+
+- Depends on Task 6; Task 6 is blocked on this. Every other Task 6 check
+  passed: `pre-commit run --all-files`, the three test files, the docs
+  build, and `verify_bodies.py`. The spec status and the `TODO.md` to
+  `DONE.md` move are already made
