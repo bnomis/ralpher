@@ -107,7 +107,7 @@ the exact label `set_status` takes, so no caller builds one.
 
 ## Task 3: Add `set_setting`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`set_setting`); Error handling; Tests (`set_setting`)
@@ -117,7 +117,7 @@ command never edits the settings table by hand.
 
 **Subtasks:**
 
-- [ ] Write the failing tests first in `src/tests/test_order.py`:
+- [x] Write the failing tests first in `src/tests/test_order.py`:
   - writing the empty `progress page` cell changes that cell and no other
     byte (compare the file bytes before and after);
   - a known setting with no row is added as the last row of the settings
@@ -126,25 +126,25 @@ command never edits the settings table by hand.
   - `checkpoint every` set to `x` raises `OrderFormatError` and leaves the
     file byte-identical;
   - a value holding `|` round-trips through `read_order`
-- [ ] Implement `set_setting(path, name, value)` in `src/ralphlib/order.py`
+- [x] Implement `set_setting(path, name, value)` in `src/ralphlib/order.py`
       beside `set_status`, reusing `replace_cell`, `split_cells`,
       `strip_ending` and `SETTINGS_HEADER`: refuse a name not in
       `KNOWN_SETTINGS`, rewrite the row's second cell, or insert a new
       `| <name> | <value> |` row after the settings table's last row with
       the file's line ending
-- [ ] After writing, call `read_order(path)`; if it raises, write the
+- [x] After writing, call `read_order(path)`; if it raises, write the
       original bytes back and re-raise
-- [ ] Give it the docstring from the spec's API block
+- [x] Give it the docstring from the spec's API block
 
 **Acceptance Criteria:**
 
-- [ ] Every test above passes, and each fails before the function exists
-- [ ] No byte outside the target cell (or the added row) changes
+- [x] Every test above passes, and each fails before the function exists
+- [x] No byte outside the target cell (or the added row) changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 

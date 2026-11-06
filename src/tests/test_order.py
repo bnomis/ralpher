@@ -417,3 +417,54 @@ def test_checkpoint_label_round_trip(project: pathlib.Path, rows: list[str], eve
     assert after != step
     if isinstance(after, ralphlib.order.RunCheckpoint | ralphlib.order.Resume):
         assert checkpoint_label(after) != checkpoint_label(step)
+
+
+SETTINGS_WITH_PAGE = SETTINGS + '| progress page | |\n'
+ONE_LIST = ORDER_HEADER + '| 1 | `parser/tasks-1.md` | - | - | todo |\n'
+
+
+def test_set_setting_changes_only_the_empty_cell(project: pathlib.Path) -> None:
+    path = write_order(project, '# Order\n\n' + SETTINGS_WITH_PAGE + '\n' + ONE_LIST)
+    before = path.read_bytes()
+    ralphlib.order.set_setting(path, 'progress page', 'https://example.test/p')
+    after = path.read_bytes()
+    assert after == before.replace(b'| progress page | |', b'| progress page | https://example.test/p |')
+    assert ralphlib.order.read_order(path).settings.progress_page == 'https://example.test/p'
+
+
+def test_set_setting_adds_a_missing_row_last(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS + '\n' + ONE_LIST)
+    ralphlib.order.set_setting(path, 'progress page', 'https://example.test/p')
+    lines = path.read_text().splitlines()
+    assert lines[lines.index('| test pass line | `all passed` |') + 1] == '| progress page | https://example.test/p |'
+    assert ralphlib.order.read_order(path).settings.progress_page == 'https://example.test/p'
+
+
+def test_set_setting_adds_a_row_with_crlf_endings(project: pathlib.Path) -> None:
+    path = write_order(project, '')
+    path.write_bytes((SETTINGS + '\n' + ONE_LIST).replace('\n', '\r\n').encode())
+    ralphlib.order.set_setting(path, 'test log', 'logs/x.log')
+    assert b'| test log | logs/x.log |\r\n' in path.read_bytes()
+    assert b'\n' not in path.read_bytes().replace(b'\r\n', b'')
+
+
+def test_set_setting_unknown_name(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS + '\n' + ONE_LIST)
+    before = path.read_bytes()
+    with pytest.raises(ralphlib.exceptions.OrderFormatError):
+        ralphlib.order.set_setting(path, 'colour', 'red')
+    assert path.read_bytes() == before
+
+
+def test_set_setting_invalid_value_restores_the_file(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS + '| checkpoint every | 2 |\n\n' + ONE_LIST)
+    before = path.read_bytes()
+    with pytest.raises(ralphlib.exceptions.OrderFormatError):
+        ralphlib.order.set_setting(path, 'checkpoint every', 'x')
+    assert path.read_bytes() == before
+
+
+def test_set_setting_value_with_a_bar_round_trips(project: pathlib.Path) -> None:
+    path = write_order(project, SETTINGS_WITH_PAGE + '\n' + ONE_LIST)
+    ralphlib.order.set_setting(path, 'progress page', 'https://example.test/a|b')
+    assert ralphlib.order.read_order(path).settings.progress_page == 'https://example.test/a|b'
