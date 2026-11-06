@@ -64,6 +64,7 @@ class ListRow:
 
 @dataclasses.dataclass(frozen=True)
 class CheckpointRow:
+    label: str
     final: bool
     status: str
 
@@ -84,11 +85,14 @@ class RunList:
 class RunCheckpoint:
     """A checkpoint is due.
 
-    `position` is the index in `Order.rows` of the explicit checkpoint row, or
-    of the list row the implicit checkpoint follows; `after` is the label of
-    the last list the checkpoint covers.
+    `label` is the exact label `set_status` takes for this checkpoint:
+    `checkpoint:<n>` for an explicit row, `Checkpoint after <label>` for an
+    implicit one. `position` is the index in `Order.rows` of the explicit
+    checkpoint row, or of the list row the implicit checkpoint follows; `after`
+    is the label of the last list the checkpoint covers.
     """
 
+    label: str
     position: int
     final: bool
     after: str
@@ -210,9 +214,11 @@ def read_order(path: pathlib.Path) -> Order:
             raise ralphlib.exceptions.OrderFormatError(f'{path}:{number}: duplicate label `{label}`')
         labels.add(label)
     rows: list[ListRow | CheckpointRow] = []
+    checkpoints = 0
     for number, cells in raw_rows:
         if is_checkpoint(cells):
-            rows.append(CheckpointRow(final='final' in unquote(cells[1]).lower(), status=cells[4]))
+            checkpoints += 1
+            rows.append(CheckpointRow(label=f'checkpoint:{checkpoints}', final='final' in unquote(cells[1]).lower(), status=cells[4]))
             continue
         task_list = unquote(cells[1])
         if not TASK_LIST.match(task_list):
@@ -258,7 +264,7 @@ def next_step(order: Order) -> Step:
                 continue
             if is_open(row.status):
                 return Resume(row)
-            return RunCheckpoint(position, row.final, last_label)
+            return RunCheckpoint(row.label, position, row.final, last_label)
         last_label = row.label
         if is_open(row.status):
             return Resume(row)
@@ -277,9 +283,10 @@ def next_step(order: Order) -> Step:
         if status.startswith('passed'):
             since_checkpoint = 0
             continue
+        label = f'Checkpoint after {row.label}'
         if is_open(status):
-            return Resume(CheckpointRow(final=final, status=status))
-        return RunCheckpoint(position, final, row.label)
+            return Resume(CheckpointRow(label=label, final=final, status=status))
+        return RunCheckpoint(label, position, final, row.label)
     return Finished()
 
 

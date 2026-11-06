@@ -60,9 +60,9 @@ def test_explicit_checkpoints_and_defaults(project: pathlib.Path) -> None:
     assert order.rows == (
         ralphlib.order.ListRow('1', 'parser/tasks-1.md', (), '-', 'todo'),
         ralphlib.order.ListRow('2', 'lexicon/tasks-1.md', ('1',), 'the verdicts (Task 3)', 'merged abc1234'),
-        ralphlib.order.CheckpointRow(final=False, status='todo'),
+        ralphlib.order.CheckpointRow(label='checkpoint:1', final=False, status='todo'),
         ralphlib.order.ListRow('3', 'report/tasks-2.md', ('1', '2'), '-', 'todo'),
-        ralphlib.order.CheckpointRow(final=True, status='todo'),
+        ralphlib.order.CheckpointRow(label='checkpoint:2', final=True, status='todo'),
     )
     row = order.rows[3]
     assert isinstance(row, ralphlib.order.ListRow)
@@ -205,7 +205,7 @@ def test_waits_for_unmet_raises(project: pathlib.Path) -> None:
 def test_explicit_checkpoint_due_and_resume(project: pathlib.Path) -> None:
     rows = [L1.format('merged abc1234'), L2.format('merged def5678'), CP.format('{}'), L3.format('todo')]
     step = ralphlib.order.next_step(order_with(project, [r.replace('{}', 'todo') for r in rows]))
-    assert step == ralphlib.order.RunCheckpoint(position=2, final=False, after='2')
+    assert step == ralphlib.order.RunCheckpoint(label='checkpoint:1', position=2, final=False, after='2')
     step = ralphlib.order.next_step(order_with(project, [r.replace('{}', 'failed 3 tests') for r in rows]))
     assert isinstance(step, ralphlib.order.Resume)
     assert step.row.status == 'failed 3 tests'
@@ -216,18 +216,18 @@ def test_explicit_checkpoint_due_and_resume(project: pathlib.Path) -> None:
 def test_final_checkpoint_then_finished(project: pathlib.Path) -> None:
     merged = [L1.format('merged abc1234'), L2.format('merged def5678')]
     step = ralphlib.order.next_step(order_with(project, [*merged, FINAL.format('todo')]))
-    assert step == ralphlib.order.RunCheckpoint(position=2, final=True, after='2')
+    assert step == ralphlib.order.RunCheckpoint(label='checkpoint:1', position=2, final=True, after='2')
     assert ralphlib.order.next_step(order_with(project, [*merged, FINAL.format('passed 90')])) == ralphlib.order.Finished()
 
 
 def test_implicit_checkpoint_after_the_third_merge(project: pathlib.Path) -> None:
     rows = [L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3')]
     step = ralphlib.order.next_step(order_with(project, rows))
-    assert step == ralphlib.order.RunCheckpoint(position=2, final=True, after='3')
+    assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 3', position=2, final=True, after='3')
     two = [L1.format('merged a1'), L2.format('merged b2'), L3.format('todo')]
     assert isinstance(ralphlib.order.next_step(order_with(project, two)), ralphlib.order.RunList)
     step = ralphlib.order.next_step(order_with(project, two, every=2))
-    assert step == ralphlib.order.RunCheckpoint(position=1, final=False, after='2')
+    assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 2', position=1, final=False, after='2')
 
 
 def test_implicit_checkpoint_status_is_read_back(project: pathlib.Path) -> None:
@@ -382,3 +382,38 @@ def test_set_status_implicit_checkpoint_line(project: pathlib.Path) -> None:
     order = ralphlib.order.read_order(path)
     assert order.implicit == (('1', 'passed 5'),)
     assert path.read_text().endswith('after\n')
+
+
+def checkpoint_label(step: ralphlib.order.Step) -> str:
+    if isinstance(step, ralphlib.order.RunCheckpoint):
+        return step.label
+    assert isinstance(step, ralphlib.order.Resume)
+    return step.row.label
+
+
+def test_one_list_order_final_checkpoint_label(project: pathlib.Path) -> None:
+    step = ralphlib.order.next_step(order_with(project, [L1.format('merged a1')]))
+    assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 1', position=0, final=True, after='1')
+
+
+@pytest.mark.parametrize(
+    ('rows', 'every', 'tail'),
+    [
+        ([L1.format('merged a1'), CP.format('todo'), L2.format('todo')], None, ''),
+        ([L1.format('merged a1'), FINAL.format('todo')], None, ''),
+        ([L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3')], None, ''),
+        ([L1.format('merged a1')], None, ''),
+        ([L1.format('merged a1'), CP.format('running'), L2.format('todo')], None, ''),
+        ([L1.format('merged a1'), L2.format('merged b2')], 2, '\nCheckpoint after 2: failed 2\n'),
+    ],
+)
+def test_checkpoint_label_round_trip(project: pathlib.Path, rows: list[str], every: int | None, tail: str) -> None:
+    settings = SETTINGS + (f'| checkpoint every | {every} |\n' if every else '')
+    path = write_order(project, settings + ORDER_HEADER + ''.join(rows) + tail)
+    step = ralphlib.order.next_step(ralphlib.order.read_order(path))
+    assert isinstance(step, ralphlib.order.RunCheckpoint | ralphlib.order.Resume)
+    ralphlib.order.set_status(path, checkpoint_label(step), 'passed 9')
+    after = ralphlib.order.next_step(ralphlib.order.read_order(path))
+    assert after != step
+    if isinstance(after, ralphlib.order.RunCheckpoint | ralphlib.order.Resume):
+        assert checkpoint_label(after) != checkpoint_label(step)

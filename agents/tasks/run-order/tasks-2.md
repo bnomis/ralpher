@@ -55,7 +55,7 @@ does not build over work already done.
 
 ## Task 2: Carry the set-status label on every checkpoint
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`CheckpointRow`, `RunCheckpoint`, `set_status`); Tests (label round trip)
@@ -65,36 +65,36 @@ the exact label `set_status` takes, so no caller builds one.
 
 **Subtasks:**
 
-- [ ] Write the failing tests first in `src/tests/test_order.py`: for an
+- [x] Write the failing tests first in `src/tests/test_order.py`: for an
       explicit checkpoint, an explicit final checkpoint, an implicit
       checkpoint after the third merge, an implicit final checkpoint on a
       one-list order, and a `Resume` of an explicit and of an implicit
       checkpoint, pass the step's (or the resumed row's) `label` to
       `set_status` with a `passed ...` status, re-read the order, and check
       `next_step` moves past it
-- [ ] Add `label: str` as the first field of `CheckpointRow` and of
+- [x] Add `label: str` as the first field of `CheckpointRow` and of
       `RunCheckpoint`, matching the spec's API block
-- [ ] In `read_order`, set each table checkpoint row's label to
+- [x] In `read_order`, set each table checkpoint row's label to
       `checkpoint:<n>`, counting checkpoint rows from 1 in table order (the
       same count `set_status` uses)
-- [ ] In `next_step`, give an explicit checkpoint's `RunCheckpoint` its
+- [x] In `next_step`, give an explicit checkpoint's `RunCheckpoint` its
       row's label, and an implicit one's `RunCheckpoint` and `Resume` row
       `Checkpoint after <label>`
-- [ ] Update the existing tests that construct `CheckpointRow` or
+- [x] Update the existing tests that construct `CheckpointRow` or
       `RunCheckpoint` for the new field
-- [ ] Update `RunCheckpoint`'s docstring to describe `label`
+- [x] Update `RunCheckpoint`'s docstring to describe `label`
 
 **Acceptance Criteria:**
 
-- [ ] On a one-list order with no checkpoint row and the list merged,
+- [x] On a one-list order with no checkpoint row and the list merged,
       `next_step` returns
       `RunCheckpoint(label='Checkpoint after 1', position=0, final=True, after='1')`
-- [ ] Every round-trip test passes; each fails on the code before this task
+- [x] Every round-trip test passes; each fails on the code before this task
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
