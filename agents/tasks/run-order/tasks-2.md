@@ -251,7 +251,7 @@ table by hand.
 
 ## Task 6: Whole-tree checks, close the spec and the TODO item
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests; the whole amendment
@@ -261,27 +261,27 @@ spec says it is built, and the `TODO.md` item moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Run the checks below and fix anything they find
-- [ ] Set the spec's `**Status:**` to `implemented`
-- [ ] Move the `TODO.md` item "The `/rro` command's steps do not match
+- [x] Run the checks below and fix anything they find
+- [x] Set the spec's `**Status:**` to `implemented`
+- [x] Move the `TODO.md` item "The `/rro` command's steps do not match
       `bin/rro.py`'s interface" to the end of `DONE.md`: append its heading
       and body unchanged, then a line
       `Done: <YYYY-MM-DD> - spec agents/specs/run-order/spec.md amendment 1.1, tasks agents/tasks/run-order/tasks-2.md.`
       and remove it from `TODO.md`
-- [ ] Take the baseline `TODO.md` from the commit that added this task list:
+- [x] Take the baseline `TODO.md` from the commit that added this task list:
       `git show "$(git log --diff-filter=A --format=%H -- agents/tasks/run-order/tasks-2.md)":TODO.md > <scratch file>`
 
 **Acceptance Criteria:**
 
-- [ ] Every check below passes on the branch
+- [x] Every check below passes on the branch
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_install_claude.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch file> TODO.md DONE.md` exits 0
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_install_claude.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch file> TODO.md DONE.md` exits 0
 
 **Notes:**
 
@@ -291,7 +291,7 @@ spec says it is built, and the `TODO.md` item moves to `DONE.md`.
 
 ## Task 7: Resolve the ruff version drift the pre-push audit reports
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** none (found by Task 6)
@@ -306,7 +306,7 @@ passes.
       `ruff-pre-commit` rev (v0.17.3). Make them agree; this needs an edit to
       `.pre-commit-config.yaml` or `uv.lock`, both under "Do not modify" in
       `AGENTS.md`, so the operator must approve it
-- [ ] Re-run the Task 6 checks and finish Task 6
+- [x] Re-run the Task 6 checks and finish Task 6
 
 **Notes:**
 
