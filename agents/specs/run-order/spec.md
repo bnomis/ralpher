@@ -1,8 +1,8 @@
 # Run order
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
-**Date:** 2026-11-06 (1.0: 2026-11-04)
+**Date:** 2026-11-07 (1.2: no implicit checkpoint before a short tail; 1.1: 2026-11-06; 1.0: 2026-11-04)
 **Review page:** https://claude.ai/artifact/3a2sGJiXFLn78YeDsixi2G (1.0: every section approved by the operator, 2026-11-04 08:29 UTC)
 **Review page (1.1):** https://claude.ai/artifact/3Nk6F46yV929P4TZTPxv8F (review document: `agents/specs/run-order/review-1.1.md`)
 
@@ -105,7 +105,11 @@ other line is free text and is kept as written.
   `passed <counts>` or `failed <counts>`.
 - A `**Checkpoint**` row may be written by hand; where the table has none,
   `/rro` runs one after every `checkpoint every` merged lists and after the
-  last. A `**Final checkpoint**` row ends the order.
+  last, but skips one that would leave fewer than `checkpoint every` lists
+  before the last: with `checkpoint every` 3, an order of four or five lists
+  gets one checkpoint, after the last, and six get two. A short tail would
+  otherwise cost a whole checkpoint run for one or two lists. A
+  `**Final checkpoint**` row ends the order.
 
 ## Settings
 
@@ -199,7 +203,8 @@ def next_step(order: Order) -> Step:
     A running or waiting row is returned as Resume(row). A list whose
     waits_for holds an unmerged label raises WaitsForUnmetError. A checkpoint
     is due when the table names one next, or, with none in the table, after
-    every `checkpoint_every` merged lists and after the last.
+    every `checkpoint_every` merged lists and after the last, skipping one
+    that would leave fewer than `checkpoint_every` lists before the last.
     """
 
 

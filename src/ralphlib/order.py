@@ -277,7 +277,9 @@ def next_step(order: Order) -> Step:
             continue
         since_checkpoint += 1
         final = row is lists[-1]
-        if since_checkpoint < order.settings.checkpoint_every and not final:
+        every = order.settings.checkpoint_every
+        left = len(lists) - position - 1
+        if not final and (since_checkpoint < every or left < every):
             continue
         status = implicit.get(row.label, 'todo')
         if status.startswith('passed'):
