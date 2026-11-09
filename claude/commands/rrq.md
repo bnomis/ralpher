@@ -85,8 +85,10 @@ reason is a task stopped for the operator ("Operator input required for task
    and marked "decided by Claude, not yet reviewed". Tick the subtasks it
    completes and set the task's status.
 4. Commit it in the worktree with the trailer
-   `Queue-decision: <task list path> Task <N>`, so the user can find every
-   such decision later with `git log --grep '^Queue-decision:'`.
+   `Queue-decision: <task list path> Task <N>` in the message's last
+   paragraph, beside any other trailers and with no blank line between
+   them, so the user can find every such decision later with
+   `git log --grep '^Queue-decision:'`.
 5. Tell the user in two or three lines what you decided and why, naming the
    task in plain words, then run this command again with the same arguments,
    `--decide` included.

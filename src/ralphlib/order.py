@@ -19,6 +19,7 @@ DEFAULT_TEST_LOG = 'ralpher-logs/{spec}/tasks-{index}/final-tests.log'
 DEFAULT_BRANCH = 'main'
 DEFAULT_FAIL_PATTERN = 'FAILED'
 DECISION_TRAILER = 'Queue-decision'
+DECISION_LINE = re.compile(f'^{DECISION_TRAILER}:(.*)$', re.MULTILINE)
 FIELD_SEPARATOR = '\x1f'
 RECORD_SEPARATOR = '\x1e'
 REQUIRED_SETTINGS = ('checkpoint command', 'test pass line')
@@ -447,7 +448,10 @@ def default_branch(repo: git.Repo) -> str:
 
 
 def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
-    """Commits on the default branch since ref carrying a Queue-decision trailer, oldest first.
+    """Commits on the default branch since ref with a Queue-decision line, oldest first.
+
+    The value is read from every such line in the message, wherever it sits: git parses
+    trailers only in the last paragraph, and a line above it is still a decided stop.
 
     Raises:
         GitError: root is not a repository or ref does not resolve.
@@ -458,7 +462,7 @@ def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
     except git.GitError as e:
         raise ralphlib.exceptions.GitError(f'Cannot resolve {ref} in {root}') from e
     # auditme: accept[legacy-formatting-percent] git log placeholders, not Python formatting
-    fields = ('%H', '%as', '%s', '%b', f'%(trailers:key={DECISION_TRAILER},valueonly,separator=%x2c)')
+    fields = ('%H', '%as', '%s', '%b', '%B')
     text = repo.git.log(
         '--reverse',
         f'--format={FIELD_SEPARATOR.join(fields)}{RECORD_SEPARATOR}',
@@ -469,7 +473,7 @@ def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
     for record in text.split(RECORD_SEPARATOR):
         if not record.strip():
             continue
-        commit, date, subject, body, task = record.strip('\n').split(FIELD_SEPARATOR)
-        if task.strip():
-            decisions.append(Decision(commit=commit, date=date, subject=subject, body=body.strip(), task=task.strip()))
+        commit, date, subject, body, message = record.strip('\n').split(FIELD_SEPARATOR)
+        task = ', '.join(value.strip() for value in DECISION_LINE.findall(message))
+        decisions.append(Decision(commit=commit, date=date, subject=subject, body=body.strip(), task=task))
     return decisions

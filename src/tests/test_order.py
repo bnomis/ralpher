@@ -300,6 +300,14 @@ def test_decisions_since_filters_and_orders(repo: git.Repo) -> None:
     assert 'Why it was chosen.' in decisions[0].body
 
 
+def test_decisions_since_reads_a_line_outside_the_last_paragraph(repo: git.Repo) -> None:
+    base = git_commit(repo, 'a', 'base')
+    stop = git_commit(repo, 'b', 'task stop\n\nWhy.\n\nQueue-decision: sites S1, S3 and S4 change\n\nCo-Authored-By: Probe <p@example.com>')
+    decisions = ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), base)
+    assert [d.commit for d in decisions] == [stop]
+    assert [d.task for d in decisions] == ['sites S1, S3 and S4 change']
+
+
 def test_decisions_since_includes_merged_branch(repo: git.Repo) -> None:
     base = git_commit(repo, 'a', 'base')
     repo.git.checkout('-b', 'feature')
