@@ -108,6 +108,9 @@ table's rows), never from memory:
 
 - `SEQ`, `STATUS` and `CKSTATUS`: each row's label, list, task count,
   waits-for, stops for the operator and status, and each checkpoint's result;
+  each entry is `[code, text]`, and the page colours only the codes its
+  template styles: `done` (green) or `fail` (red) for a list or checkpoint,
+  `run` while one is going; any other code, such as `passed`, shows uncoloured;
 - `RUN`, for the list now running (else `null`): every task's title and
   status from its tasks file in the list's worktree, and the time each
   finished from that task's commit (`git log --format='%cI %s' <default
