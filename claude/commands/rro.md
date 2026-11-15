@@ -122,7 +122,10 @@ table's rows), never from memory:
   from.
 
 Republish it at every list start, task start and finish, stop, merge and
-checkpoint. On the first publish, write its URL with
+checkpoint. A task line from the queue's monitor is two actions in the same
+turn: relay the line, then rebuild `RUN` and `STATUS` from the tasks file and
+the list's commits and republish. Relaying the line alone leaves the page
+showing the first task running while the queue is several tasks on. On the first publish, write its URL with
 `bin/rro.sh set-setting <order> "progress page" <url>`, then commit and push. The file stays the record; the
 page never disagrees with it.
 
