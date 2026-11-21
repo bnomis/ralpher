@@ -169,6 +169,23 @@ class Order:
 
 
 @dataclass(frozen=True)
+class LogVerdict:
+    passed: bool
+    path: pathlib.Path
+    fail_lines: tuple[str, ...]
+    has_pass_line: bool
+
+
+@dataclass(frozen=True)
+class Decision:
+    commit: str
+    date: str
+    subject: str
+    body: str
+    task: str
+
+
+@dataclass(frozen=True)
 class RunList:
     row: ListRow
 

@@ -36,6 +36,10 @@ claim itself after the iteration ends: if any task in the tasks file is not
 No new dependencies: the module uses GitPython (as `giter.py` does) and `re`.
 
 ```python
+class TasksFileError(RalpherError):
+    """Raised, in `ralphlib/exceptions.py`, when the tasks file the agent edits cannot be located."""
+
+
 @dataclasses.dataclass
 class TaskStatus:
     number: int
@@ -179,7 +183,9 @@ A parse that finds no task headings is not `verified` (reason
 
 - Tasks file or worktree missing, unreadable, or not valid UTF-8: the check
   is not `verified`, the reason names the tasks file option
-  (`options.task_file`, not the worktree path that was read) and the error,
+  (`options.task_file`, not the worktree path that was read) and the error
+  (for a missing worktree, the `TasksFileError` text
+  `worktree for <slug> not found`),
   and the loop stops as it does today. `verifier.READ_ERRORS` (`OSError`,
   `UnicodeDecodeError`, `ValueError`, `git.GitCommandError` and
   `TasksFileError`) are caught in `verify_stop` and where `iteration.py`
@@ -205,6 +211,11 @@ temporary repository with and without a matching worktree.
 `(True, False)`: an unfinished task runs the next iteration and prints the
 rejection line; every task done, `--no-verify-stop` and an unreadable tasks
 file each stop after the first iteration (the last also logs a warning).
+
+## External dependencies
+
+- GitPython (`git`), already used by `giter.py`, for `git worktree list`.
+- `re`, from the standard library, for the task heading and status patterns.
 
 ## Out of scope
 

@@ -377,7 +377,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 12: Spec fixes, and the whole-tree checks
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 13, Decision 2
@@ -386,22 +386,22 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `agents/specs/auditme-adoption/spec.md`: `message_type_to_str` to `MESSAGE_TYPE_TO_STR` (line 56), `ralpher_event_type_to_str` to `RALPHER_EVENT_TYPE_TO_STR` (line 57), `is_working_tree_clean` to `working_tree_is_clean` (line 80), `bin/install-claude.py` to `bin/install-claude.sh` in Module location (line 37); leave the dated Implementation table as written
-- [ ] `agents/specs/verified-stop/spec.md:180`: say a missing worktree gives the `TasksFileError` text `worktree for <slug> not found` as the reason, as line 173 does
-- [ ] `agents/specs/verified-stop/spec.md`: add an External dependencies section (GitPython, `re`) and declare `TasksFileError` in the API
-- [ ] `agents/specs/run-order/spec.md`: define `LogVerdict` and `Decision` in the API, with the fields `src/ralphlib/order.py` gives them
-- [ ] Do not split either spec (Decision 2)
+- [x] `agents/specs/auditme-adoption/spec.md`: `message_type_to_str` to `MESSAGE_TYPE_TO_STR` (line 56), `ralpher_event_type_to_str` to `RALPHER_EVENT_TYPE_TO_STR` (line 57), `is_working_tree_clean` to `working_tree_is_clean` (line 80), `bin/install-claude.py` to `bin/install-claude.sh` in Module location (line 37); leave the dated Implementation table as written
+- [x] `agents/specs/verified-stop/spec.md:180`: say a missing worktree gives the `TasksFileError` text `worktree for <slug> not found` as the reason, as line 173 does
+- [x] `agents/specs/verified-stop/spec.md`: add an External dependencies section (GitPython, `re`) and declare `TasksFileError` in the API
+- [x] `agents/specs/run-order/spec.md`: define `LogVerdict` and `Decision` in the API, with the fields `src/ralphlib/order.py` gives them
+- [x] Do not split either spec (Decision 2)
 
 **Acceptance Criteria:**
 
-- [ ] Each statement review-4's Doc4 list names now matches the code
+- [x] Each statement review-4's Doc4 list names now matches the code
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_order.py src/tests/test_ralpher.py src/tests/test_rro.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_order.py src/tests/test_ralpher.py src/tests/test_rro.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
