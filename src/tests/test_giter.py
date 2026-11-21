@@ -464,6 +464,14 @@ class TestLastCommitSummary:
         ):
             ralphlib.giter.last_commit_summary(tmp_path)
 
+    def test_os_error_raises_git_error(self, tmp_path: pathlib.Path) -> None:
+        git.Repo.init(str(tmp_path))
+        with (
+            unittest.mock.patch.object(git.Repo, 'head', new_callable=unittest.mock.PropertyMock, side_effect=OSError('denied')),
+            pytest.raises(ralphlib.exceptions.GitError),
+        ):
+            ralphlib.giter.last_commit_summary(tmp_path)
+
 
 class TestConfirmGitState:
     @pytest.fixture

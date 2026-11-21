@@ -1,4 +1,5 @@
 import pathlib
+import unittest.mock
 
 import git
 import pytest
@@ -323,6 +324,19 @@ def test_decisions_since_unknown_ref(repo: git.Repo) -> None:
     git_commit(repo, 'a', 'base')
     with pytest.raises(ralphlib.exceptions.GitError):
         ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), 'no-such-ref')
+
+
+def test_decisions_since_os_error(repo: git.Repo) -> None:
+    git_commit(repo, 'a', 'base')
+    with unittest.mock.patch('git.Repo', side_effect=OSError('denied')), pytest.raises(ralphlib.exceptions.GitError):
+        ralphlib.order.decisions_since(pathlib.Path(repo.working_dir), 'HEAD')
+
+
+def test_default_branch_os_error() -> None:
+    repo = unittest.mock.MagicMock()
+    repo.git.symbolic_ref.side_effect = OSError('denied')
+    with pytest.raises(ralphlib.exceptions.GitError):
+        ralphlib.order.default_branch(repo)
 
 
 def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ralphlib.order.LogVerdict:

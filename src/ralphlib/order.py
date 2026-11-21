@@ -497,11 +497,17 @@ class Decision:
 
 
 def default_branch(repo: git.Repo) -> str:
-    """The branch origin/HEAD points at, or main when it is unset."""
+    """The branch origin/HEAD points at, or main when it is unset.
+
+    Raises:
+        GitError: the repository cannot be read from disk.
+    """
     try:
         return repo.git.symbolic_ref('--short', 'refs/remotes/origin/HEAD').removeprefix('origin/')
     except git.GitCommandError:
         return DEFAULT_BRANCH
+    except OSError as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read origin/HEAD of {repo.working_dir}') from e
 
 
 def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
@@ -516,7 +522,7 @@ def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
     try:
         repo = git.Repo(root)
         repo.git.rev_parse('--verify', '--quiet', f'{ref}^{{commit}}')
-    except git.GitError as e:
+    except (git.GitError, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot resolve {ref} in {root}') from e
     # auditme: accept[legacy-formatting-percent] git log placeholders, not Python formatting
     fields = ('%H', '%as', '%s', '%b', '%B')

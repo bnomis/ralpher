@@ -128,7 +128,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 4: Git handlers also catch `OSError`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -137,19 +137,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_giter.py` and `src/tests/test_order.py` that an `OSError` from each guarded call (patch the GitPython call) raises `GitError`
-- [ ] Add `OSError` to each handler and raise `GitError` from it, keeping each handler's existing behaviour for the errors it already catches
-- [ ] Update the `Raises:` sections where they change
+- [x] Add tests to `src/tests/test_giter.py` and `src/tests/test_order.py` that an `OSError` from each guarded call (patch the GitPython call) raises `GitError`
+- [x] Add `OSError` to each handler and raise `GitError` from it, keeping each handler's existing behaviour for the errors it already catches
+- [x] Update the `Raises:` sections where they change
 
 **Acceptance Criteria:**
 
-- [ ] Each of the three handlers names `OSError`
+- [x] Each of the three handlers names `OSError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_order.py` passes
 
 **Notes:**
 
