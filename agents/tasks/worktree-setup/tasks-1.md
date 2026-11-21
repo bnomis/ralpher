@@ -150,7 +150,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 5: User docs, and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Tests and documentation (User docs), Settings
@@ -159,24 +159,24 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `docs/reference/settings.md`: a row for `worktree_setup` in the Keys table (list of strings, no default, what it does, must be safe to repeat)
-- [ ] `docs/reference/variables.md`: a `worktree_setup` row under Prompts (the commands with `--worktree`, else an empty list)
-- [ ] `docs/guide/worktrees.md`: a section on giving the worktree an environment: the `["uv sync"]` example in `.ralpher/settings.json`, why it matters (a check that falls back to `PATH` sees other tools), the warning, that every iteration's agent runs the commands, and that they must be safe to repeat
-- [ ] `docs/guide/prompts.md`: that `one-task.md` shows the commands, and that a custom prompt can use `worktree_setup`
-- [ ] Set the spec's `**Status:**` to `implemented`
-- [ ] Move the `TODO.md` item "A queue's worktree has no environment, so its audit runs PATH's ruff" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - spec agents/specs/worktree-setup/spec.md, tasks agents/tasks/worktree-setup/tasks-1.md.`, and remove it from `TODO.md`
+- [x] `docs/reference/settings.md`: a row for `worktree_setup` in the Keys table (list of strings, no default, what it does, must be safe to repeat)
+- [x] `docs/reference/variables.md`: a `worktree_setup` row under Prompts (the commands with `--worktree`, else an empty list)
+- [x] `docs/guide/worktrees.md`: a section on giving the worktree an environment: the `["uv sync"]` example in `.ralpher/settings.json`, why it matters (a check that falls back to `PATH` sees other tools), the warning, that every iteration's agent runs the commands, and that they must be safe to repeat
+- [x] `docs/guide/prompts.md`: that `one-task.md` shows the commands, and that a custom prompt can use `worktree_setup`
+- [x] Set the spec's `**Status:**` to `implemented`
+- [x] Move the `TODO.md` item "A queue's worktree has no environment, so its audit runs PATH's ruff" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - spec agents/specs/worktree-setup/spec.md, tasks agents/tasks/worktree-setup/tasks-1.md.`, and remove it from `TODO.md`
 
 **Acceptance Criteria:**
 
-- [ ] Every page the spec's User docs list names `worktree_setup`
+- [x] Every page the spec's User docs list names `worktree_setup`
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_templater.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this task list (`git show "$(git log --diff-filter=A --format=%H -- agents/tasks/worktree-setup/tasks-1.md)":TODO.md`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_templater.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this task list (`git show "$(git log --diff-filter=A --format=%H -- agents/tasks/worktree-setup/tasks-1.md)":TODO.md`)
 
 **Notes:**
 

@@ -14,6 +14,7 @@ Rendered before each iteration. See [Prompts](../guide/prompts.md).
 | `task_file_relative_path` | the tasks file relative to `--cwd` when inside it, else absolute; empty without one |
 | `worktree` | boolean: `--worktree` given |
 | `worktree_name` | the worktree name, with `--worktree` and `--task-file`; else empty |
+| `worktree_setup` | list of strings: the `worktree_setup` setting's commands with `--worktree`, else an empty list |
 | each `--vars` key | its value; a key that names a built-in is rejected |
 
 ## Hooks

@@ -15,7 +15,7 @@ trailing whitespace is stripped.
 
 The prompt is a [Jinja](https://jinja.palletsprojects.com/en/stable/templates/)
 template, rendered before every iteration. Every value is a string, except
-`worktree`, which is a boolean.
+`worktree`, which is a boolean, and `worktree_setup`, which is a list.
 
 | Variable | Value |
 |----------|-------|
@@ -25,6 +25,7 @@ template, rendered before every iteration. Every value is a string, except
 | `task_file_relative_path` | `--task-file` relative to `--cwd` when it is inside it, otherwise absolute; empty without a tasks file |
 | `worktree` | `true` with `--worktree` |
 | `worktree_name` | the worktree's name, with `--worktree` and `--task-file`; otherwise empty |
+| `worktree_setup` | a list of strings: the [`worktree_setup`](../reference/settings.md#keys) commands with `--worktree`, otherwise empty |
 | anything from `--vars` | its value |
 
 The template renders in Jinja's sandbox, the same one hooks use. A template
@@ -40,6 +41,15 @@ Work only in the worktree {{ worktree_name }}.
 Read {{ task_file_relative_path }} and do the first task whose status is todo.
 ```
 
+The bundled `one-task.md` lists the `worktree_setup` commands for the agent to
+run first. A custom prompt can loop over them:
+
+```jinja
+{% for command in worktree_setup %}
+Run `{{ command }}` in the worktree before anything else.
+{% endfor %}
+```
+
 ## `--vars`
 
 ```shell
@@ -49,7 +59,7 @@ ralpher.sh --prompt PROMPT.md --vars area=parser --vars max_files=5
 Each `--vars KEY=VALUE` adds a variable; split at the first `=`, so values can
 contain `=`. A value with no `=`, or a key that names a built-in variable
 (`iteration`, `iterations`, `task_file`, `task_file_relative_path`, `worktree`,
-`worktree_name`), stops the run before the `start` hook with an error and exit
+`worktree_name`, `worktree_setup`), stops the run before the `start` hook with an error and exit
 status 1.
 
 ## Writing a prompt for a loop
