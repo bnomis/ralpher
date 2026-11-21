@@ -218,3 +218,38 @@ def test_load_settings_applies_the_cli_settings_file_last(theme: dict[str, str])
         path.write_text(json.dumps({'theme': theme}))
         options = tests.helpers.make_plain_options(settings_file=str(path))
         assert ralphlib.settings.load_settings(options).settings['theme'] == theme
+
+
+class TestValidateSettings:
+    PATH = pathlib.Path('settings.json')
+
+    def test_valid_settings_pass(self) -> None:
+        # auditme: accept[duplicate-side-effect-per-target] one test per validation branch
+        ralphlib.settings.validate_settings({'hooks': {'start': ['echo greet']}, 'hook_templates': False, 'theme': {'a': 'b'}}, self.PATH)
+
+    def test_empty_settings_pass(self) -> None:
+        ralphlib.settings.validate_settings({}, self.PATH)
+
+    def test_hooks_not_an_object_raises(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='hooks must be an object'):
+            ralphlib.settings.validate_settings({'hooks': ['echo salute']}, self.PATH)
+
+    def test_hook_commands_not_a_list_raises(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match=r'hooks\.start must be a list of strings'):
+            ralphlib.settings.validate_settings({'hooks': {'start': 'echo hi'}}, self.PATH)
+
+    def test_hook_command_not_a_string_raises(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match=r'hooks\.end must be a list of strings'):
+            ralphlib.settings.validate_settings({'hooks': {'end': ['echo hi', 3]}}, self.PATH)
+
+    def test_hook_templates_not_a_bool_raises(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='hook_templates must be true or false'):
+            ralphlib.settings.validate_settings({'hook_templates': 'yes'}, self.PATH)
+
+    def test_theme_not_an_object_raises(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='theme must be an object'):
+            ralphlib.settings.validate_settings({'theme': 'dark'}, self.PATH)
+
+    def test_error_names_the_file(self) -> None:
+        with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
+            ralphlib.settings.validate_settings({'theme': 1}, self.PATH)

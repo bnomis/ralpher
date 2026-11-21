@@ -19,6 +19,7 @@ import ralphlib.logger
 import ralphlib.looper
 import ralphlib.options
 import ralphlib.settings
+import ralphlib.signals
 import ralphlib.types
 
 
@@ -367,3 +368,79 @@ class TestLoopEndToEnd:
         assert types[-2:] == [ralphlib.types.RalpherEventType.ERROR, ralphlib.types.RalpherEventType.END]
         assert state['exit_reason'] == 'error'
         assert state['iterations_completed'] == 1
+
+
+def make_stop_options(tmp_path: pathlib.Path, tasks_text: str | None) -> ralphlib.options.RalpherOptions:
+    task_file = tmp_path / 'tasks.md'
+    if tasks_text is not None:
+        task_file.write_text(tasks_text)
+    options = ralphlib.options.RalpherOptions(
+        prompts='p',
+        task_file=str(task_file),
+        skip_git_check=True,
+        state='state.json',
+        logdir=str(tmp_path / 'logs'),
+        cwd=str(tmp_path),
+    )
+    options.settings = ralphlib.settings.default_settings()
+    return options
+
+
+class TestRejectUnverifiedStop:
+    def test_all_done_allows_the_stop(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+        options = make_stop_options(tmp_path, TASKS_DONE)
+        assert ralphlib.looper.reject_unverified_stop(options, 1, '1') is True
+        assert 'rejected' not in capsys.readouterr().out
+
+    def test_missing_task_file_trusts_the_stop(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+        options = make_stop_options(tmp_path, None)
+        assert ralphlib.looper.reject_unverified_stop(options, 1, '1') is True
+        assert 'rejected' not in capsys.readouterr().out
+
+    def test_unfinished_tasks_reject_the_stop_and_record_it(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+        options = make_stop_options(tmp_path, TASKS_UNFINISHED)
+        (tmp_path / 'logs').mkdir()
+        (tmp_path / 'logs' / 'state.json').write_text('{}')
+        assert ralphlib.looper.reject_unverified_stop(options, 2, '2') is False
+        out = capsys.readouterr().out
+        assert 'Loop complete signal rejected, 2 of 3 tasks not done' in out
+        assert '  Task 2: Second thing (todo)' in out
+        assert '  Task 3: Third (no status)' in out
+        state = json.loads((tmp_path / 'logs' / 'state.json').read_text())
+        assert state['iterations']['2']['stop_rejected'] == {'total': 3, 'not_done': [2, 3]}
+
+
+class TestPrintCleanupCmds:
+    def test_worktree_run_prints_the_cleanup_chain(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = ralphlib.options.RalpherOptions(prompts='p', worktree=True, task_file='agents/tasks/tasks-1.md', cwd='/src/probe')
+        options.settings = ralphlib.settings.default_settings()
+        ralphlib.looper.print_cleanup_cmds(options)
+        out = capsys.readouterr().out
+        assert 'Probable cleanup commands...' in out
+        for cmd in ralphlib.looper.cleanup_cmds(options):
+            assert cmd in out
+        assert 'cd /src/probe' in out
+        assert 'git push' in out
+
+    def test_no_worktree_prints_nothing(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = ralphlib.options.RalpherOptions(prompts='p', task_file='tasks.md')
+        options.settings = ralphlib.settings.default_settings()
+        ralphlib.looper.print_cleanup_cmds(options)
+        assert capsys.readouterr().out == ''
+
+
+class TestPrintStoppingPrompt:
+    def test_prints_the_stored_prompt(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = ralphlib.options.RalpherOptions(prompts='p')
+        options.settings = ralphlib.settings.default_settings()
+        ralphlib.signals.set_should_exit(True, reason='stop', prompt='do the next thing')
+        ralphlib.looper.print_stopping_prompt(options)
+        out = capsys.readouterr().out
+        assert 'Probable next prompt...' in out
+        assert 'do the next thing' in out
+
+    def test_no_prompt_prints_nothing(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = ralphlib.options.RalpherOptions(prompts='p')
+        options.settings = ralphlib.settings.default_settings()
+        ralphlib.looper.print_stopping_prompt(options)
+        assert capsys.readouterr().out == ''

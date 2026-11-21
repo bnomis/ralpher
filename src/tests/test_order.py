@@ -2,6 +2,8 @@ import pathlib
 import unittest.mock
 
 import git
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import ralphlib.exceptions
@@ -353,6 +355,139 @@ def test_default_branch_os_error() -> None:
     repo.git.symbolic_ref.side_effect = OSError('denied')
     with pytest.raises(ralphlib.exceptions.GitError):
         ralphlib.order.default_branch(repo)
+
+
+def test_default_branch_reads_origin_head(repo: git.Repo) -> None:
+    head = git_commit(repo, 'a', 'base')
+    repo.git.update_ref('refs/remotes/origin/trunk', head)
+    repo.git.symbolic_ref('refs/remotes/origin/HEAD', 'refs/remotes/origin/trunk')
+    assert ralphlib.order.default_branch(repo) == 'trunk'
+
+
+def test_default_branch_falls_back_when_origin_head_is_unset(repo: git.Repo) -> None:
+    git_commit(repo, 'a', 'base')
+    assert ralphlib.order.default_branch(repo) == ralphlib.order.DEFAULT_BRANCH
+
+
+def test_default_branch_falls_back_on_a_git_command_error() -> None:
+    repo = unittest.mock.MagicMock()
+    repo.git.symbolic_ref.side_effect = git.GitCommandError('symbolic-ref', 1)
+    assert ralphlib.order.default_branch(repo) == 'main'
+
+
+def test_default_branch_os_error_names_the_repository() -> None:
+    repo = unittest.mock.MagicMock()
+    repo.working_dir = '/src/probe'
+    repo.git.symbolic_ref.side_effect = OSError('denied')
+    with pytest.raises(ralphlib.exceptions.GitError, match='/src/probe'):
+        ralphlib.order.default_branch(repo)
+
+
+def test_discover_root_finds_the_directory_holding_agents_tasks(project: pathlib.Path) -> None:
+    order = write_order(project, '')
+    assert ralphlib.order.discover_root(order) == project.resolve()
+
+
+def test_discover_root_takes_the_nearest_ancestor(project: pathlib.Path) -> None:
+    inner = project / 'sub'
+    (inner / 'agents' / 'tasks').mkdir(parents=True)
+    assert ralphlib.order.discover_root(inner / 'agents' / 'tasks' / 'order-x.md') == inner.resolve()
+
+
+def test_discover_root_without_agents_tasks_names_the_path(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'order-x.md'
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=r'no agents/tasks/ directory'):
+        ralphlib.order.discover_root(path)
+
+
+REQUIRED = {'checkpoint command': 'make test-slow', 'test pass line': 'all passed'}
+SETTINGS_PATH = pathlib.Path('/src/probe/order-x.md')
+
+
+def settings_for(values: dict[str, str], **lines: int) -> ralphlib.order.OrderSettings:
+    return ralphlib.order.build_settings(values, lines, 3, SETTINGS_PATH)
+
+
+def test_build_settings_defaults() -> None:
+    settings = settings_for(REQUIRED)
+    assert settings == ralphlib.order.OrderSettings(
+        checkpoint_command='make test-slow',
+        checkpoint_every=3,
+        test_log=ralphlib.order.DEFAULT_TEST_LOG,
+        pass_line='all passed',  # noqa: S106 a log line, not a password
+        fail_pattern='FAILED',
+        wait_rules=(),
+        progress_page=None,
+    )
+
+
+def test_build_settings_every_value_given() -> None:
+    values = REQUIRED | {
+        'always wait for': 'alpha, beta ,, gamma',
+        'checkpoint every': '5',
+        'progress page': 'page.html',
+        'test fail pattern': 'BROKEN',
+        'test log': 'logs/x.log',
+    }
+    settings = settings_for(values, **{'checkpoint every': 7})
+    assert settings.checkpoint_every == 5
+    assert settings.wait_rules == ('alpha', 'beta', 'gamma')
+    assert settings.progress_page == 'page.html'
+    assert settings.fail_pattern == 'BROKEN'
+    assert settings.test_log == 'logs/x.log'
+
+
+def test_build_settings_empty_optional_values_use_the_defaults() -> None:
+    values = REQUIRED | {'always wait for': ' ', 'checkpoint every': '', 'progress page': '', 'test fail pattern': '', 'test log': ''}
+    settings = settings_for(values)
+    assert settings.checkpoint_every == 3
+    assert settings.wait_rules == ()
+    assert settings.progress_page is None
+    assert settings.fail_pattern == 'FAILED'
+    assert settings.test_log == ralphlib.order.DEFAULT_TEST_LOG
+
+
+@pytest.mark.parametrize('name', ['checkpoint command', 'test pass line'])
+@pytest.mark.parametrize('present', [False, True])
+def test_build_settings_missing_or_empty_required_setting(name: str, present: bool) -> None:
+    values = dict(REQUIRED)
+    if present:
+        values[name] = ''
+    else:
+        del values[name]
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=f'{SETTINGS_PATH}:3: missing required setting `{name}`'):
+        settings_for(values)
+
+
+@pytest.mark.parametrize('text', ['0', '-1', 'two', '1.5', '٣', '\u00b2'])
+def test_build_settings_bad_checkpoint_every(text: str) -> None:
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=f'{SETTINGS_PATH}:9: `checkpoint every` must be a positive integer'):
+        settings_for(REQUIRED | {'checkpoint every': text}, **{'checkpoint every': 9})
+
+
+CELL_TEXT = hypothesis.strategies.text(alphabet='ab1 |-`', max_size=12).map(str.strip)
+CELLS = hypothesis.strategies.lists(CELL_TEXT, min_size=1, max_size=6)
+
+
+def row_of(cells: list[str]) -> str:
+    escaped = ' | '.join(cell.replace('|', '\\|') for cell in cells)
+    return f'| {escaped} |'
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(cells=CELLS)
+def test_split_cells_round_trips_a_row_with_escaped_bars(cells: list[str]) -> None:
+    assert ralphlib.order.split_cells(row_of(cells)) == cells
+
+
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(cells=CELLS, text=CELL_TEXT, data=hypothesis.strategies.data())
+def test_replace_cell_changes_only_the_chosen_cell(cells: list[str], text: str, data: hypothesis.strategies.DataObject) -> None:
+    index = data.draw(hypothesis.strategies.integers(min_value=0, max_value=len(cells) - 1))
+    replaced = ralphlib.order.replace_cell(row_of(cells), index, text)
+    expected = list(cells)
+    expected[index] = text
+    assert ralphlib.order.split_cells(replaced) == expected
 
 
 def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ralphlib.order.LogVerdict:

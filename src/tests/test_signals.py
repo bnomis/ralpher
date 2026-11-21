@@ -68,3 +68,17 @@ class TestShouldExitRoundTrip:
         assert ralphlib.signals.get_should_exit() is True
         ralphlib.signals.set_should_exit(False)
         assert ralphlib.signals.get_should_exit() is False
+
+
+class TestPerformShutdown:
+    def test_marks_shutting_down_and_requests_exit(self, terminator: ralphlib.signals.GracefulTerminator) -> None:
+        terminator.perform_shutdown()
+        assert terminator.is_shutting_down is True
+        assert ralphlib.signals.get_should_exit() is True
+        assert ralphlib.signals.get_should_exit_reason() == 'Graceful shutdown initiated'
+        assert ralphlib.signals.get_should_exit_prompt() is None
+
+    def test_clears_a_stored_prompt(self, terminator: ralphlib.signals.GracefulTerminator) -> None:
+        ralphlib.signals.set_should_exit(False, prompt='old')
+        terminator.perform_shutdown()
+        assert ralphlib.signals.get_should_exit_prompt() is None

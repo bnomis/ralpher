@@ -23,6 +23,7 @@ import ralphlib.iteration
 import ralphlib.logger
 import ralphlib.options
 import ralphlib.signals
+import ralphlib.state
 import ralphlib.templater
 import ralphlib.types
 import tests.helpers
@@ -1881,3 +1882,346 @@ def test_make_context_clears_the_cached_worktree_path() -> None:
     options.worktree_task_path = pathlib.Path('/stale')
     ralphlib.iteration.make_context(options, 'prompt', 1)
     assert options.worktree_task_path is None
+
+
+# --- Direct tests of the small iteration helpers ---
+
+
+class FakeProc:
+    """A stand-in for a process that exits only once `signal_agent` has been called `exit_after` times."""
+
+    def __init__(self, exit_after: int | None) -> None:
+        self.pid = 4242
+        self.exit_after = exit_after
+        self.signals = 0
+
+    def poll(self) -> int | None:
+        if self.exit_after is not None and self.signals >= self.exit_after:
+            return 0
+        return None
+
+
+def count_signal(proc: FakeProc) -> None:
+    proc.signals += 1
+
+
+def test_signal_agent_signals_the_process_group() -> None:
+    proc = unittest.mock.MagicMock()
+    proc.pid = 4242
+    with unittest.mock.patch('os.killpg') as killpg:
+        ralphlib.iteration.signal_agent(proc)
+    killpg.assert_called_once_with(4242, signal.SIGTERM)
+    proc.terminate.assert_not_called()
+
+
+def test_signal_agent_falls_back_to_terminate_when_killpg_fails() -> None:
+    proc = unittest.mock.MagicMock()
+    proc.pid = 4242
+    with unittest.mock.patch('os.killpg', side_effect=ProcessLookupError('gone')):
+        ralphlib.iteration.signal_agent(proc)
+    proc.terminate.assert_called_once_with()
+
+
+def test_write_log_without_a_file_is_a_noop() -> None:
+    ralphlib.iteration.write_log(make_context(), None, 'text', flush=True)
+
+
+def test_write_log_writes_and_flushes_only_when_asked() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    ralphlib.iteration.write_log(context, fd, 'one')
+    fd.write.assert_called_once_with('one')
+    fd.flush.assert_not_called()
+    ralphlib.iteration.write_log(context, fd, 'two', flush=True)
+    fd.flush.assert_called_once_with()
+
+
+def test_write_log_error_names_the_file() -> None:
+    fd = unittest.mock.MagicMock()
+    fd.name = '/logs/progress-1.log'
+    fd.write.side_effect = OSError('disk full')
+    with pytest.raises(ralphlib.exceptions.LogFileError, match='progress-1.log'):
+        ralphlib.iteration.write_log(make_context(), fd, 'x')
+
+
+def test_write_log_releases_the_lock_after_a_failure() -> None:
+    context = make_context()
+    fd = unittest.mock.MagicMock()
+    fd.write.side_effect = OSError('disk full')
+    with pytest.raises(ralphlib.exceptions.LogFileError):
+        ralphlib.iteration.write_log(context, fd, 'x')
+    assert context.gil.acquire(blocking=False)
+    context.gil.release()
+
+
+def test_read_task_statuses_without_a_task_file_is_empty() -> None:
+    assert ralphlib.iteration.read_task_statuses(tests.helpers.make_plain_options(task_file='')) == []
+
+
+def test_read_task_statuses_unreadable_file_is_empty(tmp_path: pathlib.Path) -> None:
+    options = tests.helpers.make_plain_options(task_file=str(tmp_path / 'missing.md'), cwd=str(tmp_path))
+    assert ralphlib.iteration.read_task_statuses(options) == []
+
+
+def test_read_task_statuses_returns_every_task_with_its_position(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'tasks.md'
+    write_tasks(path, 'in-progress')
+    options = tests.helpers.make_plain_options(task_file=str(path), cwd=str(tmp_path))
+    assert ralphlib.iteration.read_task_statuses(options) == [
+        ralphlib.iteration.TaskEntry('1', 'First thing', 1, 3, 'done'),
+        ralphlib.iteration.TaskEntry('2', 'Second thing', 2, 3, 'in-progress'),
+        ralphlib.iteration.TaskEntry('3', 'Third thing', 3, 3, 'todo'),
+    ]
+
+
+def test_kill_agent_stops_signalling_once_the_process_exits() -> None:
+    proc = FakeProc(exit_after=2)
+    with (
+        unittest.mock.patch.object(ralphlib.iteration, 'signal_agent', side_effect=count_signal),
+        unittest.mock.patch.object(ralphlib.iteration.time, 'sleep'),
+        unittest.mock.patch('loguru.logger.warning') as warning,
+    ):
+        ralphlib.iteration.kill_agent(proc)  # type: ignore[arg-type]
+    assert proc.signals == 2
+    warning.assert_not_called()
+
+
+def test_kill_agent_gives_up_after_the_maximum_attempts() -> None:
+    proc = FakeProc(exit_after=None)
+    with (
+        unittest.mock.patch.object(ralphlib.iteration, 'signal_agent', side_effect=count_signal),
+        unittest.mock.patch.object(ralphlib.iteration.time, 'sleep'),
+        unittest.mock.patch('loguru.logger.warning') as warning,
+    ):
+        ralphlib.iteration.kill_agent(proc)  # type: ignore[arg-type]
+    assert proc.signals == ralphlib.iteration.MAX_KILL_ATTEMPTS
+    warning.assert_called_once()
+
+
+def test_kill_agent_does_not_signal_an_exited_process() -> None:
+    proc = FakeProc(exit_after=0)
+    with unittest.mock.patch.object(ralphlib.iteration, 'signal_agent') as signal_agent:
+        ralphlib.iteration.kill_agent(proc)  # type: ignore[arg-type]
+    signal_agent.assert_not_called()
+
+
+def test_open_log_file_without_a_name_opens_nothing() -> None:
+    opened: list[io.TextIOWrapper] = []
+    assert ralphlib.iteration.open_log_file(None, tests.helpers.make_options(), 1, opened) == (None, None)
+    assert opened == []
+
+
+def test_open_log_file_opens_for_appending_and_records_the_handle(tmp_path: pathlib.Path) -> None:
+    ralphlib.logger.log_file_cache.clear()
+    options = tests.helpers.make_options(logdir=str(tmp_path), quiet=True)
+    opened: list[io.TextIOWrapper] = []
+    # auditme: accept[filesystem-envelope-gap] try/finally only closes the handles; the open is under test
+    try:
+        path, fd = ralphlib.iteration.open_log_file('probe.log', options, 1, opened)
+        assert path is not None
+        assert fd is not None
+        assert opened == [fd]
+        fd.write('one\n')
+        fd.flush()
+        assert path.read_text(encoding='utf-8') == 'one\n'
+        path2, fd2 = ralphlib.iteration.open_log_file('probe.log', options, 1, opened)
+        assert path2 == path
+        assert fd2 is not None
+        fd2.write('two\n')
+        fd2.flush()
+        assert path.read_text(encoding='utf-8') == 'one\ntwo\n'
+    finally:
+        ralphlib.iteration.close_all(opened)
+        ralphlib.logger.log_file_cache.clear()
+
+
+def test_open_log_file_failure_raises_log_file_error_and_records_nothing(tmp_path: pathlib.Path) -> None:
+    ralphlib.logger.log_file_cache.clear()
+    blocker = tmp_path / 'file'
+    blocker.write_text('x')
+    options = tests.helpers.make_options(logdir=str(blocker), quiet=True)
+    opened: list[io.TextIOWrapper] = []
+    try:
+        with pytest.raises(ralphlib.exceptions.LogFileError):
+            ralphlib.iteration.open_log_file('probe.log', options, 1, opened)
+        assert opened == []
+    finally:
+        ralphlib.logger.log_file_cache.clear()
+
+
+@pytest.mark.parametrize(
+    ('content', 'expected'),
+    [
+        ({'input': {'command': 'ls'}}, '  ls'),
+        ({'input': {'command': 'a\nb'}}, '  a\n  b'),
+        ({'input': {'todos': [{'content': 'x'}, {'content': 'y'}]}}, '  - x\n  - y'),
+        ({'input': {'other': 'value'}}, ''),
+        ({'input': {}}, ''),
+        ({}, ''),
+    ],
+)
+def test_get_tool_input_indents_the_input_content(content: dict[str, typing.Any], expected: str) -> None:
+    assert ralphlib.iteration.get_tool_input(content) == expected
+
+
+def test_last_message_type_is_none_for_an_empty_queue() -> None:
+    assert ralphlib.iteration.last_message_type(make_context()) is None
+
+
+def test_last_message_type_returns_the_newest_entry() -> None:
+    context = make_context()
+    ralphlib.iteration.append_message_type(context, ralphlib.types.MessageType.SYSTEM)
+    ralphlib.iteration.append_message_type(context, ralphlib.types.MessageType.TOOL_USE)
+    assert ralphlib.iteration.last_message_type(context) == ralphlib.types.MessageType.TOOL_USE
+    assert context.message_type_queue == [ralphlib.types.MessageType.SYSTEM, ralphlib.types.MessageType.TOOL_USE]
+
+
+def test_mark_started_is_true_once_per_task() -> None:
+    context = make_context()
+    assert ralphlib.iteration.mark_started(context, '1') is True
+    assert ralphlib.iteration.mark_started(context, '1') is False
+    assert ralphlib.iteration.mark_started(context, '2') is True
+    assert context.started_tasks == {'1', '2'}
+
+
+@pytest.mark.parametrize(
+    'subtype',
+    [
+        'background_tasks_changed',
+        'commands_changed',
+        'compat_boundary',
+        'hook_progress',
+        'hook_response',
+        'hook_started',
+        'init',
+        'notification',
+        'status',
+        'task_notification',
+        'task_progress',
+        'task_started',
+        'task_updated',
+        'thinking_tokens',
+        'vcs_state_changed',
+    ],
+)
+def test_process_system_skips_housekeeping_subtypes(subtype: str) -> None:
+    payload = {'type': 'system', 'subtype': subtype}
+    line = orjson.dumps(payload).decode()
+    result = ralphlib.iteration.process_system(tests.helpers.make_plain_options(quiet=True), make_context(), payload, line)
+    assert result == (ralphlib.types.MessageType.NONE, line)
+
+
+@pytest.mark.parametrize(('payload', 'expected'), [({'subtype': 'api_retry'}, 'api_retry'), ({}, ''), ({'subtype': ''}, '')])
+def test_process_system_reports_other_subtypes(payload: dict[str, str], expected: str) -> None:
+    result = ralphlib.iteration.process_system(tests.helpers.make_plain_options(quiet=True), make_context(), payload, 'line')
+    assert result == (ralphlib.types.MessageType.SYSTEM, expected)
+
+
+def test_read_stdout_logs_each_line_and_records_message_types() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    context.stdoutfd = io.StringIO()
+    context.progressfd = io.StringIO()
+    lines = [
+        orjson.dumps({'type': 'system', 'subtype': 'api_retry'}).decode(),
+        '',
+        orjson.dumps({'type': 'system', 'subtype': 'init'}).decode(),
+        orjson.dumps({'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'name': 'Bash', 'input': {'command': 'ls'}}]}}).decode(),
+    ]
+    pipe = io.StringIO('\n'.join(lines) + '\n')
+
+    ralphlib.iteration.read_stdout(options, context, pipe)  # type: ignore[arg-type]
+
+    assert context.stdoutfd.getvalue() == ''.join(f'{line}\n' for line in lines if line)
+    assert context.progressfd.getvalue() == 'api_retry\nBash\n  ls\n'
+    assert context.message_type_queue == [ralphlib.types.MessageType.SYSTEM, ralphlib.types.MessageType.TOOL_USE]
+    assert 'Bash' in context.tools_used_set
+
+
+def test_read_stdout_on_an_empty_pipe_does_nothing() -> None:
+    context = make_context()
+    ralphlib.iteration.read_stdout(tests.helpers.make_plain_options(quiet=True), context, io.StringIO(''))  # type: ignore[arg-type]
+    assert context.message_type_queue == []
+
+
+def test_summary_without_anything_to_report_writes_no_state() -> None:
+    context = make_context()
+    context.progressfd = io.StringIO()
+    with unittest.mock.patch.object(ralphlib.state, 'add_to_state') as add_to_state:
+        ralphlib.iteration.summary(tests.helpers.make_plain_options(quiet=True), context)
+    add_to_state.assert_not_called()
+    assert context.progressfd.getvalue() == ''
+
+
+def test_summary_reports_tools_unknown_tools_and_unknown_ptypes() -> None:
+    options = tests.helpers.make_plain_options(quiet=True)
+    context = make_context()
+    context.progressfd = io.StringIO()
+    context.tools_used_set = {'Read', 'Bash'}
+    context.unknown_tools = {'Mystery': {'input_bytes': 7}}
+    context.unknown_ptype_set = {'zeta', 'alpha'}
+
+    with unittest.mock.patch.object(ralphlib.state, 'add_to_state') as add_to_state:
+        ralphlib.iteration.summary(options, context)
+
+    progress = context.progressfd.getvalue()
+    assert 'Tools used:\n- Bash\n- Read\n' in progress
+    assert 'Unknown tools used:\n- Mystery\n  - input_bytes: 7\n' in progress
+    assert 'Unknown message types received:\n- alpha\n- zeta\n' in progress
+    add_to_state.assert_called_once()
+    assert add_to_state.call_args.args[1] == {
+        'tools_used': ['Bash', 'Read'],
+        'unknown_ptypes': ['alpha', 'zeta'],
+        'unknown_tools': {'Mystery': {'input_bytes': 7}},
+    }
+    assert add_to_state.call_args.kwargs == {'key1': 'iterations', 'key2': ralphlib.logger.iteration_to_str(options, 1)}
+
+
+def test_unmake_context_flushes_and_closes_every_open_log(tmp_path: pathlib.Path) -> None:
+    context = make_context()
+    path = tmp_path / 'out.log'
+    context.stdoutfd = path.open('a', encoding='utf-8')
+    context.stdoutfd.write('data')
+    context.stderrfd = io.StringIO()
+    context.progressfd = io.StringIO()
+    context.errorsfd = io.StringIO()
+    fds = [context.stdoutfd, context.stderrfd, context.progressfd, context.errorsfd]
+
+    ralphlib.iteration.unmake_context(context)
+
+    assert all(fd.closed for fd in fds)
+    assert path.read_text(encoding='utf-8') == 'data'
+
+
+def test_unmake_context_without_logs_is_a_noop() -> None:
+    ralphlib.iteration.unmake_context(make_context())
+
+
+@pytest.mark.parametrize('quiet', [False, True])
+@pytest.mark.parametrize(
+    ('call', 'stream', 'expected'),
+    [
+        (lambda options, context: ralphlib.iteration.print_error(options, context, 'bad'), 'err', 'bad'),
+        (lambda options, context: ralphlib.iteration.print_error_eol(options, context), 'err', '\n\n'),
+        (
+            lambda options, context: ralphlib.iteration.print_progress(options, context, ralphlib.types.MessageType.SYSTEM, 'msg'),
+            'out',
+            'msg',
+        ),
+        (lambda options, context: ralphlib.iteration.print_progress_eol(options, context), 'out', '\n'),
+        (lambda options, context: ralphlib.iteration.print_progress_lines(options, context, ['a', 'b']), 'out', 'ab'),
+    ],
+    ids=['print_error', 'print_error_eol', 'print_progress', 'print_progress_eol', 'print_progress_lines'],
+)
+def test_print_functions_write_to_their_stream_unless_quiet(
+    capsys: pytest.CaptureFixture[str],
+    call: collections.abc.Callable[[ralphlib.options.RalpherOptions, ralphlib.iteration.IterationContext], None],
+    stream: str,
+    expected: str,
+    quiet: bool,
+) -> None:
+    call(tests.helpers.make_options(quiet=quiet), make_context())
+    captured = capsys.readouterr()
+    wanted, other = (captured.err, captured.out) if stream == 'err' else (captured.out, captured.err)
+    assert other == ''
+    assert wanted == ('' if quiet else expected)

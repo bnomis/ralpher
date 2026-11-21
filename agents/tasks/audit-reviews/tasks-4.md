@@ -282,7 +282,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 9: Direct and property tests for the untested functions
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** large
 **Source Reference:** Finding 11
@@ -291,20 +291,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Direct tests for the functions with error paths or real branches: `hooks.local_timezone` (its `RalpherError` path), `hooks.fixed_context`, `hooks.last_commit_summary`, `logger.state_path`, `settings.validate_settings`, `order.build_settings`, `order.discover_root`, `order.default_branch`, `state.add_to_state_work`, `iteration.signal_agent` (the `terminate` fallback), `iteration.write_log`, `iteration.read_task_statuses`, `iteration.kill_agent`, `iteration.open_log_file`, `looper.reject_unverified_stop`, and `rro.step_json` with its finished case
-- [ ] Direct tests for the rest of the list: `rro.read_log_verdict`, `rro.run`, `iteration.get_tool_input`, `iteration.last_message_type`, `iteration.mark_started`, `iteration.process_system`, `iteration.read_stdout`, `iteration.summary`, `iteration.unmake_context`, `looper.print_cleanup_cmds`, `looper.print_stopping_prompt`, `signals.GracefulTerminator.perform_shutdown`
-- [ ] One parametrised test for `iteration.print_error`, `print_error_eol`, `print_progress`, `print_progress_eol` and `print_progress_lines`, quiet and not quiet
-- [ ] Hypothesis tests: `hooks.fixed_context` (basename equals stem plus suffix; `cwd` joined with the relative path gives back the task file when it is under `cwd`); `order.replace_cell` (the replaced cell reads back through `split_cells` as the new text, bars included, every other cell unchanged); `order.split_cells` (round trip of a row built from cells, escaped bars included)
+- [x] Direct tests for the functions with error paths or real branches: `hooks.local_timezone` (its `RalpherError` path), `hooks.fixed_context`, `hooks.last_commit_summary`, `logger.state_path`, `settings.validate_settings`, `order.build_settings`, `order.discover_root`, `order.default_branch`, `state.add_to_state_work`, `iteration.signal_agent` (the `terminate` fallback), `iteration.write_log`, `iteration.read_task_statuses`, `iteration.kill_agent`, `iteration.open_log_file`, `looper.reject_unverified_stop`, and `rro.step_json` with its finished case
+- [x] Direct tests for the rest of the list: `rro.read_log_verdict`, `rro.run`, `iteration.get_tool_input`, `iteration.last_message_type`, `iteration.mark_started`, `iteration.process_system`, `iteration.read_stdout`, `iteration.summary`, `iteration.unmake_context`, `looper.print_cleanup_cmds`, `looper.print_stopping_prompt`, `signals.GracefulTerminator.perform_shutdown`
+- [x] One parametrised test for `iteration.print_error`, `print_error_eol`, `print_progress`, `print_progress_eol` and `print_progress_lines`, quiet and not quiet
+- [x] Hypothesis tests: `hooks.fixed_context` (basename equals stem plus suffix; `cwd` joined with the relative path gives back the task file when it is under `cwd`); `order.replace_cell` (the replaced cell reads back through `split_cells` as the new text, bars included, every other cell unchanged); `order.split_cells` (round trip of a row built from cells, escaped bars included)
 
 **Acceptance Criteria:**
 
-- [ ] Each function named above is called by name in at least one test
+- [x] Each function named above is called by name in at least one test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists every test file the task edits
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_order.py src/tests/test_state.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_rro.py src/tests/test_signals.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists every test file the task edits
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_order.py src/tests/test_state.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_rro.py src/tests/test_signals.py` passes
 
 **Notes:**
 
