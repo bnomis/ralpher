@@ -346,7 +346,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 11: AGENTS.md matches the tree, and the local settings file is untracked
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 12, Decision 1
@@ -355,19 +355,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `git rm --cached .claude/settings.local.json` (the file stays on disk; `~/.gitignore` already ignores it)
-- [ ] Add `claude/templates/` (the progress page template) to the AGENTS.md tree beside `claude/commands/`
-- [ ] Add the `auditme-changed` (every commit) and `auditme-all` (every push and CI) hooks from the auditor repository to the tools list
-- [ ] Check the tree against `git ls-files` once more for any other tracked directory it omits
+- [x] `git rm --cached .claude/settings.local.json` (the file stays on disk; `~/.gitignore` already ignores it)
+- [x] Add `claude/templates/` (the progress page template) to the AGENTS.md tree beside `claude/commands/`
+- [x] Add the `auditme-changed` (every commit) and `auditme-all` (every push and CI) hooks from the auditor repository to the tools list
+- [x] Check the tree against `git ls-files` once more for any other tracked directory it omits
 
 **Acceptance Criteria:**
 
-- [ ] `git ls-files .claude` prints nothing
-- [ ] Every tracked top-level directory and `claude/` subdirectory appears in the tree
+- [x] `git ls-files .claude` prints nothing
+- [x] Every tracked top-level directory and `claude/` subdirectory appears in the tree
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
