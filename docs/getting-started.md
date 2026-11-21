@@ -84,6 +84,7 @@ merge the branch and remove the worktree:
 
 ```text
 Probable cleanup commands...
+  cd /home/you/src/config-loader && \
   git merge --no-ff --no-edit worktree-config-loader-tasks-1 && \
   (git worktree unlock config-loader-tasks-1 2>/dev/null || true) && \
   git worktree remove --force config-loader-tasks-1 && \

@@ -315,7 +315,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 10: The user docs say what the code does
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 14
@@ -324,19 +324,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `docs/concepts.md` "Ending the loop": add the stop on an exception in an iteration (exit reason `exception during iteration <i>`, exit status 1), and say that an I/O failure on the output reader threads also counts as an error
-- [ ] `docs/guide/logs.md` "The state file": add `exception during iteration <i>` to the `exit_reason` values
-- [ ] `docs/getting-started.md` and `docs/guide/worktrees.md`: show the cleanup output exactly as an `rrq.sh` run prints it (the `Probable cleanup commands...` header, the two-space indent and the leading `cd <repository root> && \`); produce it by running `bin/ralpher.sh --cleanup --worktree --cwd=<dir> --task-file=<file>` in a scratch repository rather than writing it by hand
-- [ ] `docs/run-order.md:47`: say `agents/tasks/run-order/example-order.md` holds the same tables, not that it is the same file
+- [x] `docs/concepts.md` "Ending the loop": add the stop on an exception in an iteration (exit reason `exception during iteration <i>`, exit status 1), and say that an I/O failure on the output reader threads also counts as an error
+- [x] `docs/guide/logs.md` "The state file": add `exception during iteration <i>` to the `exit_reason` values
+- [x] `docs/getting-started.md` and `docs/guide/worktrees.md`: show the cleanup output exactly as an `rrq.sh` run prints it (the `Probable cleanup commands...` header, the two-space indent and the leading `cd <repository root> && \`); produce it by running `bin/ralpher.sh --cleanup --worktree --cwd=<dir> --task-file=<file>` in a scratch repository rather than writing it by hand
+- [x] `docs/run-order.md:47`: say `agents/tasks/run-order/example-order.md` holds the same tables, not that it is the same file
 
 **Acceptance Criteria:**
 
-- [ ] Each changed example matches the command output it shows
+- [x] Each changed example matches the command output it shows
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

@@ -44,8 +44,8 @@ is level with its remote:
 /rro agents/tasks/order-example.md
 ```
 
-The same file is `agents/tasks/run-order/example-order.md` in ralpher's
-checkout, which the tests read.
+`agents/tasks/run-order/example-order.md` in ralpher's checkout holds the
+same tables, and the tests read it.
 
 ## The order table
 

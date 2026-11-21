@@ -73,7 +73,7 @@ written.
 
 | Key | Meaning |
 |-----|---------|
-| `exit_reason` | `complete`, `error` or `termination`, joined with `, ` when several apply, or `completed all iterations` |
+| `exit_reason` | `complete`, `error` or `termination`, joined with `, ` when several apply; `completed all iterations`; or `exception during iteration <i>` |
 | `stopping_reason` | why a termination happened, such as `Operator input required for task 4`; empty otherwise |
 | `overhead_time_*` | run time outside the agent processes: checks, hooks, startup |
 | `iterations.<n>.tools_used` | tool names the agent called |
