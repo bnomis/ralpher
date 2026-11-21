@@ -23,7 +23,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 1: Validate the `worktree_setup` setting
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`validate_settings`), Error handling, Settings, Tests and documentation
@@ -32,19 +32,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Confirm the work has not started: `grep -rnw 'worktree_setup' src/ralphlib` finds nothing; if it finds something, stop the task as `blocked` naming the hit
-- [ ] Add tests to `src/tests/test_settings.py`: a list of strings passes; a string, a list holding a number, and an object each raise `SettingsError` whose message is `Settings file <path>: worktree_setup must be a list of strings`; a later file's `worktree_setup` replaces an earlier one whole; confirm the new failure tests fail before the change
-- [ ] In `ralphlib.settings.validate_settings`, reject a `worktree_setup` that is not a list of strings with that message, and update its docstring to name the key
+- [x] Confirm the work has not started: `grep -rnw 'worktree_setup' src/ralphlib` finds nothing; if it finds something, stop the task as `blocked` naming the hit
+- [x] Add tests to `src/tests/test_settings.py`: a list of strings passes; a string, a list holding a number, and an object each raise `SettingsError` whose message is `Settings file <path>: worktree_setup must be a list of strings`; a later file's `worktree_setup` replaces an earlier one whole; confirm the new failure tests fail before the change
+- [x] In `ralphlib.settings.validate_settings`, reject a `worktree_setup` that is not a list of strings with that message, and update its docstring to name the key
 
 **Acceptance Criteria:**
 
-- [ ] A settings file with `"worktree_setup": "uv sync"` stops the run with the `Error:` line and exit status 1
+- [x] A settings file with `"worktree_setup": "uv sync"` stops the run with the `Error:` line and exit status 1
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py`
-- [ ] `uv run pytest src/tests/test_settings.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py`
+- [x] `uv run pytest src/tests/test_settings.py` passes
 
 **Notes:**
 
