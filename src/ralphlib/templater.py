@@ -35,6 +35,7 @@ BUILTIN_VARS = (
     'task_file_relative_path',
     'worktree',
     'worktree_name',
+    'worktree_setup',
 )
 
 
@@ -56,13 +57,23 @@ def parse_vars(options: ralphlib.options.RalpherOptions) -> dict[str, str]:
 
 
 def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int) -> str:
-    context: dict[str, str | bool] = {
+    """Render the prompt template.
+
+    The context includes `worktree_setup`: a new list of the commands from
+    `options.settings['worktree_setup']` with `--worktree`, else an empty list.
+
+    Raises:
+        InvalidVarFormatError: `--vars` is malformed or names a built-in variable.
+        PromptTemplateError: the prompt has a syntax error or uses something the sandbox blocks.
+    """
+    context: dict[str, str | bool | list[str]] = {
         'iteration': str(iteration),
         'iterations': str(options.iterations),
         'task_file': '',
         'task_file_relative_path': '',
         'worktree': False,
         'worktree_name': '',
+        'worktree_setup': [],
     }
     cwd_path = task_file_path = task_file_relative_path = None
     if options.cwd:
@@ -80,6 +91,7 @@ def render(options: ralphlib.options.RalpherOptions, prompt: str, iteration: int
         context['worktree'] = True
         if options.task_file:
             context['worktree_name'] = task_file_slug(options.task_file)
+        context['worktree_setup'] = list(options.settings.get('worktree_setup', []))
 
     context.update(parse_vars(options))
 

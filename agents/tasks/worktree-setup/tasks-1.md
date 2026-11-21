@@ -54,7 +54,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 2: Prompts get `worktree_setup`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`render`), Implementation (Prompt context), Error handling, Tests and documentation
@@ -63,19 +63,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_templater.py`: with `--worktree` and the setting, a template `{{ worktree_setup | join(',') }}` renders the commands in order; without `--worktree`, or without the setting, it renders empty; `--vars worktree_setup=x` raises `InvalidVarFormatError`; changing the rendered list inside a template does not change `options.settings`
-- [ ] Add `'worktree_setup'` to `BUILTIN_VARS` in `src/ralphlib/templater.py`, keeping the tuple alphabetical
-- [ ] In `render`, set `context['worktree_setup']` as the spec says, and update the context's type annotation and the docstring
+- [x] Add tests to `src/tests/test_templater.py`: with `--worktree` and the setting, a template `{{ worktree_setup | join(',') }}` renders the commands in order; without `--worktree`, or without the setting, it renders empty; `--vars worktree_setup=x` raises `InvalidVarFormatError`; changing the rendered list inside a template does not change `options.settings`
+- [x] Add `'worktree_setup'` to `BUILTIN_VARS` in `src/ralphlib/templater.py`, keeping the tuple alphabetical
+- [x] In `render`, set `context['worktree_setup']` as the spec says, and update the context's type annotation and the docstring
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and the existing `render` tests still pass
+- [x] The new tests pass, and the existing `render` tests still pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py` passes
 
 **Notes:**
 

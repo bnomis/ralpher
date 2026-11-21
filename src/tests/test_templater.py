@@ -174,3 +174,36 @@ def test_render_substitutes_every_var_and_the_iteration_unchanged(variables: dic
     prompt = '\x00'.join(['{{ iteration }}/{{ iterations }}', *(f'{{{{ {key} }}}}' for key in variables)])
     rendered = ralphlib.templater.render(options, prompt, iteration)
     assert rendered.split('\x00', len(variables)) == [f'{iteration}/{iterations}', *variables.values()]
+
+
+def test_render_lists_the_worktree_setup_commands_in_order_with_worktree() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    options.settings = {'worktree_setup': ['uv sync', 'pre-commit install']}
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == 'uv sync,pre-commit install'
+
+
+def test_render_worktree_setup_is_empty_without_worktree() -> None:
+    options = ralphlib.options.RalpherOptions()
+    options.settings = {'worktree_setup': ['make deps']}
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == ''
+
+
+def test_render_worktree_setup_is_empty_without_the_setting() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == ''
+
+
+def test_render_rejects_a_var_named_worktree_setup() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['worktree_setup=x'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match='built-in'):
+        ralphlib.templater.render(options, '{{ worktree_setup }}', 1)
+
+
+def test_render_worktree_setup_changes_in_a_template_leave_the_settings_alone() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    commands = ['npm ci']
+    before = list(commands)
+    options.settings = {'worktree_setup': commands}
+    rendered = ralphlib.templater.render(options, "{{ worktree_setup.append('x') }}{{ worktree_setup | join(',') }}", 1)
+    assert rendered == 'Nonenpm ci,x'
+    assert commands == before
