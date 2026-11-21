@@ -66,3 +66,4 @@ None. Every review-3 finding was resolved by tasks-3 (Decision 1, answered on 20
 ## Checker changes since the last review
 
 - None since review-2. The D2 carve-out for plugins and themes (2026-11-02) is Phase B text only, and cleared review-2 Finding 19 as expected.
+- **2026-11-21: the audit hooks moved from `bnomis/agents` (`5912515`) to `bnomis/auditor` (`6a65d14`).** The pin spans every checker change since: `ruff-version-drift`, the widened `raises-section-drift`, the listed Phase B questions and their briefs. The one new hit, `ruff-version-drift` (the ruff hook pinned `v0.17.4`, the lock `0.17.2`), was fixed by lowering the hook to `v0.17.2`. At the new pin the sweep reports 18 hits, **0 unaccepted**, digest `0c9d1583c62118f3d14eb947b980b9dc9ce2b3306e100426a0237e3552278748`.

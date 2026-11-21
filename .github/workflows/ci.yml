@@ -37,12 +37,12 @@ jobs:
       # is installed.
       - run: uv run pytest
 
-      # The audit hooks live in a private repository; pre-commit clones it
-      # over SSH with a read-only deploy key. GitHub admits one deploy key per
-      # repository, so the key sits under its own host alias. It is installed
+      # The names hook lives in the private agents repository; pre-commit
+      # clones it over SSH with a read-only deploy key. GitHub accepts a deploy
+      # key on one repository only, so the key sits under its own host alias. It is installed
       # only now, after every third-party action and the tests have run, and
       # the host keys come from GitHub's API over TLS, not from a blind scan.
-      - name: Install the audit deploy key
+      - name: Install the agents deploy key
         env:
           AGENTS_DEPLOY_KEY: ${{ secrets.AGENTS_DEPLOY_KEY }}
         run: |
@@ -60,6 +60,26 @@ jobs:
           } >> ~/.ssh/config
           git config --global url."git@github-agents:bnomis/agents.git".insteadOf "git@github.com:bnomis/agents.git"
 
+      # The audit hooks live in the private auditor repository, cloned the same
+      # way with its own read-only deploy key under the github-auditor alias.
+      - name: Install the auditor deploy key
+        env:
+          AUDITOR_DEPLOY_KEY: ${{ secrets.AUDITOR_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$AUDITOR_DEPLOY_KEY" > ~/.ssh/auditor_deploy_key
+          chmod 600 ~/.ssh/auditor_deploy_key
+          curl -fsSL https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' >> ~/.ssh/known_hosts
+          {
+            echo 'Host github-auditor'
+            echo '  HostName github.com'
+            echo '  User git'
+            echo '  IdentityFile ~/.ssh/auditor_deploy_key'
+            echo '  IdentitiesOnly yes'
+            echo '  StrictHostKeyChecking yes'
+          } >> ~/.ssh/config
+          git config --global url."git@github-auditor:bnomis/auditor.git".insteadOf "git@github.com:bnomis/auditor.git"
+
       # The same commit-time checks, over the whole tree.
       - run: pre-commit run --all-files
 
@@ -68,6 +88,9 @@ jobs:
         run: pre-commit run auditme-all --hook-stage manual --all-files
 
       # Remove the key whether or not the checks passed.
-      - name: Remove the audit deploy key
+      - name: Remove the agents deploy key
         if: always()
         run: rm -f ~/.ssh/agents_deploy_key
+      - name: Remove the auditor deploy key
+        if: always()
+        run: rm -f ~/.ssh/auditor_deploy_key
