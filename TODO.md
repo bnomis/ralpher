@@ -31,22 +31,6 @@ Note 2026-11-21: at 15:42 UTC a new read-only deploy key (`ralpher ci`, id
 (`170651006`) deleted. As of 15:43 UTC no open Dependabot pull request had
 run CI since, so the rebase and the check that `check` passes remain.
 
-## `claude-review` fails on every Dependabot pull request
-
-Found on 2026-11-21 by a survey: the `claude-review` job of
-`.github/workflows/claude-code-review.yml` fails on all five open Dependabot
-pull requests with `Workflow initiated by non-human actor: dependabot (type:
-Bot). Add bot to allowed_bots list or use '*' to allow all bots.` (run
-43683071806, 2026-11-15).
-
-Cause: the job's `if:` condition is commented out
-(`.github/workflows/claude-code-review.yml:16`), so the review starts for bot
-pull requests, which the action refuses.
-
-Fix direction: skip the job for Dependabot (`if: github.actor !=
-'dependabot[bot]'`) rather than allowing bots, so a dependency bump spends no
-review. Small; no spec.
-
 ## Merging the ruff 0.17.3 bump would fail the push hook
 
 Found on 2026-11-21 by a survey: Dependabot pull request #24 moves ruff from

@@ -380,3 +380,21 @@ shape beside `test_decisions_since_filters_and_orders`
 the message's last paragraph, beside the other trailers. Small; no spec.
 
 Done: 2026-11-09 - `decisions_since` in `src/ralphlib/order.py` reads the value from every `^Queue-decision:` line in the message instead of the trailer parser; test `test_decisions_since_reads_a_line_outside_the_last_paragraph` in `src/tests/test_order.py`; `claude/commands/rrq.md` step 4 puts the line in the last paragraph.
+
+## `claude-review` fails on every Dependabot pull request
+
+Found on 2026-11-21 by a survey: the `claude-review` job of
+`.github/workflows/claude-code-review.yml` fails on all five open Dependabot
+pull requests with `Workflow initiated by non-human actor: dependabot (type:
+Bot). Add bot to allowed_bots list or use '*' to allow all bots.` (run
+43683071806, 2026-11-15).
+
+Cause: the job's `if:` condition is commented out
+(`.github/workflows/claude-code-review.yml:16`), so the review starts for bot
+pull requests, which the action refuses.
+
+Fix direction: skip the job for Dependabot (`if: github.actor !=
+'dependabot[bot]'`) rather than allowing bots, so a dependency bump spends no
+review. Small; no spec.
+
+Done: 2026-11-21 - the `claude-review` job in `.github/workflows/claude-code-review.yml` now runs only when the pull request's author is not `dependabot[bot]`; not yet seen in a pull request run.
