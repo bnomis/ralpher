@@ -28,3 +28,5 @@ the worktree, so its own pinned tools are the ones the checks find. The
 command differs per project (`uv sync` for a uv project), so it is runtime
 config, not a built-in default. It adds an option, so it goes through a spec
 first.
+
+Spec: agents/specs/worktree-setup/spec.md; tasks: none yet.
