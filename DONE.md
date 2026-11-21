@@ -451,3 +451,17 @@ Note 2026-11-21: the `check` item is done (see `DONE.md`). #24, rebased at
 at `.pre-commit-config.yaml:4`.
 
 Done: 2026-11-21 - #24 was retargeted to ruff 0.17.4 when rebased; `pyproject.toml`, `uv.lock` (via `uv lock`) and the `ruff-pre-commit` `rev` in `.pre-commit-config.yaml` all moved to 0.17.4 together on branch `build/ruff-0.17.4`, matching #24's lock exactly, with the operator's go-ahead to edit `.pre-commit-config.yaml`; `pre-commit run --all-files` and the `auditme-all` push hook pass.
+
+## A merged feature branch is still on the remote
+
+Found on 2026-11-21 by a survey: `origin/feat/no-short-tail-checkpoint`
+(last commit `2de0cde`, 2026-11-07) is an ancestor of `main`, so everything
+on it is merged. No local branch tracks it.
+
+Cause: the branch was merged without deleting it on the remote; `/cleanup`
+never changes the remote.
+
+Fix direction: the operator deletes it with
+`git push origin --delete feat/no-short-tail-checkpoint`. Small; no spec.
+
+Done: 2026-11-21 - `git push origin --delete feat/no-short-tail-checkpoint` at 16:07 UTC, with the operator's go-ahead; the branch was an ancestor of `origin/main` and no pull request used it.
