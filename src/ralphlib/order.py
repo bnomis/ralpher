@@ -333,9 +333,13 @@ def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict
     """Judge the final test log a list saved: it passes with its pass line and no fail match.
 
     Raises:
-        OrderFormatError: naming the path, when the log cannot be read.
+        OrderFormatError: naming the path, when the `test log` setting is absolute or contains `..`,
+            or when the log cannot be read.
     """
-    path = root / order.settings.test_log.format(spec=row.spec, index=row.index)
+    relative = pathlib.Path(order.settings.test_log.format(spec=row.spec, index=row.index))
+    if relative.is_absolute() or '..' in relative.parts:
+        raise ralphlib.exceptions.OrderFormatError(f'The test log {str(relative)!r} must be a relative path inside the repository')
+    path = root / relative
     if not path.is_file():
         return LogVerdict(passed=False, path=path, fail_lines=(), has_pass_line=False)
     fail = re.compile(order.settings.fail_pattern)

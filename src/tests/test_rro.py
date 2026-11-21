@@ -89,6 +89,13 @@ def test_check_log_prints_the_verdict(rro: types.ModuleType, order: pathlib.Path
     assert result == {'passed': True, 'path': str(log), 'fail_lines': [], 'has_pass_line': True}
 
 
+def test_check_log_refuses_a_path_outside_the_repository(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_text(ORDER.replace('| test pass line |', '| test log | /etc/passwd |\n| test pass line |'))
+    result, code = call(rro, capsys, 'check-log', str(order), 'a')
+    assert code == 2
+    assert result['error'] == 'OrderFormatError'
+
+
 def test_check_log_unknown_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
     result, code = call(rro, capsys, 'check-log', str(order), 'zzz')
     assert code == 2

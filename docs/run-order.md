@@ -73,7 +73,7 @@ error before anything runs.
 |---|---|---|
 | `checkpoint command` | required | Run from the main checkout on the default branch, in the background. Use your slowest whole-project test command; the per-list gate covers the rest. |
 | `checkpoint every` | `3` | Lists merged between checkpoints when the table has no checkpoint rows. A smaller number finds a regression sooner and names fewer suspect lists, at the cost of more slow runs. |
-| `test log` | `ralpher-logs/{spec}/tasks-{index}/final-tests.log` | Path, relative to the main checkout, where a list's last task saves its final test output. `{spec}` and `{index}` are filled per list. |
+| `test log` | `ralpher-logs/{spec}/tasks-{index}/final-tests.log` | Path, relative to the main checkout, where a list's last task saves its final test output. `{spec}` and `{index}` are filled per list. An absolute path, or one containing `..`, is refused, so the log is always read from inside the repository. |
 | `test pass line` | required | A line the log must contain for the run to count as passed. Choose one only a complete, successful run prints. |
 | `test fail pattern` | `FAILED` | Regular expression; any match in the log fails the gate. |
 | `always wait for` | empty | Comma-separated rule files whose listed stops are never decided, in addition to `/rrq`'s own exceptions. |

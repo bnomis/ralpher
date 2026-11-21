@@ -95,7 +95,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 3: The test log stays inside the repository
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 9, Decision 3

@@ -338,6 +338,12 @@ def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ral
     return ralphlib.order.check_test_log(order, row, project)
 
 
+@pytest.mark.parametrize('value', ['/etc/final-tests.log', '../outside/final-tests.log', 'ralpher-logs/../../x.log'])
+def test_log_path_outside_the_repository_is_refused(project: pathlib.Path, value: str) -> None:
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='relative path inside the repository'):
+        log_verdict(project, None, **{'test log': value})
+
+
 def test_log_passes_with_pass_line_and_no_fail(project: pathlib.Path) -> None:
     verdict = log_verdict(project, 'a\nall passed\n')
     assert verdict.passed
