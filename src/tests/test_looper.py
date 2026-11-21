@@ -21,6 +21,7 @@ import ralphlib.options
 import ralphlib.settings
 import ralphlib.signals
 import ralphlib.types
+import tests.helpers
 
 
 class TestTimedeltaToReadableExplicit:
@@ -444,3 +445,24 @@ class TestPrintStoppingPrompt:
         options.settings = ralphlib.settings.default_settings()
         ralphlib.looper.print_stopping_prompt(options)
         assert capsys.readouterr().out == ''
+
+
+WORKTREE_SETUP_WARNING = "Warning: no worktree_setup setting; the agent's worktree has no project environment."
+
+
+class TestWarnMissingWorktreeSetup:
+    @pytest.mark.parametrize('settings', [{}, {'worktree_setup': []}])
+    def test_warns_with_worktree_and_no_commands(self, capsys: pytest.CaptureFixture[str], settings: dict[str, typing.Any]) -> None:
+        options = tests.helpers.make_options_with_settings(worktree=True, settings=settings)
+        ralphlib.looper.warn_missing_worktree_setup(options)
+        assert WORKTREE_SETUP_WARNING in capsys.readouterr().err
+
+    def test_silent_with_the_setting(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = tests.helpers.make_options_with_settings(worktree=True, settings={'worktree_setup': ['make setup']})
+        ralphlib.looper.warn_missing_worktree_setup(options)
+        assert capsys.readouterr().err == ''
+
+    def test_silent_without_worktree(self, capsys: pytest.CaptureFixture[str]) -> None:
+        options = tests.helpers.make_options_with_settings(worktree=False, settings={})
+        ralphlib.looper.warn_missing_worktree_setup(options)
+        assert capsys.readouterr().err == ''

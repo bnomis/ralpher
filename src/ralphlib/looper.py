@@ -34,6 +34,7 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
             raise ralphlib.exceptions.RalpherError(f'Cannot change directory to "{options.cwd}"') from e
 
     ralphlib.giter.confirm_git_state(options)
+    warn_missing_worktree_setup(options)
 
     content = ''
     if options.prompt:
@@ -261,6 +262,15 @@ def loop(options: ralphlib.options.RalpherOptions) -> bool:
         print_stopping_prompt(options)
 
     return bool(error) or termination
+
+
+def warn_missing_worktree_setup(options: ralphlib.options.RalpherOptions) -> None:
+    """With --worktree and no `worktree_setup` setting, log and print a warning to stderr."""
+    if not options.worktree or options.settings.get('worktree_setup'):
+        return
+    message = "Warning: no worktree_setup setting; the agent's worktree has no project environment."
+    loguru.logger.warning(message)
+    ralphlib.printer.console_stderr.print(message, soft_wrap=True)
 
 
 def reject_unverified_stop(options: ralphlib.options.RalpherOptions, iteration: int, iterations_key: str) -> bool:

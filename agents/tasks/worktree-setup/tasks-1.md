@@ -117,7 +117,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 4: Warn when a worktree run has no setup
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** API (`warn_missing_worktree_setup`), Implementation (Warning), Tests and documentation
@@ -126,20 +126,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_looper.py`: `warn_missing_worktree_setup` prints `Warning: no worktree_setup setting; the agent's worktree has no project environment.` to stderr with `--worktree` and no setting, and with an empty list; prints nothing with the setting, or without `--worktree`
-- [ ] Add `warn_missing_worktree_setup` to `src/ralphlib/looper.py`, using `loguru.logger.warning` and `ralphlib.printer.console_stderr.print`
-- [ ] Call it once in `loop`, after `ralphlib.giter.confirm_git_state(options)` and before the first iteration
-- [ ] Check that the end-to-end loop tests in `src/tests/test_looper.py` still pass with the new call
+- [x] Add tests to `src/tests/test_looper.py`: `warn_missing_worktree_setup` prints `Warning: no worktree_setup setting; the agent's worktree has no project environment.` to stderr with `--worktree` and no setting, and with an empty list; prints nothing with the setting, or without `--worktree`
+- [x] Add `warn_missing_worktree_setup` to `src/ralphlib/looper.py`, using `loguru.logger.warning` and `ralphlib.printer.console_stderr.print`
+- [x] Call it once in `loop`, after `ralphlib.giter.confirm_git_state(options)` and before the first iteration
+- [x] Check that the end-to-end loop tests in `src/tests/test_looper.py` still pass with the new call
 
 **Acceptance Criteria:**
 
-- [ ] The warning does not stop the run
+- [x] The warning does not stop the run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_looper.py`
-- [ ] `uv run pytest src/tests/test_looper.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_looper.py`
+- [x] `uv run pytest src/tests/test_looper.py` passes
 
 **Notes:**
 
