@@ -29,4 +29,4 @@ command differs per project (`uv sync` for a uv project), so it is runtime
 config, not a built-in default. It adds an option, so it goes through a spec
 first.
 
-Spec: agents/specs/worktree-setup/spec.md; tasks: none yet.
+Spec: agents/specs/worktree-setup/spec.md; tasks: agents/tasks/worktree-setup/tasks-1.md.

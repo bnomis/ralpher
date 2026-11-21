@@ -12,3 +12,4 @@
 | [Audit Review 4](../audit-reviews/review-4.md) | [tasks-4.md](audit-reviews/tasks-4.md) | 4 | 2026-11-21 |
 | [Run order](../specs/run-order/spec.md) | [tasks-1.md](run-order/tasks-1.md) | 1 | 2026-11-04 |
 | [Run order](../specs/run-order/spec.md) | [tasks-2.md](run-order/tasks-2.md) | 2 | 2026-11-06 |
+| [Worktree setup](../specs/worktree-setup/spec.md) | [tasks-1.md](worktree-setup/tasks-1.md) | 1 | 2026-11-21 |
