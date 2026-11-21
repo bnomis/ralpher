@@ -158,4 +158,4 @@ counting checkpoint rows from 1; an implicit checkpoint's is
 one setting's value and refuses a name that is not a known setting.
 
 An expected error prints `{"error": "<class>", "message": "..."}` and exits 2.
-The command is installed by `bin/install-claude.py` beside `/rrq`.
+The command is installed by `bin/install-claude.sh` beside `/rrq`.

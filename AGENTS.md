@@ -61,7 +61,7 @@ src/
     └── test_verifier.py
 bin/                       # Entry point scripts
 ├── activate.sh
-├── install-claude.py      # Symlinks the Claude commands into place
+├── install-claude.sh      # Symlinks the Claude commands into place, with install-in-claude
 ├── ralpher.py
 ├── ralpher.sh
 ├── ralpherun.sh

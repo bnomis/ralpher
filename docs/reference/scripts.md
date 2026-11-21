@@ -1,7 +1,7 @@
 # Wrapper scripts
 
-All live in ralpher's `bin/`. Each shell wrapper activates ralpher's `.venv` first (`install-claude.py`
-is run with `python3` and does not). `ralpherun.sh`, `rrq.sh` and `rcl.sh` need
+All live in ralpher's `bin/`. Each shell wrapper activates ralpher's `.venv` first (`install-claude.sh`
+runs the shared installer with `uvx` and does not). `ralpherun.sh`, `rrq.sh` and `rcl.sh` need
 `RALPHER_PATH` set to ralpher's checkout.
 
 ## `ralpher.sh`
@@ -55,11 +55,16 @@ Runs ralpher with `--worktree`, the five log files in `LOGDIR`, and
 script's `bin/`, which is ralpher's own checkout, so it is for running loops
 on ralpher itself. For another project, use `rrq.sh` or `ralpher.sh --cwd`.
 
-## `install-claude.py`
+## `install-claude.sh`
 
 ```text
-python3 bin/install-claude.py
+bin/install-claude.sh [--dry-run] [any other install-in-claude option]
 ```
 
-Symlinks the files under ralpher's `claude/` into `~/.claude/`. See
+Symlinks the files under ralpher's `claude/` into `~/.claude/` by running the
+shared installer [install-in-claude](https://github.com/bnomis/install-in-claude)
+at the commit pinned in the script's `INSTALL_IN_CLAUDE_REV`, with
+`--source claude` and no settings edits. Extra arguments pass through. To
+upgrade the installer, set `INSTALL_IN_CLAUDE_REV` to a newer commit and run
+`bin/install-claude.sh --dry-run` first. See
 [Driving ralpher from Claude Code](../guide/claude-code.md).

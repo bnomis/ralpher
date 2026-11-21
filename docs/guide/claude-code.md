@@ -7,7 +7,7 @@ stop.
 
 ## The `/rrq` command
 
-[`bin/install-claude.py`](../install.md#optional-the-rrq-command-for-claude-code)
+[`bin/install-claude.sh`](../install.md#optional-the-rrq-command-for-claude-code)
 installs `/rrq` into `~/.claude/commands/`. In a session at a project's root:
 
 ```text

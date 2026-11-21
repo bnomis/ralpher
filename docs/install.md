@@ -52,13 +52,15 @@ The agent itself does not inherit that environment; see
 ## Optional: the `/rrq` command for Claude Code
 
 ```shell
-python3 bin/install-claude.py
+bin/install-claude.sh
 ```
 
 symlinks everything under ralpher's `claude/` directory into `~/.claude/`,
-which installs the `/rrq` command. An existing symlink at a destination is
-replaced; an existing regular file is renamed with a `.orig` suffix, never
-overwritten. See
+which installs the `/rrq` and `/rro` commands. It runs the shared installer,
+`install-in-claude`, with `uvx` at the commit pinned in the script, so it needs
+`uv` and SSH access to `bnomis/install-in-claude`; add `--dry-run` to see what
+it would change first. An existing symlink at a destination is replaced; an
+existing regular file is renamed with a `.orig` suffix, never overwritten. See
 [Driving ralpher from Claude Code](guide/claude-code.md).
 
 ## Update

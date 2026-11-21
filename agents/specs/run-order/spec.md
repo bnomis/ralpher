@@ -57,7 +57,7 @@ test run is checked from a log its last task saves at a set path, not rerun.
 
 ## Module location
 
-- `claude/commands/rro.md` - the command (installed by `bin/install-claude.py`
+- `claude/commands/rro.md` - the command (installed by `bin/install-claude.sh`
   like `rrq.md`)
 - `src/ralphlib/order.py` - reading the order file, choosing the next step,
   checking a test log, writing a status back

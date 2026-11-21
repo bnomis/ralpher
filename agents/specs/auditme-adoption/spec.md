@@ -101,7 +101,7 @@ hit line or the line above.
 | `silent-broad-except` | `giter.py` `has_unpushed_commits`: catch `(git.GitCommandError, git.GitCommandNotFound, OSError, UnicodeDecodeError)` around the fetch and log it with `loguru.logger.warning` beside the console message. |
 | `mutable-store-without-copy` | `test_looper.py` `LoopRun.__init__` stores `list(calls)` and `dict(state)`. |
 | `non-alphabetical-literal` | Accept `test_verifier.py:9`: `['todo', 'in-progress', 'done']` is the status progression, and order is its meaning. |
-| `stdlib-logging` | Accept `bin/install-claude.py:7`: the installer runs under the system Python, before the project's environment (and `loguru`) exists. |
+| `stdlib-logging` | Accept `bin/install-claude.py:7`: the installer runs under the system Python, before the project's environment (and `loguru`) exists. (2026-11-21: `bin/install-claude.py` is replaced by `bin/install-claude.sh`, which runs the shared installer; the accept left with it.) |
 
 Then adopt the hooks, as the shared `project-setup` skill's `adopt` mode does.
 That mode adds the shared hooks repository to `.pre-commit-config.yaml`,
