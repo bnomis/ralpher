@@ -14,19 +14,15 @@ repos:
       - id: shellcheck
         args: ["--external-sources", "--source-path=SCRIPTDIR"]
 
-  # The shared audit hooks, pinned to one commit of the checker.
-  # Upgrade with: pre-commit autoupdate --repo git@github.com:bnomis/auditor.git
+  # The shared audit hooks and the names hook, pinned to one commit of the
+  # checker. Upgrade with:
+  # pre-commit autoupdate --repo git@github.com:bnomis/auditor.git
   - repo: git@github.com:bnomis/auditor.git
-    rev: 6a65d14a8dcb8e533e0107784f566f5e8fe87057
+    rev: 6747c4e78f83f14efd7af58c3d01c6b5b1be27b1
     hooks:
       - id: auditme-changed
       - id: auditme-all
         stages: [manual, pre-push]
-
-  # The names hook, published by the agents repository.
-  - repo: git@github.com:bnomis/agents.git
-    rev: 5912515c5ed67362461ef64ea2c656e982da14b5
-    hooks:
       # ralpher serves every project, so nothing here names one (AGENTS.md).
       - id: no-project-names
         args: ["--allow=ralpher", "--allow=ralphlib"]
