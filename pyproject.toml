@@ -12,7 +12,7 @@ dependencies = [
     "orjson>=3.13.0",
     "rich>=15.0.0",
     "tenacity>=9.2.1",
-    "tzlocal>=5.4.4",
+    "tzlocal>=5.4.5",
 ]
 
 [dependency-groups]
