@@ -191,7 +191,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 6: Reader-thread log level and `process`'s `Raises`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 5 and 6
@@ -200,19 +200,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Change `logger.exception` to `logger.error` in the `(OSError, LogFileError)` handlers of `process_stdout` and `process_stderr`, keeping the message and the `set_error` call
-- [ ] Update any test in `src/tests/test_iteration.py` that asserts the old level
-- [ ] Add `LogFileError` to the `Raises:` section of `process`
-- [ ] Leave the handler in `looper.loop` unchanged (review-3 Decision 1)
+- [x] Change `logger.exception` to `logger.error` in the `(OSError, LogFileError)` handlers of `process_stdout` and `process_stderr`, keeping the message and the `set_error` call
+- [x] Update any test in `src/tests/test_iteration.py` that asserts the old level
+- [x] Add `LogFileError` to the `Raises:` section of `process`
+- [x] Leave the handler in `looper.loop` unchanged (review-3 Decision 1)
 
 **Acceptance Criteria:**
 
-- [ ] `rg -n 'logger.exception' src/ralphlib/iteration.py` no longer lists the two reader-thread handlers
+- [x] `rg -n 'logger.exception' src/ralphlib/iteration.py` no longer lists the two reader-thread handlers
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 
 **Notes:**
 

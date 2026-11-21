@@ -459,6 +459,7 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     Raises:
         RalpherError: the agent cannot be started.
         GitError: `hooks.event` could not open the repository.
+        LogFileError: the iteration log file cannot be written.
     """
     kwargs = {
         'bufsize': 1,  # line-buffered
@@ -574,7 +575,7 @@ def process_stdout(
     try:
         read_stdout(options, context, pipe)
     except OSError, ralphlib.exceptions.LogFileError:
-        loguru.logger.exception('I/O error on the agent stdout reader thread')
+        loguru.logger.error('I/O error on the agent stdout reader thread')
         set_error(context, True)
 
 
@@ -619,7 +620,7 @@ def process_stderr(
             write_stderr(context, line + '\n')
             print_error(options, context, line)
     except OSError, ralphlib.exceptions.LogFileError:
-        loguru.logger.exception('I/O error on the agent stderr reader thread')
+        loguru.logger.error('I/O error on the agent stderr reader thread')
         set_error(context, True)
 
 
