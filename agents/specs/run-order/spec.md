@@ -208,7 +208,7 @@ def next_step(order: Order) -> Step:
     """
 
 
-def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
+def read_test_log_verdict(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
     """LogVerdict(passed, path, fail_lines, has_pass_line) for the row's saved log."""
 
 
@@ -327,7 +327,7 @@ script can decide, so the routine never parses a table by hand.
 `test_order.py`: parsing each valid shape (explicit checkpoints, none,
 `3a` labels, free text around the tables) and each `OrderFormatError`;
 `next_step` for each state, including an implicit checkpoint after the
-third merge and a resume; `check_test_log` for pass, missing log, missing
+third merge and a resume; `read_test_log_verdict` for pass, missing log, missing
 pass line and a fail match; `set_status` changes one cell and no other
 byte. `test_rro.py`: each subcommand's JSON on a fixture order.
 

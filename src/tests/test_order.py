@@ -349,7 +349,7 @@ def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ral
         log = project / 'ralpher-logs' / 'parser' / 'tasks-1' / 'final-tests.log'
         log.parent.mkdir(parents=True)
         log.write_text(text)
-    return ralphlib.order.check_test_log(order, row, project)
+    return ralphlib.order.read_test_log_verdict(order, row, project)
 
 
 @pytest.mark.parametrize('value', ['/etc/final-tests.log', '../outside/final-tests.log', 'ralpher-logs/../../x.log'])
@@ -603,4 +603,4 @@ def test_check_test_log_os_error_is_an_order_format_error(project: pathlib.Path,
     log.write_text('all passed\n')
     monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
     with pytest.raises(ralphlib.exceptions.OrderFormatError, match='final-tests.log'):
-        ralphlib.order.check_test_log(order, row, project)
+        ralphlib.order.read_test_log_verdict(order, row, project)

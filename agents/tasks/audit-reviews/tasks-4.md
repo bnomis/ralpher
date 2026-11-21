@@ -223,7 +223,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 7: Names that say they do I/O
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 7
@@ -232,18 +232,18 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Rename the three functions and update every caller and test (`bin/rro.py`, `src/tests/test_order.py`, `src/tests/test_rro.py`); the `rro check-log` subcommand name stays
-- [ ] Update the run-order spec's API section and test notes for the new names (`agents/specs/run-order/spec.md:211`, `:330` and any other mention)
-- [ ] Change the docstring of `IterationContext.tasks_signature` (`src/ralphlib/iteration.py:64`) to start "Set at run time:", as the other run-time fields do
+- [x] Rename the three functions and update every caller and test (`bin/rro.py`, `src/tests/test_order.py`, `src/tests/test_rro.py`); the `rro check-log` subcommand name stays
+- [x] Update the run-order spec's API section and test notes for the new names (`agents/specs/run-order/spec.md:211`, `:330` and any other mention)
+- [x] Change the docstring of `IterationContext.tasks_signature` (`src/ralphlib/iteration.py:64`) to start "Set at run time:", as the other run-time fields do
 
 **Acceptance Criteria:**
 
-- [ ] `rg -nw 'find_root|check_test_log|check_log' src bin agents/specs docs claude` finds nothing (records under `agents/audit-reviews/` and earlier task lists keep the old names)
+- [x] `rg -nw 'find_root|check_test_log|check_log' src bin agents/specs docs claude` finds nothing (records under `agents/audit-reviews/` and earlier task lists keep the old names)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_iteration.py` passes
 
 **Notes:**
 

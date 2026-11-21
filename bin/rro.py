@@ -80,22 +80,22 @@ def step_json(step: ralphlib.order.Step) -> dict[str, typing.Any]:
             return {'kind': 'finished'}
 
 
-def check_log(command: CheckLog, root: pathlib.Path) -> dict[str, typing.Any]:
+def read_log_verdict(command: CheckLog, root: pathlib.Path) -> dict[str, typing.Any]:
     order = ralphlib.order.read_order(command.order)
     for row in order.rows:
         if isinstance(row, ralphlib.order.ListRow) and row.label == command.label:
-            verdict = ralphlib.order.check_test_log(order, row, root)
+            verdict = ralphlib.order.read_test_log_verdict(order, row, root)
             return {**dataclasses.asdict(verdict), 'path': str(verdict.path)}
     raise ralphlib.exceptions.OrderFormatError(f'{command.order}: no list labelled {command.label!r}')
 
 
 def run(command: Next | CheckLog | SetStatus | SetSetting | Decisions) -> typing.Any:
-    root = ralphlib.order.find_root(command.order)
+    root = ralphlib.order.discover_root(command.order)
     match command:
         case Next():
             return step_json(ralphlib.order.next_step(ralphlib.order.read_order(command.order)))
         case CheckLog():
-            return check_log(command, root)
+            return read_log_verdict(command, root)
         case SetStatus():
             ralphlib.order.set_status(command.order, command.label, command.status)
             return {'ok': True}

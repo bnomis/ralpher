@@ -122,7 +122,7 @@ def unquote(value: str) -> str:
     return value.replace('`', '').strip()
 
 
-def find_root(path: pathlib.Path) -> pathlib.Path:
+def discover_root(path: pathlib.Path) -> pathlib.Path:
     """The nearest directory above the order file that holds `agents/tasks/`.
 
     Raises:
@@ -191,7 +191,7 @@ def read_order(path: pathlib.Path) -> Order:
             the path when it cannot be read or decoded.
     """
     _, text = read_file(path)
-    root = find_root(path)
+    root = discover_root(path)
     values: dict[str, str] = {}
     lines: dict[str, int] = {}
     settings_line = 0
@@ -329,7 +329,7 @@ class LogVerdict:
     has_pass_line: bool
 
 
-def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
+def read_test_log_verdict(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
     """Judge the final test log a list saved: it passes with its pass line and no fail match.
 
     Raises:

@@ -61,7 +61,7 @@ class IterationContext:
     in_progress_tasks: set[str] = dataclasses.field(default_factory=set)
     """Set at run time: task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
     tasks_signature: tuple[int, int] | None = None
-    """Modification time and size of the tasks file at the last poll read."""
+    """Set at run time: modification time and size of the tasks file at the last poll read."""
     progress: pathlib.Path | None = None
     errors: pathlib.Path | None = None
     stderr: pathlib.Path | None = None
