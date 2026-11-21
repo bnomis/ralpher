@@ -25,6 +25,12 @@ variables, Dependabot); only the operator holds the key. Then ask Dependabot
 to rebase each open pull request (`@dependabot rebase`) and check that
 `check` passes. Small; no spec.
 
+Note 2026-11-21: at 15:42 UTC a new read-only deploy key (`ralpher ci`, id
+`170673638`) was added to `bnomis/auditor`, its private half set as
+`AUDITOR_DEPLOY_KEY` for both Actions and Dependabot, and the old key
+(`170651006`) deleted. As of 15:43 UTC no open Dependabot pull request had
+run CI since, so the rebase and the check that `check` passes remain.
+
 ## `claude-review` fails on every Dependabot pull request
 
 Found on 2026-11-21 by a survey: the `claude-review` job of
