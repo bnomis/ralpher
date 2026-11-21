@@ -10,6 +10,17 @@ Before doing anything, remember and follow these rules:
 
 - If you cannot find the worktree, exit with an error message
 - ensure you change working directory to the worktree directory {{ worktree_name }} before starting
+{%- if worktree_setup %}
+- After changing to the worktree and before anything else, run these
+  commands in the worktree, in order, so its checks and tests use the
+  project's own pinned tools:
+{%- for command in worktree_setup %}
+  - `{{ command }}`
+{%- endfor %}
+  If one fails, write a `<task>` block with `<status>blocked</status>`
+  naming the command and its error, and exit. Do not work round it by
+  using another checkout's environment.
+{%- endif %}
 - ONLY edit and commit files in the worktree
 - ONLY read/modify/commit the tasks file in the worktree
 {% endif %}

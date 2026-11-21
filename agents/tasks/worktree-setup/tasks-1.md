@@ -86,7 +86,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 3: `one-task.md` tells the agent to run the commands
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (Prompt text), Tests and documentation
@@ -95,18 +95,18 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_templater.py` that render `agents/prompts/one-task.md`: with `--worktree` and `worktree_setup: ["uv sync", "pre-commit install"]`, the output lists both commands in order, inside the worktree rules, and names the `blocked` status; with an empty list, without the setting, and without `--worktree`, the output has no setup block
-- [ ] Add the block the spec's Implementation section gives to `agents/prompts/one-task.md`, inside the `{% if worktree %}` block, after the line about changing to the worktree directory
+- [x] Add tests to `src/tests/test_templater.py` that render `agents/prompts/one-task.md`: with `--worktree` and `worktree_setup: ["uv sync", "pre-commit install"]`, the output lists both commands in order, inside the worktree rules, and names the `blocked` status; with an empty list, without the setting, and without `--worktree`, the output has no setup block
+- [x] Add the block the spec's Implementation section gives to `agents/prompts/one-task.md`, inside the `{% if worktree %}` block, after the line about changing to the worktree directory
 
 **Acceptance Criteria:**
 
-- [ ] A prompt rendered without the setting is unchanged from before the task (compare against the output at `a362655` in the test or by hand)
+- [x] A prompt rendered without the setting is unchanged from before the task (compare against the output at `a362655` in the test or by hand)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py` passes
 
 **Notes:**
 
