@@ -1,16 +1,68 @@
 # Audit Summary
 
-**Last updated:** 2026-11-02
-**Last review:** review-3
-**Total reviews conducted:** 3
-**Last script run hit count:** 13 (13 accepted)
-**Script version:** `ccecce19de80b8adc9b53eb38a4dfa3d3128047a1ae3affb940cf9f3d6120c2b`
+**Last updated:** 2026-11-21
+**Last review:** review-4
+**Total reviews conducted:** 4
+**Last script run hit count:** 15 (15 accepted)
+**Script version:** `e924b332c5c6809821c1635aa7a1d3714064120de0317c733f7f09dfa6b50537`
 
 ## Unresolved findings
 
-None. Every review-3 finding was resolved by tasks-3 (Decision 1, answered on 2026-11-02, kept the `except Exception` in `loop` with a scoped accept marker).
+All raised in review-4 (2026-11-21); each entry's location and recommendation are in [review-4.md](review-4.md).
+
+### Order-file I/O errors escape `rro` as raw tracebacks
+
+- **Rule or category:** A1, A2
+- **Severity:** medium
+- **Location:** `src/ralphlib/order.py` `check_test_log`, `read_order`, `set_setting`, `set_status`
+- **First raised:** review-4 (2026-11-21)
+- **Description:** order-file and test-log reads and writes are untranslated; `bin/rro.py` catches only `RalpherError`.
+- **Recommendation:** one pair of translating read/write helpers raising `OrderFormatError`.
+
+### The user docs contradict the code
+
+- **Rule or category:** Doc5
+- **Severity:** medium
+- **Location:** `docs/concepts.md:59`, `docs/guide/logs.md:76`, `docs/getting-started.md:85`, `docs/guide/worktrees.md:82`, `docs/run-order.md:47`
+- **First raised:** review-4 (2026-11-21)
+- **Description:** the exception stop and its exit reason are missing; the cleanup output examples differ from what is printed; the example order file is called "the same file".
+- **Recommendation:** review-4 Finding 14.
+
+### Error handling and input checks (remainder)
+
+- **Rule or category:** A1, A2, A4, A19, Sec2, Sec4
+- **Severity:** low
+- **Location:** review-4 Findings 2-6, 8, 9
+- **First raised:** review-4 (2026-11-21)
+- **Description:** git handlers without `OSError`; `Popen` handlers without `SubprocessError`; fail-soft sites to dismiss in the ledger; `logger.exception` in the reader threads; `process` omits `LogFileError`; `rro set-status` accepts line breaks; the test-log path is not contained (Decision 3).
+- **Recommendation:** as review-4 Findings 2-6, 8, 9.
+
+### Late mutation, pure-named I/O and the f-string rule (remainder)
+
+- **Rule or category:** A8, A9, S4
+- **Severity:** low
+- **Location:** `src/ralphlib/iteration.py:64`, `src/ralphlib/order.py:125`, `:304`, `bin/rro.py:83`, `src/tests/test_order.py:175`
+- **First raised:** review-4 (2026-11-21)
+- **Recommendation:** review-4 Findings 7 and 10.
+
+### Test gaps
+
+- **Rule or category:** T1, T2
+- **Severity:** low
+- **Location:** review-4 T1 and T2 lists
+- **First raised:** review-4 (2026-11-21)
+- **Recommendation:** review-4 Finding 11.
+
+### AGENTS.md and spec drift
+
+- **Rule or category:** Doc1, Doc2, Doc4, spec review
+- **Severity:** low
+- **Location:** `AGENTS.md`, `agents/specs/auditme-adoption/spec.md`, `agents/specs/verified-stop/spec.md`, `agents/specs/run-order/spec.md`
+- **First raised:** review-4 (2026-11-21)
+- **Recommendation:** review-4 Findings 12 and 13, Decisions 1 and 2.
 
 ## Recently resolved
+
 
 | Finding | Severity | Raised in | Resolved in |
 |---------|----------|-----------|-------------|
@@ -58,12 +110,17 @@ None. Every review-3 finding was resolved by tasks-3 (Decision 1, answered on 20
 
 ## Recurring patterns
 
-- AGENTS.md project structure falls behind the tree (review-1, review-2, review-3)
+- AGENTS.md project structure falls behind the tree (review-1, review-2, review-3, review-4)
 - Broad `except` that logs and carries on (review-1 `state.py`, review-2, review-3)
-- User docs fall behind behaviour changes (review-2, review-3)
+- User docs fall behind behaviour changes (review-2, review-3, review-4)
+- Untranslated file I/O in a newly added module (review-2, review-3, review-4 `order.py`)
 - A task-list fix closes the review's recommendation but leaves other sites the same question named (review-3 on review-2 Findings 8, 9, 14, 15)
 
 ## Checker changes since the last review
+
+- (none since review-4)
+
+### Before review-4
 
 - None since review-2. The D2 carve-out for plugins and themes (2026-11-02) is Phase B text only, and cleared review-2 Finding 19 as expected.
 - **2026-11-21: the audit hooks moved from `bnomis/agents` (`5912515`) to `bnomis/auditor` (`6a65d14`).** The pin spans every checker change since: `ruff-version-drift`, the widened `raises-section-drift`, the listed Phase B questions and their briefs. The one new hit, `ruff-version-drift` (the ruff hook pinned `v0.17.4`, the lock `0.17.2`), was fixed by lowering the hook to `v0.17.2`. At the new pin the sweep reports 18 hits, **0 unaccepted**, digest `0c9d1583c62118f3d14eb947b980b9dc9ce2b3306e100426a0237e3552278748`.
