@@ -126,6 +126,14 @@ def test_malformed_order_is_an_error_line(rro: types.ModuleType, order: pathlib.
     assert 'label' in result['message']
 
 
+def test_undecodable_order_is_an_error_line(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_bytes(b'\xff\xfe\xfa')
+    result, code = call(rro, capsys, 'next', str(order))
+    assert code == 2
+    assert result['error'] == 'OrderFormatError'
+    assert str(order) in result['message']
+
+
 def test_next_checkpoint_carries_its_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
     order.write_text(ORDER.replace('| todo |', '| merged abc |'))
     result, code = call(rro, capsys, 'next', str(order))

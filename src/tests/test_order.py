@@ -490,3 +490,75 @@ def test_set_setting_value_with_a_bar_round_trips(project: pathlib.Path) -> None
     path = write_order(project, SETTINGS_WITH_PAGE + '\n' + ONE_LIST)
     ralphlib.order.set_setting(path, 'progress page', 'https://example.test/a|b')
     assert ralphlib.order.read_order(path).settings.progress_page == 'https://example.test/a|b'
+
+
+def raise_os_error(*args: object, **kwargs: object) -> bytes:
+    raise PermissionError('denied')
+
+
+SET_STATUS_AND_SETTING = [
+    lambda path: ralphlib.order.set_status(path, '1', 'done'),
+    lambda path: ralphlib.order.set_setting(path, 'test log', 'x.log'),
+]
+
+
+def test_read_order_names_the_path_on_an_os_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=str(path)):
+        ralphlib.order.read_order(path)
+
+
+@pytest.mark.parametrize('call', [lambda path: ralphlib.order.read_order(path), *SET_STATUS_AND_SETTING])
+def test_an_undecodable_order_file_is_an_order_format_error(project: pathlib.Path, call: object) -> None:
+    path = write_order(project, '')
+    path.write_bytes(b'\xff\xfe\xfa')
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=str(path)):
+        call(path)  # type: ignore[operator]
+
+
+@pytest.mark.parametrize('call', SET_STATUS_AND_SETTING)
+def test_an_unreadable_order_file_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch, call: object) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match=str(path)):
+        call(path)  # type: ignore[operator]
+
+
+@pytest.mark.parametrize('call', SET_STATUS_AND_SETTING)
+def test_a_failed_write_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch, call: object) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    monkeypatch.setattr(pathlib.Path, 'write_bytes', raise_os_error)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='cannot write'):
+        call(path)  # type: ignore[operator]
+
+
+def test_set_setting_names_both_failures_when_the_restore_fails(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = write_order(project, SETTINGS + '| checkpoint every | 2 |\n\n' + ONE_LIST)
+    real = pathlib.Path.write_bytes
+    calls: list[bytes] = []
+
+    def fail_second(self: pathlib.Path, data: bytes) -> int:
+        calls.append(data)
+        if len(calls) > 1:
+            raise PermissionError('denied')
+        return real(self, data)
+
+    monkeypatch.setattr(pathlib.Path, 'write_bytes', fail_second)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='restoring the original also failed') as info:
+        ralphlib.order.set_setting(path, 'checkpoint every', 'x')
+    assert 'positive integer' in str(info.value)
+    assert isinstance(info.value.__cause__, ralphlib.exceptions.OrderFormatError)
+
+
+def test_check_test_log_os_error_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    order = ralphlib.order.read_order(path)
+    row = order.rows[0]
+    assert isinstance(row, ralphlib.order.ListRow)
+    log = project / 'ralpher-logs' / 'parser' / 'tasks-1' / 'final-tests.log'
+    log.parent.mkdir(parents=True)
+    log.write_text('all passed\n')
+    monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='final-tests.log'):
+        ralphlib.order.check_test_log(order, row, project)

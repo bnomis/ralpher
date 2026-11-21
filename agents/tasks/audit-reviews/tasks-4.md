@@ -26,7 +26,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 1: Order-file I/O errors end `rro` with its error line
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Finding 1

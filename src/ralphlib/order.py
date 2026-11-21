@@ -156,13 +156,41 @@ def build_settings(values: dict[str, str], lines: dict[str, int], header_line: i
     )
 
 
+def read_file(path: pathlib.Path, errors: str = 'strict') -> tuple[bytes, str]:
+    """Read a file as bytes and decoded text.
+
+    Raises:
+        OrderFormatError: naming the path, when the read fails or the bytes are not UTF-8.
+    """
+    try:
+        data = path.read_bytes()
+        return data, data.decode('utf-8', errors=errors)
+    except OSError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: cannot read ({type(e).__name__})') from e
+    except UnicodeDecodeError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: not valid UTF-8') from e
+
+
+def write_file(path: pathlib.Path, data: bytes) -> None:
+    """Write bytes to a file.
+
+    Raises:
+        OrderFormatError: naming the path, when the write fails.
+    """
+    try:
+        path.write_bytes(data)
+    except OSError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: cannot write ({type(e).__name__})') from e
+
+
 def read_order(path: pathlib.Path) -> Order:
     """Parse an order file.
 
     Raises:
-        OrderFormatError: naming the line, on any fault in the file.
+        OrderFormatError: naming the line, on any fault in the file, and
+            the path when it cannot be read or decoded.
     """
-    text = path.read_text(encoding='utf-8')
+    _, text = read_file(path)
     root = find_root(path)
     values: dict[str, str] = {}
     lines: dict[str, int] = {}
@@ -302,12 +330,16 @@ class LogVerdict:
 
 
 def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
-    """Judge the final test log a list saved: it passes with its pass line and no fail match."""
+    """Judge the final test log a list saved: it passes with its pass line and no fail match.
+
+    Raises:
+        OrderFormatError: naming the path, when the log cannot be read.
+    """
     path = root / order.settings.test_log.format(spec=row.spec, index=row.index)
     if not path.is_file():
         return LogVerdict(passed=False, path=path, fail_lines=(), has_pass_line=False)
     fail = re.compile(order.settings.fail_pattern)
-    lines = [ANSI_ESCAPE.sub('', line) for line in path.read_text(encoding='utf-8', errors='replace').splitlines()]
+    lines = [ANSI_ESCAPE.sub('', line) for line in read_file(path, errors='replace')[1].splitlines()]
     has_pass_line = any(order.settings.pass_line in line for line in lines)
     fail_lines = tuple(line for line in lines if fail.search(line))
     return LogVerdict(passed=has_pass_line and not fail_lines, path=path, fail_lines=fail_lines, has_pass_line=has_pass_line)
@@ -337,9 +369,10 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
     which is added below the order table the first time it is set.
 
     Raises:
-        OrderFormatError: no row or line has that label.
+        OrderFormatError: no row or line has that label, or the file cannot
+            be read, decoded or written.
     """
-    lines = path.read_bytes().decode('utf-8').splitlines(keepends=True)
+    lines = read_file(path)[1].splitlines(keepends=True)
     nth = 0
     in_order = False
     last_table_line = -1
@@ -351,7 +384,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
             match = IMPLICIT_CHECKPOINT.match(body.strip())
             if match and label == f'Checkpoint after {match.group(1)}':
                 lines[number] = f'{label}: {status}{ending}'
-                path.write_bytes(''.join(lines).encode('utf-8'))
+                write_file(path, ''.join(lines).encode('utf-8'))
                 return
             continue
         cells = split_cells(body)
@@ -379,7 +412,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
         lines.insert(last_table_line + 1, f'{ending}{label}: {status}{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no row labelled {label!r}')
-    path.write_bytes(''.join(lines).encode('utf-8'))
+    write_file(path, ''.join(lines).encode('utf-8'))
 
 
 def set_setting(path: pathlib.Path, name: str, value: str) -> None:
@@ -388,11 +421,12 @@ def set_setting(path: pathlib.Path, name: str, value: str) -> None:
     A known setting with no row is added as the last row of the settings
     table. Raises OrderFormatError for an unknown name, and for a value that
     makes the file fail read_order, in which case the file is left as it was.
+    Also raises OrderFormatError when the file cannot be read, decoded or written.
     """
     if name not in KNOWN_SETTINGS:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: unknown setting `{name}`')
-    original = path.read_bytes()
-    lines = original.decode('utf-8').splitlines(keepends=True)
+    original, text = read_file(path)
+    lines = text.splitlines(keepends=True)
     in_settings = False
     last_table_line = -1
     target = -1
@@ -422,11 +456,15 @@ def set_setting(path: pathlib.Path, name: str, value: str) -> None:
         lines.insert(last_table_line + 1, f'| {name} | {escaped} |{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no settings table (header `Setting | Value`)')
-    path.write_bytes(''.join(lines).encode('utf-8'))
+    write_file(path, ''.join(lines).encode('utf-8'))
     try:
         read_order(path)
-    except ralphlib.exceptions.OrderFormatError:
-        path.write_bytes(original)
+    except ralphlib.exceptions.OrderFormatError as e:
+        try:
+            write_file(path, original)
+        except ralphlib.exceptions.OrderFormatError as restore_error:
+            # auditme: accept[except-interpolation] the message must name both failures
+            raise ralphlib.exceptions.OrderFormatError(f'{e}; restoring the original also failed: {restore_error}') from restore_error
         raise
 
 
