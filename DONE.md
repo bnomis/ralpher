@@ -398,3 +398,32 @@ Fix direction: skip the job for Dependabot (`if: github.actor !=
 review. Small; no spec.
 
 Done: 2026-11-21 - the `claude-review` job in `.github/workflows/claude-code-review.yml` now runs only when the pull request's author is not `dependabot[bot]`; not yet seen in a pull request run.
+
+## CI's `check` job fails on every Dependabot pull request
+
+Found on 2026-11-21 by a survey: `check` fails on all five open Dependabot
+pull requests (#21, #22, #24, #25, #26) with `Load key
+"/home/runner/.ssh/agents_deploy_key": error in libcrypto` and `Permission
+denied (publickey)` when pre-commit fetches the audit hooks (runs of
+2026-11-15, e.g. run 43683071813).
+
+Cause: a workflow run that Dependabot triggers reads Dependabot secrets, not
+Actions secrets. `gh secret list --app dependabot` lists none, while the
+deploy key is set only as the Actions secret `AUDITOR_DEPLOY_KEY`, which
+`.github/workflows/ci.yml:48` writes to `~/.ssh/auditor_deploy_key`. The
+failed runs predate the move to the auditor repository, but a rebased pull
+request meets the same empty secret.
+
+Fix direction: the operator adds the auditor deploy key as a Dependabot
+secret named `AUDITOR_DEPLOY_KEY` (repository settings, Secrets and
+variables, Dependabot); only the operator holds the key. Then ask Dependabot
+to rebase each open pull request (`@dependabot rebase`) and check that
+`check` passes. Small; no spec.
+
+Note 2026-11-21: at 15:42 UTC a new read-only deploy key (`ralpher ci`, id
+`170673638`) was added to `bnomis/auditor`, its private half set as
+`AUDITOR_DEPLOY_KEY` for both Actions and Dependabot, and the old key
+(`170651006`) deleted. As of 15:43 UTC no open Dependabot pull request had
+run CI since, so the rebase and the check that `check` passes remain.
+
+Done: 2026-11-21 - the Dependabot secret `AUDITOR_DEPLOY_KEY` (deploy key `170673638`); after `@dependabot rebase` at 15:49 UTC, `check` fetched the audit hooks on #21, #24, #25 and #26 and passed on #21, #25 and #26 (#24 fails on `ruff-version-drift`, the next item); #22 had not been rebased as of 15:58 UTC.

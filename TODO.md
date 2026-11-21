@@ -4,33 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## CI's `check` job fails on every Dependabot pull request
-
-Found on 2026-11-21 by a survey: `check` fails on all five open Dependabot
-pull requests (#21, #22, #24, #25, #26) with `Load key
-"/home/runner/.ssh/agents_deploy_key": error in libcrypto` and `Permission
-denied (publickey)` when pre-commit fetches the audit hooks (runs of
-2026-11-15, e.g. run 43683071813).
-
-Cause: a workflow run that Dependabot triggers reads Dependabot secrets, not
-Actions secrets. `gh secret list --app dependabot` lists none, while the
-deploy key is set only as the Actions secret `AUDITOR_DEPLOY_KEY`, which
-`.github/workflows/ci.yml:48` writes to `~/.ssh/auditor_deploy_key`. The
-failed runs predate the move to the auditor repository, but a rebased pull
-request meets the same empty secret.
-
-Fix direction: the operator adds the auditor deploy key as a Dependabot
-secret named `AUDITOR_DEPLOY_KEY` (repository settings, Secrets and
-variables, Dependabot); only the operator holds the key. Then ask Dependabot
-to rebase each open pull request (`@dependabot rebase`) and check that
-`check` passes. Small; no spec.
-
-Note 2026-11-21: at 15:42 UTC a new read-only deploy key (`ralpher ci`, id
-`170673638`) was added to `bnomis/auditor`, its private half set as
-`AUDITOR_DEPLOY_KEY` for both Actions and Dependabot, and the old key
-(`170651006`) deleted. As of 15:43 UTC no open Dependabot pull request had
-run CI since, so the rebase and the check that `check` passes remain.
-
 ## Merging the ruff 0.17.3 bump would fail the push hook
 
 Found on 2026-11-21 by a survey: Dependabot pull request #24 moves ruff from
@@ -48,6 +21,10 @@ raise the `rev` to `v0.17.3` in the same change that merges #24 (push a
 commit to the Dependabot branch, or take the bump on `main` by hand and close
 the pull request). Waits on the `check` item above for #24's own CI. Small;
 no spec.
+
+Note 2026-11-21: the `check` item is done (see `DONE.md`). #24, rebased at
+15:49 UTC, now fails only here: run 44921408958 reports `ruff-version-drift`
+at `.pre-commit-config.yaml:4`.
 
 ## A merged feature branch is still on the remote
 
