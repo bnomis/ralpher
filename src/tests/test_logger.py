@@ -160,3 +160,27 @@ def test_log_file_names_each_iteration_once_and_never_reuses_a_file(
 
         assert path == pathlib.Path(logdir).absolute() / (f'{name}-1{suffix}' if taken else f'{name}{suffix}')
         assert ralphlib.logger.log_file(options, f'{stem}{suffix}', iteration) == path
+
+
+class TestStatePath:
+    def test_without_logdir_returns_plain_path(self) -> None:
+        options = tests.helpers.make_plain_options(logdir=None)
+        assert ralphlib.logger.state_path(options, 'sub/state.json') == pathlib.Path('sub/state.json')
+
+    def test_absolute_path_allowed_without_logdir(self) -> None:
+        options = tests.helpers.make_plain_options(logdir=None)
+        assert ralphlib.logger.state_path(options, '/etc/state.json') == pathlib.Path('/etc/state.json')
+
+    def test_with_logdir_joins(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(logdir=str(tmp_path))
+        assert ralphlib.logger.state_path(options, 'sub/state.json') == tmp_path / 'sub' / 'state.json'
+
+    def test_absolute_path_raises(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(logdir=str(tmp_path), state='/etc/state.json')
+        with pytest.raises(ralphlib.exceptions.LogFileError, match='relative path'):
+            ralphlib.logger.state_path(options, '/etc/state.json')
+
+    def test_parent_traversal_raises(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(logdir=str(tmp_path), state='../state.json')
+        with pytest.raises(ralphlib.exceptions.LogFileError, match='relative path'):
+            ralphlib.logger.state_path(options, '../state.json')

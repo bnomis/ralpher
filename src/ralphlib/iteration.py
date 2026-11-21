@@ -61,7 +61,7 @@ class IterationContext:
     in_progress_tasks: set[str] = dataclasses.field(default_factory=set)
     """Set at run time: task ids seen `in-progress` in the tasks file, seeded before the agent starts."""
     tasks_signature: tuple[int, int] | None = None
-    """Modification time and size of the tasks file at the last poll read."""
+    """Set at run time: modification time and size of the tasks file at the last poll read."""
     progress: pathlib.Path | None = None
     errors: pathlib.Path | None = None
     stderr: pathlib.Path | None = None
@@ -459,6 +459,7 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     Raises:
         RalpherError: the agent cannot be started.
         GitError: `hooks.event` could not open the repository.
+        LogFileError: the iteration log file cannot be written.
     """
     kwargs = {
         'bufsize': 1,  # line-buffered
@@ -480,7 +481,7 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
             context.cmd,
             **kwargs,
         )
-    except OSError as e:
+    except (OSError, subprocess.SubprocessError) as e:
         raise ralphlib.exceptions.RalpherError(f'Cannot start the agent "{context.cmd[0]}"') from e
     log_msg(options, context, f'Started agent process {proc.pid}')
     ralphlib.hooks.event(
@@ -574,7 +575,7 @@ def process_stdout(
     try:
         read_stdout(options, context, pipe)
     except OSError, ralphlib.exceptions.LogFileError:
-        loguru.logger.exception('I/O error on the agent stdout reader thread')
+        loguru.logger.error('I/O error on the agent stdout reader thread')
         set_error(context, True)
 
 
@@ -619,7 +620,7 @@ def process_stderr(
             write_stderr(context, line + '\n')
             print_error(options, context, line)
     except OSError, ralphlib.exceptions.LogFileError:
-        loguru.logger.exception('I/O error on the agent stderr reader thread')
+        loguru.logger.error('I/O error on the agent stderr reader thread')
         set_error(context, True)
 
 

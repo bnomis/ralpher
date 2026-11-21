@@ -122,7 +122,7 @@ def unquote(value: str) -> str:
     return value.replace('`', '').strip()
 
 
-def find_root(path: pathlib.Path) -> pathlib.Path:
+def discover_root(path: pathlib.Path) -> pathlib.Path:
     """The nearest directory above the order file that holds `agents/tasks/`.
 
     Raises:
@@ -156,14 +156,42 @@ def build_settings(values: dict[str, str], lines: dict[str, int], header_line: i
     )
 
 
+def read_file(path: pathlib.Path, errors: str = 'strict') -> tuple[bytes, str]:
+    """Read a file as bytes and decoded text.
+
+    Raises:
+        OrderFormatError: naming the path, when the read fails or the bytes are not UTF-8.
+    """
+    try:
+        data = path.read_bytes()
+        return data, data.decode('utf-8', errors=errors)
+    except OSError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: cannot read ({type(e).__name__})') from e
+    except UnicodeDecodeError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: not valid UTF-8') from e
+
+
+def write_file(path: pathlib.Path, data: bytes) -> None:
+    """Write bytes to a file.
+
+    Raises:
+        OrderFormatError: naming the path, when the write fails.
+    """
+    try:
+        path.write_bytes(data)
+    except OSError as e:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: cannot write ({type(e).__name__})') from e
+
+
 def read_order(path: pathlib.Path) -> Order:
     """Parse an order file.
 
     Raises:
-        OrderFormatError: naming the line, on any fault in the file.
+        OrderFormatError: naming the line, on any fault in the file, and
+            the path when it cannot be read or decoded.
     """
-    text = path.read_text(encoding='utf-8')
-    root = find_root(path)
+    _, text = read_file(path)
+    root = discover_root(path)
     values: dict[str, str] = {}
     lines: dict[str, int] = {}
     settings_line = 0
@@ -301,13 +329,21 @@ class LogVerdict:
     has_pass_line: bool
 
 
-def check_test_log(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
-    """Judge the final test log a list saved: it passes with its pass line and no fail match."""
-    path = root / order.settings.test_log.format(spec=row.spec, index=row.index)
+def read_test_log_verdict(order: Order, row: ListRow, root: pathlib.Path) -> LogVerdict:
+    """Judge the final test log a list saved: it passes with its pass line and no fail match.
+
+    Raises:
+        OrderFormatError: naming the path, when the `test log` setting is absolute or contains `..`,
+            or when the log cannot be read.
+    """
+    relative = pathlib.Path(order.settings.test_log.format(spec=row.spec, index=row.index))
+    if relative.is_absolute() or '..' in relative.parts:
+        raise ralphlib.exceptions.OrderFormatError(f'The test log {str(relative)!r} must be a relative path inside the repository')
+    path = root / relative
     if not path.is_file():
         return LogVerdict(passed=False, path=path, fail_lines=(), has_pass_line=False)
     fail = re.compile(order.settings.fail_pattern)
-    lines = [ANSI_ESCAPE.sub('', line) for line in path.read_text(encoding='utf-8', errors='replace').splitlines()]
+    lines = [ANSI_ESCAPE.sub('', line) for line in read_file(path, errors='replace')[1].splitlines()]
     has_pass_line = any(order.settings.pass_line in line for line in lines)
     fail_lines = tuple(line for line in lines if fail.search(line))
     return LogVerdict(passed=has_pass_line and not fail_lines, path=path, fail_lines=fail_lines, has_pass_line=has_pass_line)
@@ -329,6 +365,26 @@ def strip_ending(line: str) -> tuple[str, str]:
     return body, line[len(body) :]
 
 
+def write_checked(path: pathlib.Path, lines: list[str], original: bytes) -> None:
+    """Write the lines, then restore `original` if read_order refuses the result.
+
+    Raises:
+        OrderFormatError: the write failed, or the result is not a valid order
+            (the original is restored); the message names both failures when
+            the restore also fails.
+    """
+    write_file(path, ''.join(lines).encode('utf-8'))
+    try:
+        read_order(path)
+    except ralphlib.exceptions.OrderFormatError as e:
+        try:
+            write_file(path, original)
+        except ralphlib.exceptions.OrderFormatError as restore_error:
+            # auditme: accept[except-interpolation] the message must name both failures
+            raise ralphlib.exceptions.OrderFormatError(f'{e}; restoring the original also failed: {restore_error}') from restore_error
+        raise
+
+
 def set_status(path: pathlib.Path, label: str, status: str) -> None:
     """Rewrite one Status cell, leaving every other byte of the file unchanged.
 
@@ -337,9 +393,14 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
     which is added below the order table the first time it is set.
 
     Raises:
-        OrderFormatError: no row or line has that label.
+        OrderFormatError: the status contains a line break, no row or line has
+            that label, the write leaves a file read_order refuses (the file is
+            then restored), or the file cannot be read, decoded or written.
     """
-    lines = path.read_bytes().decode('utf-8').splitlines(keepends=True)
+    if len(f'a{status}a'.splitlines()) > 1:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: a status cannot contain a line break')
+    original, text = read_file(path)
+    lines = text.splitlines(keepends=True)
     nth = 0
     in_order = False
     last_table_line = -1
@@ -351,7 +412,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
             match = IMPLICIT_CHECKPOINT.match(body.strip())
             if match and label == f'Checkpoint after {match.group(1)}':
                 lines[number] = f'{label}: {status}{ending}'
-                path.write_bytes(''.join(lines).encode('utf-8'))
+                write_checked(path, lines, original)
                 return
             continue
         cells = split_cells(body)
@@ -379,7 +440,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
         lines.insert(last_table_line + 1, f'{ending}{label}: {status}{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no row labelled {label!r}')
-    path.write_bytes(''.join(lines).encode('utf-8'))
+    write_checked(path, lines, original)
 
 
 def set_setting(path: pathlib.Path, name: str, value: str) -> None:
@@ -388,11 +449,12 @@ def set_setting(path: pathlib.Path, name: str, value: str) -> None:
     A known setting with no row is added as the last row of the settings
     table. Raises OrderFormatError for an unknown name, and for a value that
     makes the file fail read_order, in which case the file is left as it was.
+    Also raises OrderFormatError when the file cannot be read, decoded or written.
     """
     if name not in KNOWN_SETTINGS:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: unknown setting `{name}`')
-    original = path.read_bytes()
-    lines = original.decode('utf-8').splitlines(keepends=True)
+    original, text = read_file(path)
+    lines = text.splitlines(keepends=True)
     in_settings = False
     last_table_line = -1
     target = -1
@@ -422,12 +484,7 @@ def set_setting(path: pathlib.Path, name: str, value: str) -> None:
         lines.insert(last_table_line + 1, f'| {name} | {escaped} |{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no settings table (header `Setting | Value`)')
-    path.write_bytes(''.join(lines).encode('utf-8'))
-    try:
-        read_order(path)
-    except ralphlib.exceptions.OrderFormatError:
-        path.write_bytes(original)
-        raise
+    write_checked(path, lines, original)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -440,11 +497,17 @@ class Decision:
 
 
 def default_branch(repo: git.Repo) -> str:
-    """The branch origin/HEAD points at, or main when it is unset."""
+    """The branch origin/HEAD points at, or main when it is unset.
+
+    Raises:
+        GitError: the repository cannot be read from disk.
+    """
     try:
         return repo.git.symbolic_ref('--short', 'refs/remotes/origin/HEAD').removeprefix('origin/')
     except git.GitCommandError:
         return DEFAULT_BRANCH
+    except OSError as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read origin/HEAD of {repo.working_dir}') from e
 
 
 def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
@@ -459,7 +522,7 @@ def decisions_since(root: pathlib.Path, ref: str) -> list[Decision]:
     try:
         repo = git.Repo(root)
         repo.git.rev_parse('--verify', '--quiet', f'{ref}^{{commit}}')
-    except git.GitError as e:
+    except (git.GitError, OSError) as e:
         raise ralphlib.exceptions.GitError(f'Cannot resolve {ref} in {root}') from e
     # auditme: accept[legacy-formatting-percent] git log placeholders, not Python formatting
     fields = ('%H', '%as', '%s', '%b', '%B')

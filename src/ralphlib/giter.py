@@ -35,6 +35,12 @@ def lines_to_text(options: ralphlib.options.RalpherOptions, lines: list[str]) ->
 
 
 def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
+    """
+    The summary line of the last commit, or an empty string when it cannot be read from git.
+
+    Raises:
+        GitError: the repository cannot be opened or read from disk.
+    """
     repo = discover_repo_path(path=path)
     if repo is None:
         return ''
@@ -44,6 +50,8 @@ def last_commit_summary(path: pathlib.Path | str | None = None) -> str:
     except git.GitCommandError, git.GitCommandNotFound, ValueError:
         loguru.logger.opt(exception=True).warning('Cannot read the last commit')
         return ''
+    except OSError as e:
+        raise ralphlib.exceptions.GitError(f'Cannot read the last commit of {repo.working_dir}') from e
 
 
 def confirm_git_state(options: ralphlib.options.RalpherOptions, path: pathlib.Path | str | None = None) -> None:

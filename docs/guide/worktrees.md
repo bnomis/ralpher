@@ -79,17 +79,20 @@ When a run ends complete, with no error or termination, and used
 `--worktree` and `--task-file`, ralpher prints the commands to fold the work
 back in:
 
-```shell
-git merge --no-ff --no-edit worktree-<name> && \
-(git worktree unlock <name> 2>/dev/null || true) && \
-git worktree remove --force <name> && \
-git branch -D worktree-<name> && \
-git push && \
-(git push origin --delete worktree-<name> 2>/dev/null || true)
+```text
+Probable cleanup commands...
+  cd <repository root> && \
+  git merge --no-ff --no-edit worktree-<name> && \
+  (git worktree unlock <name> 2>/dev/null || true) && \
+  git worktree remove --force <name> && \
+  git branch -D worktree-<name> && \
+  git push && \
+  (git push origin --delete worktree-<name> 2>/dev/null || true)
 ```
 
-They are printed, never run. Run them from your checkout of the branch the
-worktree started from. `git branch -D` is used rather than `-d` because a
+The `cd` line appears when `--cwd` is set, as `rrq.sh` sets it. They are
+printed, never run. Run them from your checkout of the branch the worktree
+started from. `git branch -D` is used rather than `-d` because a
 branch pushed for CI, then committed to, is refused by `-d` even once merged,
 and the chain would stop before the push.
 

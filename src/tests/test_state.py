@@ -163,8 +163,8 @@ class TestDomainErrors:
             ralphlib.state.add_to_state(options, {'new': 'val'})
 
 
-KEYS = hypothesis.strategies.sampled_from(['a', 'b', 'c'])
-LEAVES = hypothesis.strategies.dictionaries(hypothesis.strategies.sampled_from(['x', 'y', 'z']), hypothesis.strategies.integers(), max_size=3)
+KEYS = hypothesis.strategies.sampled_from(['key-a', 'key-b', 'key-c'])
+LEAVES = hypothesis.strategies.dictionaries(hypothesis.strategies.sampled_from(['leaf-x', 'leaf-y', 'leaf-z']), hypothesis.strategies.integers(), max_size=3)
 
 
 @hypothesis.settings(max_examples=20, deadline=10000)
@@ -192,3 +192,69 @@ def test_add_to_state_merges_value_at_its_keys_and_leaves_the_rest(
         else:
             expected.setdefault(key1, {}).setdefault(key2, {}).update(value)
         assert json.loads(state_path.read_text()) == expected
+
+
+class TestAddToStateWork:
+    def lock_path(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        return tmp_path / 'state.json.lock'
+
+    def test_no_keys_updates_top_level(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        ralphlib.state.save_state(options, {'a': 1})
+        # auditme: accept[duplicate-side-effect-per-target] each test sets up different state before the same call
+        ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2})
+        assert ralphlib.state.load_state(options) == {'a': 1, 'b': 2}
+
+    def test_key1_updates_nested(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        ralphlib.state.save_state(options, {'outer': {'a': 1}})
+        ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2}, key1='outer')
+        assert ralphlib.state.load_state(options) == {'outer': {'a': 1, 'b': 2}}
+
+    def test_key1_key2_updates_doubly_nested(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        ralphlib.state.save_state(options, {})
+        ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2}, key1='x', key2='y')
+        assert ralphlib.state.load_state(options) == {'x': {'y': {'b': 2}}}
+
+    def test_key1_not_a_dict_raises(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        ralphlib.state.save_state(options, {'x': 'text'})
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='x'):
+            ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2}, key1='x')
+
+    def test_key2_not_a_dict_raises(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        ralphlib.state.save_state(options, {'x': {'y': 3}})
+        with pytest.raises(ralphlib.exceptions.ValueNotADictError, match='x/y'):
+            ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2}, key1='x', key2='y')
+
+    def test_os_error_creating_lock_raises_state_file_error(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            raise PermissionError('denied')
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        with pytest.raises(ralphlib.exceptions.StateFileError, match='state.json.lock') as excinfo:
+            ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2})
+        assert isinstance(excinfo.value.__cause__, PermissionError)
+
+    def test_timeout_is_reraised_after_retries(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        options = tests.helpers.make_plain_options(state='state.json', logdir=str(tmp_path))
+        attempts: list[float] = []
+
+        def acquire(self: filelock.FileLock, timeout: float) -> None:
+            attempts.append(timeout)
+            raise filelock.Timeout(str(self.lock_file))
+
+        monkeypatch.setattr(filelock.FileLock, 'acquire', acquire)
+        monkeypatch.setattr(ralphlib.state.add_to_state_work.retry, 'wait', tenacity.wait_none())
+        with pytest.raises(filelock.Timeout):
+            ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2})
+        assert len(attempts) == 3
+
+    def test_returns_without_saving_when_load_state_is_none(self, tmp_path: pathlib.Path) -> None:
+        options = tests.helpers.make_plain_options(state=None, logdir=str(tmp_path))
+        ralphlib.state.add_to_state_work(options, self.lock_path(tmp_path), {'b': 2})
+        assert not (tmp_path / 'state.json').exists()

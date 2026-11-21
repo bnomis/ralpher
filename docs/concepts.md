@@ -61,7 +61,10 @@ After each iteration, the loop stops if any of these holds:
 - **complete**: a line of the agent's output was exactly a stop marker
   (`--stops`, default `<promise>COMPLETE</promise>`), and, with a tasks file,
   the [verified stop](guide/tasks.md#verified-stop) agrees;
-- **error**: the agent reported an error result;
+- **error**: the agent reported an error result, or an I/O failure on the
+  agent's output reader threads was logged as an error;
+- **exception**: an exception in the iteration itself ends the loop at once,
+  with exit reason `exception during iteration <i>` and exit status 1;
 - **termination**: you pressed Ctrl+C twice, ralpher got `SIGTERM`, the agent
   asked for an operator, or ralpher detected a loop on a blocked task. See
   [Stopping a run](guide/stopping.md).

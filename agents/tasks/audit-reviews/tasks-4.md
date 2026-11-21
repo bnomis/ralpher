@@ -26,7 +26,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 1: Order-file I/O errors end `rro` with its error line
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Finding 1
@@ -35,23 +35,23 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: `read_order`, `set_status` and `set_setting` raise `OrderFormatError` naming the path when the read raises `OSError` (patch `pathlib.Path.read_text` / `read_bytes`) and when the file is not valid UTF-8; `check_test_log` raises `OrderFormatError` when the log read raises `OSError`; a failed write in `set_status` and `set_setting` raises `OrderFormatError`; confirm they fail before the fix
-- [ ] Add a test to `src/tests/test_rro.py` that an undecodable order file makes `rro next` print the `{error, message}` line and exit 2
-- [ ] In `src/ralphlib/order.py`, add one read helper and one write helper that translate `OSError` and `UnicodeDecodeError` to `OrderFormatError` naming the path (`raise ... from e`), and route every order-file read and write in `read_order`, `set_setting`, `set_status` and the test-log read in `check_test_log` through them
-- [ ] In `set_setting`, when the restore write after a failed `read_order` itself fails, raise `OrderFormatError` naming both failures, chained from the restore error, so the original error is not lost
-- [ ] Add `OSError` and `UnicodeDecodeError` to the handler at `src/ralphlib/order.py:428` if it still catches only `OrderFormatError` after the helpers land
-- [ ] Update the `Raises:` sections of the changed functions
+- [x] Add tests to `src/tests/test_order.py`: `read_order`, `set_status` and `set_setting` raise `OrderFormatError` naming the path when the read raises `OSError` (patch `pathlib.Path.read_text` / `read_bytes`) and when the file is not valid UTF-8; `check_test_log` raises `OrderFormatError` when the log read raises `OSError`; a failed write in `set_status` and `set_setting` raises `OrderFormatError`; confirm they fail before the fix
+- [x] Add a test to `src/tests/test_rro.py` that an undecodable order file makes `rro next` print the `{error, message}` line and exit 2
+- [x] In `src/ralphlib/order.py`, add one read helper and one write helper that translate `OSError` and `UnicodeDecodeError` to `OrderFormatError` naming the path (`raise ... from e`), and route every order-file read and write in `read_order`, `set_setting`, `set_status` and the test-log read in `check_test_log` through them
+- [x] In `set_setting`, when the restore write after a failed `read_order` itself fails, raise `OrderFormatError` naming both failures, chained from the restore error, so the original error is not lost
+- [x] Add `OSError` and `UnicodeDecodeError` to the handler at `src/ralphlib/order.py:428` if it still catches only `OrderFormatError` after the helpers land
+- [x] Update the `Raises:` sections of the changed functions
 
 **Acceptance Criteria:**
 
-- [ ] No `read_text`, `read_bytes` or `write_bytes` call in `src/ralphlib/order.py` sits outside the two helpers (`rg -n 'read_text|read_bytes|write_bytes' src/ralphlib/order.py`)
-- [ ] The new tests pass
+- [x] No `read_text`, `read_bytes` or `write_bytes` call in `src/ralphlib/order.py` sits outside the two helpers (`rg -n 'read_text|read_bytes|write_bytes' src/ralphlib/order.py`)
+- [x] The new tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py` and `src/tests/test_rro.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py` and `src/tests/test_rro.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
 
 **Notes:**
 
@@ -61,7 +61,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 2: `rro set-status` refuses line breaks
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 8
@@ -70,21 +70,21 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: a status containing `\n` or `\r` raises `OrderFormatError` and leaves the file byte-for-byte unchanged; a write that leaves the file unparseable is restored, as `set_setting`'s tests check
-- [ ] In `ralphlib.order.set_status`, refuse a status containing `\r` or `\n` with `OrderFormatError` before writing
-- [ ] After the write, re-parse the file with `read_order` and restore the original bytes on `OrderFormatError`, as `set_setting` does
-- [ ] Say in `docs/run-order.md` (the `set-status` description) that a status cannot contain a line break
+- [x] Add tests to `src/tests/test_order.py`: a status containing `\n` or `\r` raises `OrderFormatError` and leaves the file byte-for-byte unchanged; a write that leaves the file unparseable is restored, as `set_setting`'s tests check
+- [x] In `ralphlib.order.set_status`, refuse a status containing `\r` or `\n` with `OrderFormatError` before writing
+- [x] After the write, re-parse the file with `read_order` and restore the original bytes on `OrderFormatError`, as `set_setting` does
+- [x] Say in `docs/run-order.md` (the `set-status` description) that a status cannot contain a line break
 
 **Acceptance Criteria:**
 
-- [ ] A forged `Checkpoint after X: passed` line cannot be written through `set_status`
+- [x] A forged `Checkpoint after X: passed` line cannot be written through `set_status`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -95,7 +95,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 3: The test log stays inside the repository
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 9, Decision 3
@@ -104,20 +104,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: an absolute `test log` path and one containing `..` make `check_test_log` raise `OrderFormatError`; the default path still works
-- [ ] In `ralphlib.order.check_test_log` (or where the setting is read), refuse such paths with `OrderFormatError`, matching how `ralphlib.logger.state_path` refuses absolute and `..` paths
-- [ ] Document the rule beside the `test log` setting in `docs/run-order.md`
+- [x] Add tests to `src/tests/test_order.py`: an absolute `test log` path and one containing `..` make `check_test_log` raise `OrderFormatError`; the default path still works
+- [x] In `ralphlib.order.check_test_log` (or where the setting is read), refuse such paths with `OrderFormatError`, matching how `ralphlib.logger.state_path` refuses absolute and `..` paths
+- [x] Document the rule beside the `test log` setting in `docs/run-order.md`
 
 **Acceptance Criteria:**
 
-- [ ] `rro check-log` on such an order prints the `{error, message}` line and exits 2
+- [x] `rro check-log` on such an order prints the `{error, message}` line and exits 2
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -128,7 +128,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 4: Git handlers also catch `OSError`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 2
@@ -137,19 +137,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_giter.py` and `src/tests/test_order.py` that an `OSError` from each guarded call (patch the GitPython call) raises `GitError`
-- [ ] Add `OSError` to each handler and raise `GitError` from it, keeping each handler's existing behaviour for the errors it already catches
-- [ ] Update the `Raises:` sections where they change
+- [x] Add tests to `src/tests/test_giter.py` and `src/tests/test_order.py` that an `OSError` from each guarded call (patch the GitPython call) raises `GitError`
+- [x] Add `OSError` to each handler and raise `GitError` from it, keeping each handler's existing behaviour for the errors it already catches
+- [x] Update the `Raises:` sections where they change
 
 **Acceptance Criteria:**
 
-- [ ] Each of the three handlers names `OSError`
+- [x] Each of the three handlers names `OSError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_giter.py` and `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_order.py` passes
 
 **Notes:**
 
@@ -159,7 +159,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 5: `Popen` handlers cover `SubprocessError`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 3 and 4
@@ -168,19 +168,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_iteration.py` that a `subprocess.SubprocessError` from `Popen` in `process` raises `RalpherError`
-- [ ] Add a test to `src/tests/test_hooks.py` that a `subprocess.SubprocessError` from `Popen` in `run_hook` is logged as a warning and the run carries on
-- [ ] Catch `(OSError, subprocess.SubprocessError)` in both handlers
+- [x] Add a test to `src/tests/test_iteration.py` that a `subprocess.SubprocessError` from `Popen` in `process` raises `RalpherError`
+- [x] Add a test to `src/tests/test_hooks.py` that a `subprocess.SubprocessError` from `Popen` in `run_hook` is logged as a warning and the run carries on
+- [x] Catch `(OSError, subprocess.SubprocessError)` in both handlers
 
 **Acceptance Criteria:**
 
-- [ ] `run_hook` still never raises for a failed hook command
+- [x] `run_hook` still never raises for a failed hook command
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_iteration.py` and `src/tests/test_hooks.py`
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_iteration.py` and `src/tests/test_hooks.py`
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py` passes
 
 **Notes:**
 
@@ -191,7 +191,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 6: Reader-thread log level and `process`'s `Raises`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 5 and 6
@@ -200,19 +200,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Change `logger.exception` to `logger.error` in the `(OSError, LogFileError)` handlers of `process_stdout` and `process_stderr`, keeping the message and the `set_error` call
-- [ ] Update any test in `src/tests/test_iteration.py` that asserts the old level
-- [ ] Add `LogFileError` to the `Raises:` section of `process`
-- [ ] Leave the handler in `looper.loop` unchanged (review-3 Decision 1)
+- [x] Change `logger.exception` to `logger.error` in the `(OSError, LogFileError)` handlers of `process_stdout` and `process_stderr`, keeping the message and the `set_error` call
+- [x] Update any test in `src/tests/test_iteration.py` that asserts the old level
+- [x] Add `LogFileError` to the `Raises:` section of `process`
+- [x] Leave the handler in `looper.loop` unchanged (review-3 Decision 1)
 
 **Acceptance Criteria:**
 
-- [ ] `rg -n 'logger.exception' src/ralphlib/iteration.py` no longer lists the two reader-thread handlers
+- [x] `rg -n 'logger.exception' src/ralphlib/iteration.py` no longer lists the two reader-thread handlers
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_iteration.py` passes
 
 **Notes:**
 
@@ -223,7 +223,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 7: Names that say they do I/O
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 7
@@ -232,18 +232,18 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Rename the three functions and update every caller and test (`bin/rro.py`, `src/tests/test_order.py`, `src/tests/test_rro.py`); the `rro check-log` subcommand name stays
-- [ ] Update the run-order spec's API section and test notes for the new names (`agents/specs/run-order/spec.md:211`, `:330` and any other mention)
-- [ ] Change the docstring of `IterationContext.tasks_signature` (`src/ralphlib/iteration.py:64`) to start "Set at run time:", as the other run-time fields do
+- [x] Rename the three functions and update every caller and test (`bin/rro.py`, `src/tests/test_order.py`, `src/tests/test_rro.py`); the `rro check-log` subcommand name stays
+- [x] Update the run-order spec's API section and test notes for the new names (`agents/specs/run-order/spec.md:211`, `:330` and any other mention)
+- [x] Change the docstring of `IterationContext.tasks_signature` (`src/ralphlib/iteration.py:64`) to start "Set at run time:", as the other run-time fields do
 
 **Acceptance Criteria:**
 
-- [ ] `rg -nw 'find_root|check_test_log|check_log' src bin agents/specs docs claude` finds nothing (records under `agents/audit-reviews/` and earlier task lists keep the old names)
+- [x] `rg -nw 'find_root|check_test_log|check_log' src bin agents/specs docs claude` finds nothing (records under `agents/audit-reviews/` and earlier task lists keep the old names)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_iteration.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py src/tests/test_iteration.py` passes
 
 **Notes:**
 
@@ -253,7 +253,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 8: f-strings in `test_order.py`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 10
@@ -262,17 +262,17 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Replace each template with a function taking the status (`def l1(status: str) -> str`), and update every use in the module
-- [ ] Leave `src/ralphlib/order.py`'s `.format()` of the user-supplied template alone
+- [x] Replace each template with a function taking the status (`def l1(status: str) -> str`), and update every use in the module
+- [x] Leave `src/ralphlib/order.py`'s `.format()` of the user-supplied template alone
 
 **Acceptance Criteria:**
 
-- [ ] `rg -n '\.format\(' src/tests/test_order.py` finds nothing
+- [x] `rg -n '\.format\(' src/tests/test_order.py` finds nothing
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
@@ -282,7 +282,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 9: Direct and property tests for the untested functions
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** large
 **Source Reference:** Finding 11
@@ -291,20 +291,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Direct tests for the functions with error paths or real branches: `hooks.local_timezone` (its `RalpherError` path), `hooks.fixed_context`, `hooks.last_commit_summary`, `logger.state_path`, `settings.validate_settings`, `order.build_settings`, `order.discover_root`, `order.default_branch`, `state.add_to_state_work`, `iteration.signal_agent` (the `terminate` fallback), `iteration.write_log`, `iteration.read_task_statuses`, `iteration.kill_agent`, `iteration.open_log_file`, `looper.reject_unverified_stop`, and `rro.step_json` with its finished case
-- [ ] Direct tests for the rest of the list: `rro.read_log_verdict`, `rro.run`, `iteration.get_tool_input`, `iteration.last_message_type`, `iteration.mark_started`, `iteration.process_system`, `iteration.read_stdout`, `iteration.summary`, `iteration.unmake_context`, `looper.print_cleanup_cmds`, `looper.print_stopping_prompt`, `signals.GracefulTerminator.perform_shutdown`
-- [ ] One parametrised test for `iteration.print_error`, `print_error_eol`, `print_progress`, `print_progress_eol` and `print_progress_lines`, quiet and not quiet
-- [ ] Hypothesis tests: `hooks.fixed_context` (basename equals stem plus suffix; `cwd` joined with the relative path gives back the task file when it is under `cwd`); `order.replace_cell` (the replaced cell reads back through `split_cells` as the new text, bars included, every other cell unchanged); `order.split_cells` (round trip of a row built from cells, escaped bars included)
+- [x] Direct tests for the functions with error paths or real branches: `hooks.local_timezone` (its `RalpherError` path), `hooks.fixed_context`, `hooks.last_commit_summary`, `logger.state_path`, `settings.validate_settings`, `order.build_settings`, `order.discover_root`, `order.default_branch`, `state.add_to_state_work`, `iteration.signal_agent` (the `terminate` fallback), `iteration.write_log`, `iteration.read_task_statuses`, `iteration.kill_agent`, `iteration.open_log_file`, `looper.reject_unverified_stop`, and `rro.step_json` with its finished case
+- [x] Direct tests for the rest of the list: `rro.read_log_verdict`, `rro.run`, `iteration.get_tool_input`, `iteration.last_message_type`, `iteration.mark_started`, `iteration.process_system`, `iteration.read_stdout`, `iteration.summary`, `iteration.unmake_context`, `looper.print_cleanup_cmds`, `looper.print_stopping_prompt`, `signals.GracefulTerminator.perform_shutdown`
+- [x] One parametrised test for `iteration.print_error`, `print_error_eol`, `print_progress`, `print_progress_eol` and `print_progress_lines`, quiet and not quiet
+- [x] Hypothesis tests: `hooks.fixed_context` (basename equals stem plus suffix; `cwd` joined with the relative path gives back the task file when it is under `cwd`); `order.replace_cell` (the replaced cell reads back through `split_cells` as the new text, bars included, every other cell unchanged); `order.split_cells` (round trip of a row built from cells, escaped bars included)
 
 **Acceptance Criteria:**
 
-- [ ] Each function named above is called by name in at least one test
+- [x] Each function named above is called by name in at least one test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists every test file the task edits
-- [ ] `uv run pytest src/tests/test_hooks.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_order.py src/tests/test_state.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_rro.py src/tests/test_signals.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists every test file the task edits
+- [x] `uv run pytest src/tests/test_hooks.py src/tests/test_logger.py src/tests/test_settings.py src/tests/test_order.py src/tests/test_state.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_rro.py src/tests/test_signals.py` passes
 
 **Notes:**
 
@@ -315,7 +315,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 10: The user docs say what the code does
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** Finding 14
@@ -324,19 +324,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `docs/concepts.md` "Ending the loop": add the stop on an exception in an iteration (exit reason `exception during iteration <i>`, exit status 1), and say that an I/O failure on the output reader threads also counts as an error
-- [ ] `docs/guide/logs.md` "The state file": add `exception during iteration <i>` to the `exit_reason` values
-- [ ] `docs/getting-started.md` and `docs/guide/worktrees.md`: show the cleanup output exactly as an `rrq.sh` run prints it (the `Probable cleanup commands...` header, the two-space indent and the leading `cd <repository root> && \`); produce it by running `bin/ralpher.sh --cleanup --worktree --cwd=<dir> --task-file=<file>` in a scratch repository rather than writing it by hand
-- [ ] `docs/run-order.md:47`: say `agents/tasks/run-order/example-order.md` holds the same tables, not that it is the same file
+- [x] `docs/concepts.md` "Ending the loop": add the stop on an exception in an iteration (exit reason `exception during iteration <i>`, exit status 1), and say that an I/O failure on the output reader threads also counts as an error
+- [x] `docs/guide/logs.md` "The state file": add `exception during iteration <i>` to the `exit_reason` values
+- [x] `docs/getting-started.md` and `docs/guide/worktrees.md`: show the cleanup output exactly as an `rrq.sh` run prints it (the `Probable cleanup commands...` header, the two-space indent and the leading `cd <repository root> && \`); produce it by running `bin/ralpher.sh --cleanup --worktree --cwd=<dir> --task-file=<file>` in a scratch repository rather than writing it by hand
+- [x] `docs/run-order.md:47`: say `agents/tasks/run-order/example-order.md` holds the same tables, not that it is the same file
 
 **Acceptance Criteria:**
 
-- [ ] Each changed example matches the command output it shows
+- [x] Each changed example matches the command output it shows
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
@@ -346,7 +346,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 11: AGENTS.md matches the tree, and the local settings file is untracked
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 12, Decision 1
@@ -355,19 +355,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `git rm --cached .claude/settings.local.json` (the file stays on disk; `~/.gitignore` already ignores it)
-- [ ] Add `claude/templates/` (the progress page template) to the AGENTS.md tree beside `claude/commands/`
-- [ ] Add the `auditme-changed` (every commit) and `auditme-all` (every push and CI) hooks from the auditor repository to the tools list
-- [ ] Check the tree against `git ls-files` once more for any other tracked directory it omits
+- [x] `git rm --cached .claude/settings.local.json` (the file stays on disk; `~/.gitignore` already ignores it)
+- [x] Add `claude/templates/` (the progress page template) to the AGENTS.md tree beside `claude/commands/`
+- [x] Add the `auditme-changed` (every commit) and `auditme-all` (every push and CI) hooks from the auditor repository to the tools list
+- [x] Check the tree against `git ls-files` once more for any other tracked directory it omits
 
 **Acceptance Criteria:**
 
-- [ ] `git ls-files .claude` prints nothing
-- [ ] Every tracked top-level directory and `claude/` subdirectory appears in the tree
+- [x] `git ls-files .claude` prints nothing
+- [x] Every tracked top-level directory and `claude/` subdirectory appears in the tree
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -377,7 +377,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 12: Spec fixes, and the whole-tree checks
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 13, Decision 2
@@ -386,22 +386,22 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `agents/specs/auditme-adoption/spec.md`: `message_type_to_str` to `MESSAGE_TYPE_TO_STR` (line 56), `ralpher_event_type_to_str` to `RALPHER_EVENT_TYPE_TO_STR` (line 57), `is_working_tree_clean` to `working_tree_is_clean` (line 80), `bin/install-claude.py` to `bin/install-claude.sh` in Module location (line 37); leave the dated Implementation table as written
-- [ ] `agents/specs/verified-stop/spec.md:180`: say a missing worktree gives the `TasksFileError` text `worktree for <slug> not found` as the reason, as line 173 does
-- [ ] `agents/specs/verified-stop/spec.md`: add an External dependencies section (GitPython, `re`) and declare `TasksFileError` in the API
-- [ ] `agents/specs/run-order/spec.md`: define `LogVerdict` and `Decision` in the API, with the fields `src/ralphlib/order.py` gives them
-- [ ] Do not split either spec (Decision 2)
+- [x] `agents/specs/auditme-adoption/spec.md`: `message_type_to_str` to `MESSAGE_TYPE_TO_STR` (line 56), `ralpher_event_type_to_str` to `RALPHER_EVENT_TYPE_TO_STR` (line 57), `is_working_tree_clean` to `working_tree_is_clean` (line 80), `bin/install-claude.py` to `bin/install-claude.sh` in Module location (line 37); leave the dated Implementation table as written
+- [x] `agents/specs/verified-stop/spec.md:180`: say a missing worktree gives the `TasksFileError` text `worktree for <slug> not found` as the reason, as line 173 does
+- [x] `agents/specs/verified-stop/spec.md`: add an External dependencies section (GitPython, `re`) and declare `TasksFileError` in the API
+- [x] `agents/specs/run-order/spec.md`: define `LogVerdict` and `Decision` in the API, with the fields `src/ralphlib/order.py` gives them
+- [x] Do not split either spec (Decision 2)
 
 **Acceptance Criteria:**
 
-- [ ] Each statement review-4's Doc4 list names now matches the code
+- [x] Each statement review-4's Doc4 list names now matches the code
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_order.py src/tests/test_ralpher.py src/tests/test_rro.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_hooks.py src/tests/test_iteration.py src/tests/test_logger.py src/tests/test_looper.py src/tests/test_order.py src/tests/test_ralpher.py src/tests/test_rro.py src/tests/test_settings.py src/tests/test_signals.py src/tests/test_state.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

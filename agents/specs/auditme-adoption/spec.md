@@ -34,7 +34,7 @@ The operator decided on 2026-10-31:
 Source changes in `src/ralphlib/` (`giter.py`, `hooks.py`, `iteration.py`,
 `logger.py`, `looper.py`, `options.py`, `printer.py`, `settings.py`,
 `signals.py`, `state.py`, `templater.py`, `types.py`, `verifier.py`),
-`src/tests/`, a new `src/tests/helpers.py`, and `bin/install-claude.py`.
+`src/tests/`, a new `src/tests/helpers.py`, and `bin/install-claude.sh`.
 Configuration in `.pre-commit-config.yaml`, a new `.github/workflows/ci.yml`,
 and `AGENTS.md`.
 
@@ -53,8 +53,8 @@ def default_settings() -> dict[str, typing.Any]:
 
 
 # src/ralphlib/types.py
-message_type_to_str: types.MappingProxyType[MessageType, str]
-ralpher_event_type_to_str: types.MappingProxyType[RalpherEventType, str]
+MESSAGE_TYPE_TO_STR: types.MappingProxyType[MessageType, str]
+RALPHER_EVENT_TYPE_TO_STR: types.MappingProxyType[RalpherEventType, str]
 
 
 # src/ralphlib/state.py
@@ -77,7 +77,7 @@ Removed:
   callers use `ralphlib.templater.slugify` and
   `ralphlib.templater.task_file_slug`, which have identical bodies.
 - `ralphlib.giter.is_clean_strict` and `ralphlib.giter.is_clean_no_untracked`:
-  callers use `ralphlib.giter.is_working_tree_clean(repo, include_untracked=...)`.
+  callers use `ralphlib.giter.working_tree_is_clean(repo, include_untracked=...)`.
 
 ## Implementation
 

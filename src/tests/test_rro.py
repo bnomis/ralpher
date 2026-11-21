@@ -8,6 +8,9 @@ import git
 import orjson
 import pytest
 
+import ralphlib.exceptions
+import ralphlib.order
+
 BIN = pathlib.Path(__file__).resolve().parents[2] / 'bin'
 SCRIPT = BIN / 'rro.py'
 
@@ -89,6 +92,13 @@ def test_check_log_prints_the_verdict(rro: types.ModuleType, order: pathlib.Path
     assert result == {'passed': True, 'path': str(log), 'fail_lines': [], 'has_pass_line': True}
 
 
+def test_check_log_refuses_a_path_outside_the_repository(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_text(ORDER.replace('| test pass line |', '| test log | /etc/passwd |\n| test pass line |'))
+    result, code = call(rro, capsys, 'check-log', str(order), 'a')
+    assert code == 2
+    assert result['error'] == 'OrderFormatError'
+
+
 def test_check_log_unknown_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
     result, code = call(rro, capsys, 'check-log', str(order), 'zzz')
     assert code == 2
@@ -124,6 +134,14 @@ def test_malformed_order_is_an_error_line(rro: types.ModuleType, order: pathlib.
     assert code == 2
     assert result['error'] == 'OrderFormatError'
     assert 'label' in result['message']
+
+
+def test_undecodable_order_is_an_error_line(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    order.write_bytes(b'\xff\xfe\xfa')
+    result, code = call(rro, capsys, 'next', str(order))
+    assert code == 2
+    assert result['error'] == 'OrderFormatError'
+    assert str(order) in result['message']
 
 
 def test_next_checkpoint_carries_its_label(rro: types.ModuleType, order: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -179,3 +197,60 @@ def test_wrapper_runs_outside_the_repo_past_a_stub_python(order: pathlib.Path, t
     )
     assert done.returncode == 0, done.stderr
     assert orjson.loads(done.stdout)['kind'] == 'run-list'
+
+
+def test_step_json_covers_every_step(rro: types.ModuleType, order: pathlib.Path) -> None:
+    row = ralphlib.order.read_order(order).rows[0]
+    assert rro.step_json(ralphlib.order.RunList(row))['kind'] == 'run-list'
+    assert rro.step_json(ralphlib.order.Resume(row)) == {'kind': 'resume', 'row': rro.row_json(row)}
+    assert rro.step_json(ralphlib.order.Finished()) == {'kind': 'finished'}
+
+
+def test_step_json_run_checkpoint(rro: types.ModuleType, order: pathlib.Path) -> None:
+    order.write_text(ORDER.replace('| todo |', '| merged abc |'))
+    step = ralphlib.order.next_step(ralphlib.order.read_order(order))
+    assert isinstance(step, ralphlib.order.RunCheckpoint)
+    result = rro.step_json(step)
+    assert result['kind'] == 'run-checkpoint'
+    assert result['after'] == 'b'
+
+
+def test_read_log_verdict_reads_the_log(rro: types.ModuleType, order: pathlib.Path) -> None:
+    log = order.parents[2] / 'ralpher-logs' / 'parser' / 'tasks-1' / 'final-tests.log'
+    log.parent.mkdir(parents=True)
+    log.write_text('all passed\n')
+    result = rro.read_log_verdict(rro.CheckLog(order, 'a'), order.parents[2])
+    assert result == {'passed': True, 'path': str(log), 'fail_lines': (), 'has_pass_line': True}
+
+
+def test_read_log_verdict_missing_log_does_not_pass(rro: types.ModuleType, order: pathlib.Path) -> None:
+    result = rro.read_log_verdict(rro.CheckLog(order, 'a'), order.parents[2])
+    assert result['passed'] is False
+    assert result['has_pass_line'] is False
+
+
+def test_read_log_verdict_unknown_label_raises(rro: types.ModuleType, order: pathlib.Path) -> None:
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='zzz'):
+        rro.read_log_verdict(rro.CheckLog(order, 'zzz'), order.parents[2])
+
+
+def test_run_dispatches_each_command(rro: types.ModuleType, order: pathlib.Path) -> None:
+    assert rro.run(rro.Next(order))['kind'] == 'run-list'
+    assert rro.run(rro.SetStatus(order, 'a', 'running')) == {'ok': True}
+    assert rro.run(rro.SetSetting(order, 'test pass line', 'ok')) == {'ok': True}
+    assert '| test pass line | ok |' in order.read_text()
+    assert rro.run(rro.CheckLog(order, 'a'))['passed'] is False
+
+
+def test_run_decisions_returns_a_list(rro: types.ModuleType, order: pathlib.Path) -> None:
+    repo = git.Repo.init(order.parents[2], initial_branch='main')
+    repo.git.config('user.name', 'Probe')
+    repo.git.config('user.email', 'probe@example.com')
+    repo.git.add('-A')
+    repo.git.commit('-m', 'base')
+    assert rro.run(rro.Decisions(order, 'HEAD')) == []
+
+
+def test_run_propagates_order_errors(rro: types.ModuleType, order: pathlib.Path) -> None:
+    with pytest.raises(ralphlib.exceptions.OrderFormatError):
+        rro.run(rro.CheckLog(order, 'zzz'))

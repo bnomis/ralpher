@@ -71,6 +71,7 @@ bin/                       # Entry point scripts
 └── rrq.sh
 agents/                    # Specs, tasks, audit reviews, prompts and test plans
 claude/commands/           # Claude commands (rrq.md, rro.md)
+claude/templates/          # Progress page template
 docs/                      # User documentation (MkDocs site)
 img/                       # Images
 mkdocs.yml                 # Site configuration
@@ -116,6 +117,7 @@ ralpher is developed using the following tools and libraries:
 - Documentation site: `mkdocs` and `mkdocs-material` <https://www.mkdocs.org/>
 - Commit and push hooks: `pre-commit` <https://pre-commit.com/>
 - Shell script checks: `shellcheck` <https://www.shellcheck.net/>, run as a pre-commit hook
+- Audit hooks: `auditme-changed` (every commit) and `auditme-all` (every push and CI) from the auditor repository, run as pre-commit hooks
 - Project-name check: the `no-project-names` hook from the auditor repository, run as a pre-commit hook
 - Environment variables: `direnv` <https://direnv.net/> read from the `.envrc` file
 

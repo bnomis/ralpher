@@ -1,5 +1,8 @@
+import datetime
 import pathlib
 import shlex
+import subprocess
+import tempfile
 import unittest.mock
 
 import hypothesis
@@ -244,6 +247,12 @@ class TestRunHook:
             mock_opt.return_value.warning.assert_called_once()
             assert 'nonexistent_cmd' in mock_opt.return_value.warning.call_args[0][0]
 
+    @unittest.mock.patch('subprocess.Popen', side_effect=subprocess.SubprocessError('bad'))
+    def test_warns_on_subprocess_error(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
+            ralphlib.hooks.run_hook('some_cmd')
+            mock_opt.return_value.warning.assert_called_once()
+
     @unittest.mock.patch('subprocess.Popen', side_effect=RuntimeError('boom'))
     def test_unexpected_error_propagates(self, mock_popen: unittest.mock.MagicMock) -> None:
         with pytest.raises(RuntimeError):
@@ -347,3 +356,112 @@ def test_jinja_finalize_quotes_every_substitution() -> None:
     )
     args = shlex.split(cmd)
     assert args[-1] == "Give each project's config.py a module name mypy can distinguish"
+
+
+class TestLocalTimezone:
+    @pytest.mark.parametrize('error', [LookupError('x'), OSError('x'), ValueError('x')])
+    def test_lookup_failure_raises_ralpher_error(self, error: Exception) -> None:
+        with (
+            unittest.mock.patch.object(ralphlib.hooks.tzlocal, 'get_localzone', side_effect=error),
+            pytest.raises(ralphlib.exceptions.RalpherError, match='local time zone') as excinfo,
+        ):
+            ralphlib.hooks.local_timezone()
+        assert excinfo.value.__cause__ is error
+
+    def test_returns_the_zone_and_caches_it(self) -> None:
+        zone = datetime.UTC
+        with unittest.mock.patch.object(ralphlib.hooks.tzlocal, 'get_localzone', return_value=zone) as mock_zone:
+            assert ralphlib.hooks.local_timezone() is zone
+            assert ralphlib.hooks.local_timezone() is zone
+            mock_zone.assert_called_once()
+
+
+class TestFixedContext:
+    def test_empty_arguments_give_empty_values(self) -> None:
+        context = ralphlib.hooks.fixed_context('', '')
+        for key, value in context.items():
+            if key != 'ralpher_root':
+                assert value == '', key
+
+    def test_cwd_only(self, tmp_path: pathlib.Path) -> None:
+        context = ralphlib.hooks.fixed_context(str(tmp_path), '')
+        assert context['cwd'] == str(tmp_path.resolve())
+        assert context['cwd_basename'] == tmp_path.name
+        assert context['cwd_dirname'] == str(tmp_path.resolve().parent)
+        assert context['task_file'] == ''
+        assert context['task_file_relative_path'] == ''
+
+    def test_task_file_only_has_absolute_relative_path(self, tmp_path: pathlib.Path) -> None:
+        task_file = tmp_path / 'sub' / 'tasks.md'
+        context = ralphlib.hooks.fixed_context('', str(task_file))
+        assert context['cwd'] == ''
+        assert context['task_file'] == str(task_file.resolve())
+        assert context['task_file_relative_path'] == str(task_file.resolve())
+        assert context['task_file_basename'] == 'tasks.md'
+        assert context['task_file_dir_basename'] == 'sub'
+        assert context['task_file_stem'] == 'tasks'
+        assert context['task_file_suffix'] == '.md'
+        assert context['task_file_number'] == ''
+
+    def test_task_file_inside_cwd_is_relative(self, tmp_path: pathlib.Path) -> None:
+        context = ralphlib.hooks.fixed_context(str(tmp_path), str(tmp_path / 'sub' / 'tasks.md'))
+        assert context['task_file_relative_path'] == str(pathlib.Path('sub') / 'tasks.md')
+
+    def test_task_file_outside_cwd_stays_absolute(self, tmp_path: pathlib.Path) -> None:
+        cwd = tmp_path / 'work'
+        cwd.mkdir()
+        task_file = tmp_path / 'other' / 'tasks.md'
+        context = ralphlib.hooks.fixed_context(str(cwd), str(task_file))
+        assert context['task_file_relative_path'] == str(task_file.resolve())
+
+    def test_number_suffix_is_extracted(self, tmp_path: pathlib.Path) -> None:
+        context = ralphlib.hooks.fixed_context(str(tmp_path), str(tmp_path / 'tasks-4.md'))
+        assert context['task_file_number'] == '4'
+        assert context['task_file_stem'] == 'tasks-4'
+
+    def test_number_only_matches_at_end_of_stem(self, tmp_path: pathlib.Path) -> None:
+        context = ralphlib.hooks.fixed_context(str(tmp_path), str(tmp_path / 'tasks-4-extra.md'))
+        assert context['task_file_number'] == ''
+
+    @hypothesis.given(
+        segments=hypothesis.strategies.lists(hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True), min_size=1, max_size=3),
+        stem=hypothesis.strategies.from_regex(r'[a-z][a-z0-9]{0,8}', fullmatch=True),
+        suffix=hypothesis.strategies.sampled_from(['', '.md', '.txt']),
+    )
+    def test_basename_and_relative_path_round_trip(self, segments: list[str], stem: str, suffix: str) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = pathlib.Path(tmp).resolve()
+            task_file = cwd.joinpath(*segments, f'{stem}{suffix}')
+            ralphlib.hooks.clear_caches()
+            context = ralphlib.hooks.fixed_context(str(cwd), str(task_file))
+        assert context['task_file_basename'] == context['task_file_stem'] + context['task_file_suffix']
+        assert context['task_file_basename'] == f'{stem}{suffix}'
+        assert cwd / context['task_file_relative_path'] == task_file
+
+
+class TestLastCommitSummary:
+    def test_empty_when_no_command_icon_or_sound_names_it(self) -> None:
+        options = tests.helpers.make_options_with_settings(settings={'hook_icon': 'i', 'hook_sound': 's'})
+        with unittest.mock.patch.object(ralphlib.giter, 'last_commit_summary') as mock_summary:
+            assert ralphlib.hooks.last_commit_summary(options, ['echo one']) == ''
+            mock_summary.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ('commands', 'settings'),
+        [
+            (['echo {{ last_commit_summary }} now'], {}),
+            (['echo two'], {'hook_icon': '{{ last_commit_summary }}'}),
+            (['echo three'], {'hook_sound': '{{ last_commit_summary }}'}),
+        ],
+    )
+    def test_calls_giter_when_named(self, commands: list[str], settings: dict[str, str]) -> None:
+        options = tests.helpers.make_options_with_settings(settings=settings)
+        with unittest.mock.patch.object(ralphlib.giter, 'last_commit_summary', return_value='abc fix') as mock_summary:
+            assert ralphlib.hooks.last_commit_summary(options, commands) == 'abc fix'
+            mock_summary.assert_called_once_with()
+
+    def test_commands_none_always_calls(self) -> None:
+        options = tests.helpers.make_options_with_settings(settings={})
+        with unittest.mock.patch.object(ralphlib.giter, 'last_commit_summary', return_value='abc fix') as mock_summary:
+            assert ralphlib.hooks.last_commit_summary(options, None) == 'abc fix'
+            mock_summary.assert_called_once_with()
