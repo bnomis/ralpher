@@ -159,7 +159,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 5: `Popen` handlers cover `SubprocessError`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Findings 3 and 4
@@ -168,19 +168,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add a test to `src/tests/test_iteration.py` that a `subprocess.SubprocessError` from `Popen` in `process` raises `RalpherError`
-- [ ] Add a test to `src/tests/test_hooks.py` that a `subprocess.SubprocessError` from `Popen` in `run_hook` is logged as a warning and the run carries on
-- [ ] Catch `(OSError, subprocess.SubprocessError)` in both handlers
+- [x] Add a test to `src/tests/test_iteration.py` that a `subprocess.SubprocessError` from `Popen` in `process` raises `RalpherError`
+- [x] Add a test to `src/tests/test_hooks.py` that a `subprocess.SubprocessError` from `Popen` in `run_hook` is logged as a warning and the run carries on
+- [x] Catch `(OSError, subprocess.SubprocessError)` in both handlers
 
 **Acceptance Criteria:**
 
-- [ ] `run_hook` still never raises for a failed hook command
+- [x] `run_hook` still never raises for a failed hook command
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_iteration.py` and `src/tests/test_hooks.py`
-- [ ] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_iteration.py` and `src/tests/test_hooks.py`
+- [x] `uv run pytest src/tests/test_iteration.py src/tests/test_hooks.py` passes
 
 **Notes:**
 

@@ -263,5 +263,5 @@ def run_hook(cmd: str, context: dict[str, typing.Any] | None = None) -> None:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except ValueError, OSError, jinja2.exceptions.TemplateError:
+    except ValueError, OSError, subprocess.SubprocessError, jinja2.exceptions.TemplateError:
         loguru.logger.opt(exception=True).warning(f'Cannot run hook: "{cmd}"')

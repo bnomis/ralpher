@@ -480,7 +480,7 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
             context.cmd,
             **kwargs,
         )
-    except OSError as e:
+    except (OSError, subprocess.SubprocessError) as e:
         raise ralphlib.exceptions.RalpherError(f'Cannot start the agent "{context.cmd[0]}"') from e
     log_msg(options, context, f'Started agent process {proc.pid}')
     ralphlib.hooks.event(

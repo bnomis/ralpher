@@ -1338,11 +1338,11 @@ class TestDomainErrors:
         with pytest.raises(ralphlib.exceptions.LogFileError):
             ralphlib.iteration.make_context(options, 'prompt', 1)
 
-    def test_process_translates_popen_error(self) -> None:
+    @pytest.mark.parametrize('error', [FileNotFoundError('missing'), subprocess.SubprocessError('bad')])
+    def test_process_translates_popen_error(self, error: Exception) -> None:
         options = tests.helpers.make_plain_options()
         context = ralphlib.iteration.IterationContext(cmd=['no-such-agent'], iteration=1, prompt='p')
-        popen = unittest.mock.patch('subprocess.Popen', side_effect=FileNotFoundError('missing'))
-        with popen, pytest.raises(ralphlib.exceptions.RalpherError, match='no-such-agent'):
+        with unittest.mock.patch('subprocess.Popen', side_effect=error), pytest.raises(ralphlib.exceptions.RalpherError, match='no-such-agent'):
             ralphlib.iteration.process(options, context)
 
     def test_stdout_reader_stops_cleanly_on_os_error(self) -> None:

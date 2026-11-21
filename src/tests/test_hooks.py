@@ -1,5 +1,6 @@
 import pathlib
 import shlex
+import subprocess
 import unittest.mock
 
 import hypothesis
@@ -243,6 +244,12 @@ class TestRunHook:
             ralphlib.hooks.run_hook('nonexistent_cmd')
             mock_opt.return_value.warning.assert_called_once()
             assert 'nonexistent_cmd' in mock_opt.return_value.warning.call_args[0][0]
+
+    @unittest.mock.patch('subprocess.Popen', side_effect=subprocess.SubprocessError('bad'))
+    def test_warns_on_subprocess_error(self, mock_popen: unittest.mock.MagicMock) -> None:
+        with unittest.mock.patch('loguru.logger.opt') as mock_opt:
+            ralphlib.hooks.run_hook('some_cmd')
+            mock_opt.return_value.warning.assert_called_once()
 
     @unittest.mock.patch('subprocess.Popen', side_effect=RuntimeError('boom'))
     def test_unexpected_error_propagates(self, mock_popen: unittest.mock.MagicMock) -> None:
