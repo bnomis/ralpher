@@ -9,5 +9,6 @@
 | [Auditme adoption](../specs/auditme-adoption/spec.md) | [tasks-1.md](auditme-adoption/tasks-1.md) | 1 | 2026-10-31 |
 | [Audit Review 2](../audit-reviews/review-2.md) | [tasks-2.md](audit-reviews/tasks-2.md) | 2 | 2026-11-02 |
 | [Audit Review 3](../audit-reviews/review-3.md) | [tasks-3.md](audit-reviews/tasks-3.md) | 3 | 2026-11-02 |
+| [Audit Review 4](../audit-reviews/review-4.md) | [tasks-4.md](audit-reviews/tasks-4.md) | 4 | 2026-11-21 |
 | [Run order](../specs/run-order/spec.md) | [tasks-1.md](run-order/tasks-1.md) | 1 | 2026-11-04 |
 | [Run order](../specs/run-order/spec.md) | [tasks-2.md](run-order/tasks-2.md) | 2 | 2026-11-06 |
