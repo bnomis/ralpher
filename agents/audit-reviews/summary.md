@@ -8,64 +8,18 @@
 
 ## Unresolved findings
 
-All raised in review-4 (2026-11-21); each entry's location and recommendation are in [review-4.md](review-4.md).
-
-### Order-file I/O errors escape `rro` as raw tracebacks
-
-- **Rule or category:** A1, A2
-- **Severity:** medium
-- **Location:** `src/ralphlib/order.py` `check_test_log`, `read_order`, `set_setting`, `set_status`
-- **First raised:** review-4 (2026-11-21)
-- **Description:** order-file and test-log reads and writes are untranslated; `bin/rro.py` catches only `RalpherError`.
-- **Recommendation:** one pair of translating read/write helpers raising `OrderFormatError`.
-
-### The user docs contradict the code
-
-- **Rule or category:** Doc5
-- **Severity:** medium
-- **Location:** `docs/concepts.md:59`, `docs/guide/logs.md:76`, `docs/getting-started.md:85`, `docs/guide/worktrees.md:82`, `docs/run-order.md:47`
-- **First raised:** review-4 (2026-11-21)
-- **Description:** the exception stop and its exit reason are missing; the cleanup output examples differ from what is printed; the example order file is called "the same file".
-- **Recommendation:** review-4 Finding 14.
-
-### Error handling and input checks (remainder)
-
-- **Rule or category:** A1, A2, A4, A19, Sec2, Sec4
-- **Severity:** low
-- **Location:** review-4 Findings 2-6, 8, 9
-- **First raised:** review-4 (2026-11-21)
-- **Description:** git handlers without `OSError`; `Popen` handlers without `SubprocessError`; fail-soft sites to dismiss in the ledger; `logger.exception` in the reader threads; `process` omits `LogFileError`; `rro set-status` accepts line breaks; the test-log path is not contained (Decision 3).
-- **Recommendation:** as review-4 Findings 2-6, 8, 9.
-
-### Late mutation, pure-named I/O and the f-string rule (remainder)
-
-- **Rule or category:** A8, A9, S4
-- **Severity:** low
-- **Location:** `src/ralphlib/iteration.py:64`, `src/ralphlib/order.py:125`, `:304`, `bin/rro.py:83`, `src/tests/test_order.py:175`
-- **First raised:** review-4 (2026-11-21)
-- **Recommendation:** review-4 Findings 7 and 10.
-
-### Test gaps
-
-- **Rule or category:** T1, T2
-- **Severity:** low
-- **Location:** review-4 T1 and T2 lists
-- **First raised:** review-4 (2026-11-21)
-- **Recommendation:** review-4 Finding 11.
-
-### AGENTS.md and spec drift
-
-- **Rule or category:** Doc1, Doc2, Doc4, spec review
-- **Severity:** low
-- **Location:** `AGENTS.md`, `agents/specs/auditme-adoption/spec.md`, `agents/specs/verified-stop/spec.md`, `agents/specs/run-order/spec.md`
-- **First raised:** review-4 (2026-11-21)
-- **Recommendation:** review-4 Findings 12 and 13, Decisions 1 and 2.
+None. Every review-4 finding was resolved by tasks-4 (merged in `5cd03cc`, 2026-11-21); its three decisions were answered on the review page the same day.
 
 ## Recently resolved
 
-
 | Finding | Severity | Raised in | Resolved in |
 |---------|----------|-----------|-------------|
+| Order-file I/O errors escape `rro` as raw tracebacks | medium | review-4 | tasks-4 Task 1 |
+| The user docs contradict the code | medium | review-4 | tasks-4 Task 10 |
+| Error handling and input checks (remainder) | low | review-4 | tasks-4 Tasks 2-6 |
+| Late mutation, pure-named I/O and the f-string rule (remainder) | low | review-4 | tasks-4 Tasks 7 and 8 |
+| Test gaps | low | review-4 | tasks-4 Task 9 |
+| AGENTS.md and spec drift | low | review-4 | tasks-4 Tasks 11 and 12 |
 | A state-lock timeout ends the run in a raw traceback | medium | review-3 | tasks-3 Task 1 |
 | A bad settings file or `--args` value ends in a raw traceback | medium | review-3 | tasks-3 Task 2 |
 | Hook settings of the wrong shape run the wrong commands | medium | review-3 | tasks-3 Task 3 |
