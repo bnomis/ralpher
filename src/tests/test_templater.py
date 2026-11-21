@@ -1,3 +1,5 @@
+import pathlib
+
 import hypothesis
 import hypothesis.strategies
 import pytest
@@ -5,6 +7,9 @@ import pytest
 import ralphlib.exceptions
 import ralphlib.options
 import ralphlib.templater
+
+# auditme: accept[non-alphabetical-literal] the commands run in this order
+SETUP_COMMANDS = ['uv sync', 'pre-commit install']
 
 
 def test_templater() -> None:
@@ -174,3 +179,67 @@ def test_render_substitutes_every_var_and_the_iteration_unchanged(variables: dic
     prompt = '\x00'.join(['{{ iteration }}/{{ iterations }}', *(f'{{{{ {key} }}}}' for key in variables)])
     rendered = ralphlib.templater.render(options, prompt, iteration)
     assert rendered.split('\x00', len(variables)) == [f'{iteration}/{iterations}', *variables.values()]
+
+
+def test_render_lists_the_worktree_setup_commands_in_order_with_worktree() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    options.settings = {'worktree_setup': SETUP_COMMANDS}
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == 'uv sync,pre-commit install'
+
+
+def test_render_worktree_setup_is_empty_without_worktree() -> None:
+    options = ralphlib.options.RalpherOptions()
+    options.settings = {'worktree_setup': ['make deps']}
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == ''
+
+
+def test_render_worktree_setup_is_empty_without_the_setting() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    assert ralphlib.templater.render(options, "{{ worktree_setup | join(',') }}", 1) == ''
+
+
+def test_render_rejects_a_var_named_worktree_setup() -> None:
+    options = ralphlib.options.RalpherOptions(vars=['worktree_setup=x'])
+    with pytest.raises(ralphlib.exceptions.InvalidVarFormatError, match='built-in'):
+        ralphlib.templater.render(options, '{{ worktree_setup }}', 1)
+
+
+def test_render_worktree_setup_changes_in_a_template_leave_the_settings_alone() -> None:
+    options = ralphlib.options.RalpherOptions(worktree=True)
+    commands = ['npm ci']
+    before = list(commands)
+    options.settings = {'worktree_setup': commands}
+    rendered = ralphlib.templater.render(options, "{{ worktree_setup.append('x') }}{{ worktree_setup | join(',') }}", 1)
+    assert rendered == 'Nonenpm ci,x'
+    assert commands == before
+
+
+ONE_TASK_PROMPT = pathlib.Path(__file__).resolve().parents[2] / 'agents' / 'prompts' / 'one-task.md'
+
+
+def render_one_task(worktree: bool, setup: list[str] | None) -> str:
+    options = ralphlib.options.RalpherOptions(worktree=worktree, task_file='agents/tasks/x/tasks-1.md')
+    if setup is not None:
+        options.settings = {'worktree_setup': setup}
+    return ralphlib.templater.render(options, ONE_TASK_PROMPT.read_text(), 1)
+
+
+def test_one_task_prompt_lists_the_setup_commands_in_the_worktree_rules() -> None:
+    rendered = render_one_task(True, SETUP_COMMANDS)
+    rules = rendered.split('## Worktree rules', 1)[1].split('## Environment variables', 1)[0]
+    assert rules.index('`uv sync`') < rules.index('`pre-commit install`')
+    assert '<status>blocked</status>' in rules
+
+
+@pytest.mark.parametrize(
+    ('worktree', 'setup'),
+    [
+        (True, []),
+        (True, None),
+        (False, ['uv sync']),
+    ],
+)
+def test_one_task_prompt_has_no_setup_block_without_commands(worktree: bool, setup: list[str] | None) -> None:
+    rendered = render_one_task(worktree, setup)
+    assert 'run these' not in rendered
+    assert 'uv sync' not in rendered

@@ -55,7 +55,7 @@ def load_settings_from_file(options: ralphlib.options.RalpherOptions, paths: str
 
 
 def validate_settings(file_settings: dict[str, typing.Any], path: pathlib.Path) -> None:
-    """Raise SettingsError when `hooks`, `hook_templates` or `theme` has the wrong shape."""
+    """Raise SettingsError when `hooks`, `hook_templates`, `theme` or `worktree_setup` has the wrong shape."""
     hooks = file_settings.get('hooks', {})
     if not isinstance(hooks, dict):
         raise ralphlib.exceptions.SettingsError(f'Settings file {path}: hooks must be an object')
@@ -66,3 +66,6 @@ def validate_settings(file_settings: dict[str, typing.Any], path: pathlib.Path) 
         raise ralphlib.exceptions.SettingsError(f'Settings file {path}: hook_templates must be true or false')
     if not isinstance(file_settings.get('theme', {}), dict):
         raise ralphlib.exceptions.SettingsError(f'Settings file {path}: theme must be an object')
+    worktree_setup = file_settings.get('worktree_setup', [])
+    if not isinstance(worktree_setup, list) or not all(isinstance(c, str) for c in worktree_setup):
+        raise ralphlib.exceptions.SettingsError(f'Settings file {path}: worktree_setup must be a list of strings')

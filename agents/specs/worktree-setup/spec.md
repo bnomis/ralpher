@@ -1,7 +1,7 @@
 # Worktree setup
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-21
 
 A queue runs its agent in a fresh git worktree, which has the project's

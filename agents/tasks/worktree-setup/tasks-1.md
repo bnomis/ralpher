@@ -23,7 +23,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 1: Validate the `worktree_setup` setting
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`validate_settings`), Error handling, Settings, Tests and documentation
@@ -32,19 +32,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Confirm the work has not started: `grep -rnw 'worktree_setup' src/ralphlib` finds nothing; if it finds something, stop the task as `blocked` naming the hit
-- [ ] Add tests to `src/tests/test_settings.py`: a list of strings passes; a string, a list holding a number, and an object each raise `SettingsError` whose message is `Settings file <path>: worktree_setup must be a list of strings`; a later file's `worktree_setup` replaces an earlier one whole; confirm the new failure tests fail before the change
-- [ ] In `ralphlib.settings.validate_settings`, reject a `worktree_setup` that is not a list of strings with that message, and update its docstring to name the key
+- [x] Confirm the work has not started: `grep -rnw 'worktree_setup' src/ralphlib` finds nothing; if it finds something, stop the task as `blocked` naming the hit
+- [x] Add tests to `src/tests/test_settings.py`: a list of strings passes; a string, a list holding a number, and an object each raise `SettingsError` whose message is `Settings file <path>: worktree_setup must be a list of strings`; a later file's `worktree_setup` replaces an earlier one whole; confirm the new failure tests fail before the change
+- [x] In `ralphlib.settings.validate_settings`, reject a `worktree_setup` that is not a list of strings with that message, and update its docstring to name the key
 
 **Acceptance Criteria:**
 
-- [ ] A settings file with `"worktree_setup": "uv sync"` stops the run with the `Error:` line and exit status 1
+- [x] A settings file with `"worktree_setup": "uv sync"` stops the run with the `Error:` line and exit status 1
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_settings.py`
-- [ ] `uv run pytest src/tests/test_settings.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_settings.py`
+- [x] `uv run pytest src/tests/test_settings.py` passes
 
 **Notes:**
 
@@ -54,7 +54,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 2: Prompts get `worktree_setup`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`render`), Implementation (Prompt context), Error handling, Tests and documentation
@@ -63,19 +63,19 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_templater.py`: with `--worktree` and the setting, a template `{{ worktree_setup | join(',') }}` renders the commands in order; without `--worktree`, or without the setting, it renders empty; `--vars worktree_setup=x` raises `InvalidVarFormatError`; changing the rendered list inside a template does not change `options.settings`
-- [ ] Add `'worktree_setup'` to `BUILTIN_VARS` in `src/ralphlib/templater.py`, keeping the tuple alphabetical
-- [ ] In `render`, set `context['worktree_setup']` as the spec says, and update the context's type annotation and the docstring
+- [x] Add tests to `src/tests/test_templater.py`: with `--worktree` and the setting, a template `{{ worktree_setup | join(',') }}` renders the commands in order; without `--worktree`, or without the setting, it renders empty; `--vars worktree_setup=x` raises `InvalidVarFormatError`; changing the rendered list inside a template does not change `options.settings`
+- [x] Add `'worktree_setup'` to `BUILTIN_VARS` in `src/ralphlib/templater.py`, keeping the tuple alphabetical
+- [x] In `render`, set `context['worktree_setup']` as the spec says, and update the context's type annotation and the docstring
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and the existing `render` tests still pass
+- [x] The new tests pass, and the existing `render` tests still pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py` passes
 
 **Notes:**
 
@@ -86,7 +86,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 3: `one-task.md` tells the agent to run the commands
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation (Prompt text), Tests and documentation
@@ -95,18 +95,18 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_templater.py` that render `agents/prompts/one-task.md`: with `--worktree` and `worktree_setup: ["uv sync", "pre-commit install"]`, the output lists both commands in order, inside the worktree rules, and names the `blocked` status; with an empty list, without the setting, and without `--worktree`, the output has no setup block
-- [ ] Add the block the spec's Implementation section gives to `agents/prompts/one-task.md`, inside the `{% if worktree %}` block, after the line about changing to the worktree directory
+- [x] Add tests to `src/tests/test_templater.py` that render `agents/prompts/one-task.md`: with `--worktree` and `worktree_setup: ["uv sync", "pre-commit install"]`, the output lists both commands in order, inside the worktree rules, and names the `blocked` status; with an empty list, without the setting, and without `--worktree`, the output has no setup block
+- [x] Add the block the spec's Implementation section gives to `agents/prompts/one-task.md`, inside the `{% if worktree %}` block, after the line about changing to the worktree directory
 
 **Acceptance Criteria:**
 
-- [ ] A prompt rendered without the setting is unchanged from before the task (compare against the output at `a362655` in the test or by hand)
+- [x] A prompt rendered without the setting is unchanged from before the task (compare against the output at `a362655` in the test or by hand)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_templater.py`
-- [ ] `uv run pytest src/tests/test_templater.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_templater.py`
+- [x] `uv run pytest src/tests/test_templater.py` passes
 
 **Notes:**
 
@@ -117,7 +117,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 4: Warn when a worktree run has no setup
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** API (`warn_missing_worktree_setup`), Implementation (Warning), Tests and documentation
@@ -126,20 +126,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_looper.py`: `warn_missing_worktree_setup` prints `Warning: no worktree_setup setting; the agent's worktree has no project environment.` to stderr with `--worktree` and no setting, and with an empty list; prints nothing with the setting, or without `--worktree`
-- [ ] Add `warn_missing_worktree_setup` to `src/ralphlib/looper.py`, using `loguru.logger.warning` and `ralphlib.printer.console_stderr.print`
-- [ ] Call it once in `loop`, after `ralphlib.giter.confirm_git_state(options)` and before the first iteration
-- [ ] Check that the end-to-end loop tests in `src/tests/test_looper.py` still pass with the new call
+- [x] Add tests to `src/tests/test_looper.py`: `warn_missing_worktree_setup` prints `Warning: no worktree_setup setting; the agent's worktree has no project environment.` to stderr with `--worktree` and no setting, and with an empty list; prints nothing with the setting, or without `--worktree`
+- [x] Add `warn_missing_worktree_setup` to `src/ralphlib/looper.py`, using `loguru.logger.warning` and `ralphlib.printer.console_stderr.print`
+- [x] Call it once in `loop`, after `ralphlib.giter.confirm_git_state(options)` and before the first iteration
+- [x] Check that the end-to-end loop tests in `src/tests/test_looper.py` still pass with the new call
 
 **Acceptance Criteria:**
 
-- [ ] The warning does not stop the run
+- [x] The warning does not stop the run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_looper.py`
-- [ ] `uv run pytest src/tests/test_looper.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_looper.py`
+- [x] `uv run pytest src/tests/test_looper.py` passes
 
 **Notes:**
 
@@ -150,7 +150,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 5: User docs, and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Tests and documentation (User docs), Settings
@@ -159,24 +159,24 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] `docs/reference/settings.md`: a row for `worktree_setup` in the Keys table (list of strings, no default, what it does, must be safe to repeat)
-- [ ] `docs/reference/variables.md`: a `worktree_setup` row under Prompts (the commands with `--worktree`, else an empty list)
-- [ ] `docs/guide/worktrees.md`: a section on giving the worktree an environment: the `["uv sync"]` example in `.ralpher/settings.json`, why it matters (a check that falls back to `PATH` sees other tools), the warning, that every iteration's agent runs the commands, and that they must be safe to repeat
-- [ ] `docs/guide/prompts.md`: that `one-task.md` shows the commands, and that a custom prompt can use `worktree_setup`
-- [ ] Set the spec's `**Status:**` to `implemented`
-- [ ] Move the `TODO.md` item "A queue's worktree has no environment, so its audit runs PATH's ruff" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - spec agents/specs/worktree-setup/spec.md, tasks agents/tasks/worktree-setup/tasks-1.md.`, and remove it from `TODO.md`
+- [x] `docs/reference/settings.md`: a row for `worktree_setup` in the Keys table (list of strings, no default, what it does, must be safe to repeat)
+- [x] `docs/reference/variables.md`: a `worktree_setup` row under Prompts (the commands with `--worktree`, else an empty list)
+- [x] `docs/guide/worktrees.md`: a section on giving the worktree an environment: the `["uv sync"]` example in `.ralpher/settings.json`, why it matters (a check that falls back to `PATH` sees other tools), the warning, that every iteration's agent runs the commands, and that they must be safe to repeat
+- [x] `docs/guide/prompts.md`: that `one-task.md` shows the commands, and that a custom prompt can use `worktree_setup`
+- [x] Set the spec's `**Status:**` to `implemented`
+- [x] Move the `TODO.md` item "A queue's worktree has no environment, so its audit runs PATH's ruff" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - spec agents/specs/worktree-setup/spec.md, tasks agents/tasks/worktree-setup/tasks-1.md.`, and remove it from `TODO.md`
 
 **Acceptance Criteria:**
 
-- [ ] Every page the spec's User docs list names `worktree_setup`
+- [x] Every page the spec's User docs list names `worktree_setup`
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
-- [ ] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_templater.py src/tests/test_verifier.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this task list (`git show "$(git log --diff-filter=A --format=%H -- agents/tasks/worktree-setup/tasks-1.md)":TODO.md`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run --hook-stage pre-push auditme-all --all-files` passes
+- [x] `uv run pytest src/tests/test_giter.py src/tests/test_iteration.py src/tests/test_looper.py src/tests/test_options.py src/tests/test_printer.py src/tests/test_ralpher.py src/tests/test_settings.py src/tests/test_templater.py src/tests/test_verifier.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this task list (`git show "$(git log --diff-filter=A --format=%H -- agents/tasks/worktree-setup/tasks-1.md)":TODO.md`)
 
 **Notes:**
 

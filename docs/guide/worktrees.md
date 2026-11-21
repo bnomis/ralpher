@@ -44,6 +44,28 @@ picks the name.
 The prompt must tell the agent to work in the worktree; the bundled one-task
 prompt does when `{{ worktree }}` is true. See [Prompts](prompts.md).
 
+## Giving the worktree an environment
+
+The agent creates the worktree empty: it has no virtual environment and no
+installed hooks. A check that falls back to the tool on `PATH` then runs a
+different version from the one the project pins. Set `worktree_setup` in
+`.ralpher/settings.json` to a list of commands:
+
+```json
+{
+  "worktree_setup": ["uv sync"]
+}
+```
+
+With `--worktree`, the bundled `one-task.md` prompt tells the agent to run
+each command in the worktree, in order, before anything else, and to report
+the task `blocked` if one fails, rather than borrow another checkout's
+environment. Every iteration's agent runs the commands, so each must be safe
+to repeat.
+
+Without the setting, ralpher prints a warning before the first iteration and
+carries on. See [Settings](../reference/settings.md#keys).
+
 ## Where the worktree starts
 
 Claude Code's `worktree.baseRef` setting decides what a new worktree is

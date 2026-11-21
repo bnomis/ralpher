@@ -15,6 +15,8 @@ import tests.helpers
 
 ECHO_HI = ('echo hi',)
 NOTIFY = ('notify',)
+SETUP_FIRST = ['pre-commit install', 'uv sync']
+SETUP_SECOND = ['make env']
 
 
 class TestLoadSettingsFromFile:
@@ -253,3 +255,25 @@ class TestValidateSettings:
     def test_error_names_the_file(self) -> None:
         with pytest.raises(ralphlib.exceptions.SettingsError, match='settings.json'):
             ralphlib.settings.validate_settings({'theme': 1}, self.PATH)
+
+    def test_worktree_setup_list_of_strings_passes(self) -> None:
+        ralphlib.settings.validate_settings({'worktree_setup': SETUP_FIRST}, self.PATH)
+
+    @pytest.mark.parametrize('value', ['uv sync', ['uv sync', 3], {'cmd': 'uv sync'}])
+    def test_worktree_setup_wrong_shape_raises(self, value: typing.Any) -> None:
+        with pytest.raises(
+            ralphlib.exceptions.SettingsError,
+            match=r'^Settings file settings\.json: worktree_setup must be a list of strings$',
+        ):
+            ralphlib.settings.validate_settings({'worktree_setup': value}, self.PATH)
+
+
+def test_later_file_worktree_setup_replaces_earlier_whole(tmp_path: typing.Any) -> None:
+    first = tmp_path / 'first.json'
+    first.write_text(json.dumps({'worktree_setup': SETUP_FIRST}))
+    second = tmp_path / 'second.json'
+    second.write_text(json.dumps({'worktree_setup': SETUP_SECOND}))
+    options = tests.helpers.make_options_with_settings()
+    ralphlib.settings.load_settings_from_file(options, str(first))
+    result = ralphlib.settings.load_settings_from_file(options, str(second))
+    assert result.settings['worktree_setup'] == SETUP_SECOND

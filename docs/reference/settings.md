@@ -37,6 +37,7 @@ default theme.
 | `hook_templates` | boolean (`true` or `false`, not a string) | `true` | Render hook commands as Jinja templates. |
 | `hook_icon` | string (template) | none | A file path offered to hooks as `{{hook_icon}}`. |
 | `hook_sound` | string (template) | none | A sound name or path offered to hooks as `{{hook_sound}}`. |
+| `worktree_setup` | list of strings | none | Commands the agent runs in the worktree before anything else, with `--worktree`. Each must be safe to repeat. See [Giving the worktree an environment](../guide/worktrees.md#giving-the-worktree-an-environment). |
 | `theme` | object: message kind to Rich style | see [Themes](../guide/terminal.md#themes) | Terminal colours and styles. |
 
 Unknown keys are ignored.
