@@ -361,6 +361,26 @@ def strip_ending(line: str) -> tuple[str, str]:
     return body, line[len(body) :]
 
 
+def write_checked(path: pathlib.Path, lines: list[str], original: bytes) -> None:
+    """Write the lines, then restore `original` if read_order refuses the result.
+
+    Raises:
+        OrderFormatError: the write failed, or the result is not a valid order
+            (the original is restored); the message names both failures when
+            the restore also fails.
+    """
+    write_file(path, ''.join(lines).encode('utf-8'))
+    try:
+        read_order(path)
+    except ralphlib.exceptions.OrderFormatError as e:
+        try:
+            write_file(path, original)
+        except ralphlib.exceptions.OrderFormatError as restore_error:
+            # auditme: accept[except-interpolation] the message must name both failures
+            raise ralphlib.exceptions.OrderFormatError(f'{e}; restoring the original also failed: {restore_error}') from restore_error
+        raise
+
+
 def set_status(path: pathlib.Path, label: str, status: str) -> None:
     """Rewrite one Status cell, leaving every other byte of the file unchanged.
 
@@ -369,10 +389,14 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
     which is added below the order table the first time it is set.
 
     Raises:
-        OrderFormatError: no row or line has that label, or the file cannot
-            be read, decoded or written.
+        OrderFormatError: the status contains a line break, no row or line has
+            that label, the write leaves a file read_order refuses (the file is
+            then restored), or the file cannot be read, decoded or written.
     """
-    lines = read_file(path)[1].splitlines(keepends=True)
+    if len(f'a{status}a'.splitlines()) > 1:
+        raise ralphlib.exceptions.OrderFormatError(f'{path}: a status cannot contain a line break')
+    original, text = read_file(path)
+    lines = text.splitlines(keepends=True)
     nth = 0
     in_order = False
     last_table_line = -1
@@ -384,7 +408,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
             match = IMPLICIT_CHECKPOINT.match(body.strip())
             if match and label == f'Checkpoint after {match.group(1)}':
                 lines[number] = f'{label}: {status}{ending}'
-                write_file(path, ''.join(lines).encode('utf-8'))
+                write_checked(path, lines, original)
                 return
             continue
         cells = split_cells(body)
@@ -412,7 +436,7 @@ def set_status(path: pathlib.Path, label: str, status: str) -> None:
         lines.insert(last_table_line + 1, f'{ending}{label}: {status}{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no row labelled {label!r}')
-    write_file(path, ''.join(lines).encode('utf-8'))
+    write_checked(path, lines, original)
 
 
 def set_setting(path: pathlib.Path, name: str, value: str) -> None:
@@ -456,16 +480,7 @@ def set_setting(path: pathlib.Path, name: str, value: str) -> None:
         lines.insert(last_table_line + 1, f'| {name} | {escaped} |{ending}')
     else:
         raise ralphlib.exceptions.OrderFormatError(f'{path}: no settings table (header `Setting | Value`)')
-    write_file(path, ''.join(lines).encode('utf-8'))
-    try:
-        read_order(path)
-    except ralphlib.exceptions.OrderFormatError as e:
-        try:
-            write_file(path, original)
-        except ralphlib.exceptions.OrderFormatError as restore_error:
-            # auditme: accept[except-interpolation] the message must name both failures
-            raise ralphlib.exceptions.OrderFormatError(f'{e}; restoring the original also failed: {restore_error}') from restore_error
-        raise
+    write_checked(path, lines, original)
 
 
 @dataclasses.dataclass(frozen=True)

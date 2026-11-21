@@ -396,6 +396,28 @@ def test_set_status_unknown_label(project: pathlib.Path) -> None:
         ralphlib.order.set_status(path, '9', 'running')
 
 
+@pytest.mark.parametrize('status', ['a\nb', 'a\rb', 'x\nCheckpoint after 1: passed 9', 'x\r\n', 'a\x0bb', 'a\x0cb', 'a\x1cb', 'a\x85b', 'a b', 'a b'])
+def test_set_status_refuses_a_line_break(project: pathlib.Path, status: str) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    before = path.read_bytes()
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='line break'):
+        ralphlib.order.set_status(path, '1', status)
+    assert path.read_bytes() == before
+
+
+def test_set_status_restores_a_file_the_write_left_unparseable(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    before = path.read_bytes()
+
+    def refuse(order_path: pathlib.Path) -> None:
+        raise ralphlib.exceptions.OrderFormatError('refused')
+
+    monkeypatch.setattr(ralphlib.order, 'read_order', refuse)
+    with pytest.raises(ralphlib.exceptions.OrderFormatError, match='refused'):
+        ralphlib.order.set_status(path, '1', 'running')
+    assert path.read_bytes() == before
+
+
 def test_set_status_implicit_checkpoint_line(project: pathlib.Path) -> None:
     path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('merged a1') + '\nafter\n')
     ralphlib.order.set_status(path, 'Checkpoint after 1', 'running')

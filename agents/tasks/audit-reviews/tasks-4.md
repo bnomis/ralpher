@@ -61,7 +61,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 2: `rro set-status` refuses line breaks
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 8
@@ -70,21 +70,21 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: a status containing `\n` or `\r` raises `OrderFormatError` and leaves the file byte-for-byte unchanged; a write that leaves the file unparseable is restored, as `set_setting`'s tests check
-- [ ] In `ralphlib.order.set_status`, refuse a status containing `\r` or `\n` with `OrderFormatError` before writing
-- [ ] After the write, re-parse the file with `read_order` and restore the original bytes on `OrderFormatError`, as `set_setting` does
-- [ ] Say in `docs/run-order.md` (the `set-status` description) that a status cannot contain a line break
+- [x] Add tests to `src/tests/test_order.py`: a status containing `\n` or `\r` raises `OrderFormatError` and leaves the file byte-for-byte unchanged; a write that leaves the file unparseable is restored, as `set_setting`'s tests check
+- [x] In `ralphlib.order.set_status`, refuse a status containing `\r` or `\n` with `OrderFormatError` before writing
+- [x] After the write, re-parse the file with `read_order` and restore the original bytes on `OrderFormatError`, as `set_setting` does
+- [x] Say in `docs/run-order.md` (the `set-status` description) that a status cannot contain a line break
 
 **Acceptance Criteria:**
 
-- [ ] A forged `Checkpoint after X: passed` line cannot be written through `set_status`
+- [x] A forged `Checkpoint after X: passed` line cannot be written through `set_status`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 

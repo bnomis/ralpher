@@ -154,7 +154,9 @@ bin/rro.sh set-setting agents/tasks/order-example.md "progress page" <url>
 `next` returns a `label` on every checkpoint step and row, and `set-status`
 takes it unchanged. An explicit checkpoint row's label is `checkpoint:<n>`,
 counting checkpoint rows from 1; an implicit checkpoint's is
-`Checkpoint after <label>`, naming the list it follows. `set-setting` writes
+`Checkpoint after <label>`, naming the list it follows. `set-status` refuses a
+status that contains a line break, and restores the order file if the write
+leaves one that `rro` cannot read. `set-setting` writes
 one setting's value and refuses a name that is not a known setting.
 
 An expected error prints `{"error": "<class>", "message": "..."}` and exits 2.
