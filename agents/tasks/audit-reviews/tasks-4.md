@@ -95,7 +95,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 3: The test log stays inside the repository
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** Finding 9, Decision 3
@@ -104,20 +104,20 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: an absolute `test log` path and one containing `..` make `check_test_log` raise `OrderFormatError`; the default path still works
-- [ ] In `ralphlib.order.check_test_log` (or where the setting is read), refuse such paths with `OrderFormatError`, matching how `ralphlib.logger.state_path` refuses absolute and `..` paths
-- [ ] Document the rule beside the `test log` setting in `docs/run-order.md`
+- [x] Add tests to `src/tests/test_order.py`: an absolute `test log` path and one containing `..` make `check_test_log` raise `OrderFormatError`; the default path still works
+- [x] In `ralphlib.order.check_test_log` (or where the setting is read), refuse such paths with `OrderFormatError`, matching how `ralphlib.logger.state_path` refuses absolute and `..` paths
+- [x] Document the rule beside the `test log` setting in `docs/run-order.md`
 
 **Acceptance Criteria:**
 
-- [ ] `rro check-log` on such an order prints the `{error, message}` line and exits 2
+- [x] `rro check-log` on such an order prints the `{error, message}` line and exits 2
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
-- [ ] `uv run --group docs mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] `uv run --group docs mkdocs build --strict` passes
 
 **Notes:**
 
