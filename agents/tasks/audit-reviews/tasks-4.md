@@ -26,7 +26,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 1: Order-file I/O errors end `rro` with its error line
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** Finding 1
@@ -35,23 +35,23 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_order.py`: `read_order`, `set_status` and `set_setting` raise `OrderFormatError` naming the path when the read raises `OSError` (patch `pathlib.Path.read_text` / `read_bytes`) and when the file is not valid UTF-8; `check_test_log` raises `OrderFormatError` when the log read raises `OSError`; a failed write in `set_status` and `set_setting` raises `OrderFormatError`; confirm they fail before the fix
-- [ ] Add a test to `src/tests/test_rro.py` that an undecodable order file makes `rro next` print the `{error, message}` line and exit 2
-- [ ] In `src/ralphlib/order.py`, add one read helper and one write helper that translate `OSError` and `UnicodeDecodeError` to `OrderFormatError` naming the path (`raise ... from e`), and route every order-file read and write in `read_order`, `set_setting`, `set_status` and the test-log read in `check_test_log` through them
-- [ ] In `set_setting`, when the restore write after a failed `read_order` itself fails, raise `OrderFormatError` naming both failures, chained from the restore error, so the original error is not lost
-- [ ] Add `OSError` and `UnicodeDecodeError` to the handler at `src/ralphlib/order.py:428` if it still catches only `OrderFormatError` after the helpers land
-- [ ] Update the `Raises:` sections of the changed functions
+- [x] Add tests to `src/tests/test_order.py`: `read_order`, `set_status` and `set_setting` raise `OrderFormatError` naming the path when the read raises `OSError` (patch `pathlib.Path.read_text` / `read_bytes`) and when the file is not valid UTF-8; `check_test_log` raises `OrderFormatError` when the log read raises `OSError`; a failed write in `set_status` and `set_setting` raises `OrderFormatError`; confirm they fail before the fix
+- [x] Add a test to `src/tests/test_rro.py` that an undecodable order file makes `rro next` print the `{error, message}` line and exit 2
+- [x] In `src/ralphlib/order.py`, add one read helper and one write helper that translate `OSError` and `UnicodeDecodeError` to `OrderFormatError` naming the path (`raise ... from e`), and route every order-file read and write in `read_order`, `set_setting`, `set_status` and the test-log read in `check_test_log` through them
+- [x] In `set_setting`, when the restore write after a failed `read_order` itself fails, raise `OrderFormatError` naming both failures, chained from the restore error, so the original error is not lost
+- [x] Add `OSError` and `UnicodeDecodeError` to the handler at `src/ralphlib/order.py:428` if it still catches only `OrderFormatError` after the helpers land
+- [x] Update the `Raises:` sections of the changed functions
 
 **Acceptance Criteria:**
 
-- [ ] No `read_text`, `read_bytes` or `write_bytes` call in `src/ralphlib/order.py` sits outside the two helpers (`rg -n 'read_text|read_bytes|write_bytes' src/ralphlib/order.py`)
-- [ ] The new tests pass
+- [x] No `read_text`, `read_bytes` or `write_bytes` call in `src/ralphlib/order.py` sits outside the two helpers (`rg -n 'read_text|read_bytes|write_bytes' src/ralphlib/order.py`)
+- [x] The new tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show --stat HEAD` lists `src/tests/test_order.py` and `src/tests/test_rro.py`
-- [ ] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show --stat HEAD` lists `src/tests/test_order.py` and `src/tests/test_rro.py`
+- [x] `uv run pytest src/tests/test_order.py src/tests/test_rro.py` passes
 
 **Notes:**
 
