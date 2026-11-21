@@ -173,16 +173,32 @@ def order_with(project: pathlib.Path, rows: list[str], tail: str = '', every: in
     return ralphlib.order.read_order(write_order(project, settings + ORDER_HEADER + ''.join(rows) + tail))
 
 
-L1 = '| 1 | parser/tasks-1.md | - | - | {} |\n'
-L2 = '| 2 | lexicon/tasks-1.md | 1 | - | {} |\n'
-L3 = '| 3 | report/tasks-2.md | - | - | {} |\n'
-L4 = '| 4 | cache/tasks-1.md | - | - | {} |\n'
-CP = '| | **Checkpoint** | | | {} |\n'
-FINAL = '| | **Final checkpoint** | | | {} |\n'
+def l1(status: str) -> str:
+    return f'| 1 | parser/tasks-1.md | - | - | {status} |\n'
+
+
+def l2(status: str) -> str:
+    return f'| 2 | lexicon/tasks-1.md | 1 | - | {status} |\n'
+
+
+def l3(status: str) -> str:
+    return f'| 3 | report/tasks-2.md | - | - | {status} |\n'
+
+
+def l4(status: str) -> str:
+    return f'| 4 | cache/tasks-1.md | - | - | {status} |\n'
+
+
+def cp(status: str) -> str:
+    return f'| | **Checkpoint** | | | {status} |\n'
+
+
+def final(status: str) -> str:
+    return f'| | **Final checkpoint** | | | {status} |\n'
 
 
 def test_first_todo_list_runs(project: pathlib.Path) -> None:
-    order = order_with(project, [L1.format('merged abc1234'), L2.format('todo'), L3.format('todo')])
+    order = order_with(project, [l1('merged abc1234'), l2('todo'), l3('todo')])
     step = ralphlib.order.next_step(order)
     assert isinstance(step, ralphlib.order.RunList)
     assert step.row.label == '2'
@@ -190,22 +206,22 @@ def test_first_todo_list_runs(project: pathlib.Path) -> None:
 
 @pytest.mark.parametrize('status', ['running', 'waiting: test gate'])
 def test_resume_a_running_or_waiting_list(project: pathlib.Path, status: str) -> None:
-    order = order_with(project, [L1.format('merged abc1234'), L2.format(status)])
+    order = order_with(project, [l1('merged abc1234'), l2(status)])
     step = ralphlib.order.next_step(order)
     assert isinstance(step, ralphlib.order.Resume)
     assert step.row.status == status
 
 
 def test_waits_for_unmet_raises(project: pathlib.Path) -> None:
-    order = order_with(project, [L1.format('todo'), L2.format('todo')])
+    order = order_with(project, [l1('todo'), l2('todo')])
     assert isinstance(ralphlib.order.next_step(order), ralphlib.order.RunList)
-    order = order_with(project, [L3.format('merged abc1234'), L2.format('todo'), L1.format('todo')])
+    order = order_with(project, [l3('merged abc1234'), l2('todo'), l1('todo')])
     with pytest.raises(ralphlib.exceptions.WaitsForUnmetError, match='list 2 waits for list 1'):
         ralphlib.order.next_step(order)
 
 
 def test_explicit_checkpoint_due_and_resume(project: pathlib.Path) -> None:
-    rows = [L1.format('merged abc1234'), L2.format('merged def5678'), CP.format('{}'), L3.format('todo')]
+    rows = [l1('merged abc1234'), l2('merged def5678'), cp('{}'), l3('todo')]
     step = ralphlib.order.next_step(order_with(project, [r.replace('{}', 'todo') for r in rows]))
     assert step == ralphlib.order.RunCheckpoint(label='checkpoint:1', position=2, final=False, after='2')
     step = ralphlib.order.next_step(order_with(project, [r.replace('{}', 'failed 3 tests') for r in rows]))
@@ -216,17 +232,17 @@ def test_explicit_checkpoint_due_and_resume(project: pathlib.Path) -> None:
 
 
 def test_final_checkpoint_then_finished(project: pathlib.Path) -> None:
-    merged = [L1.format('merged abc1234'), L2.format('merged def5678')]
-    step = ralphlib.order.next_step(order_with(project, [*merged, FINAL.format('todo')]))
+    merged = [l1('merged abc1234'), l2('merged def5678')]
+    step = ralphlib.order.next_step(order_with(project, [*merged, final('todo')]))
     assert step == ralphlib.order.RunCheckpoint(label='checkpoint:1', position=2, final=True, after='2')
-    assert ralphlib.order.next_step(order_with(project, [*merged, FINAL.format('passed 90')])) == ralphlib.order.Finished()
+    assert ralphlib.order.next_step(order_with(project, [*merged, final('passed 90')])) == ralphlib.order.Finished()
 
 
 def test_implicit_checkpoint_after_the_third_merge(project: pathlib.Path) -> None:
-    rows = [L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3')]
+    rows = [l1('merged a1'), l2('merged b2'), l3('merged c3')]
     step = ralphlib.order.next_step(order_with(project, rows))
     assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 3', position=2, final=True, after='3')
-    two = [L1.format('merged a1'), L2.format('merged b2'), L3.format('todo'), L4.format('todo')]
+    two = [l1('merged a1'), l2('merged b2'), l3('todo'), l4('todo')]
     assert isinstance(ralphlib.order.next_step(order_with(project, two)), ralphlib.order.RunList)
     step = ralphlib.order.next_step(order_with(project, two, every=2))
     assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 2', position=1, final=False, after='2')
@@ -234,8 +250,8 @@ def test_implicit_checkpoint_after_the_third_merge(project: pathlib.Path) -> Non
 
 @pytest.mark.parametrize('every', [2, 3])
 def test_no_implicit_checkpoint_leaves_a_short_tail(project: pathlib.Path, every: int) -> None:
-    three = [L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3'), L4.format('todo')]
-    rows = three if every == 3 else [L1.format('merged a1'), L2.format('merged b2'), L3.format('todo')]
+    three = [l1('merged a1'), l2('merged b2'), l3('merged c3'), l4('todo')]
+    rows = three if every == 3 else [l1('merged a1'), l2('merged b2'), l3('todo')]
     step = ralphlib.order.next_step(order_with(project, rows, every=every))
     assert isinstance(step, ralphlib.order.RunList)
     assert step.row.label == rows[-1].split('|')[1].strip()
@@ -246,7 +262,7 @@ def test_no_implicit_checkpoint_leaves_a_short_tail(project: pathlib.Path, every
 
 
 def test_implicit_checkpoint_status_is_read_back(project: pathlib.Path) -> None:
-    rows = [L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3')]
+    rows = [l1('merged a1'), l2('merged b2'), l3('merged c3')]
     order = order_with(project, rows, tail='\nCheckpoint after 3: passed 90\n')
     assert order.implicit == (('3', 'passed 90'),)
     assert ralphlib.order.next_step(order) == ralphlib.order.Finished()
@@ -259,7 +275,7 @@ def test_implicit_checkpoint_status_is_read_back(project: pathlib.Path) -> None:
 
 
 def test_implicit_counter_restarts_after_a_passed_checkpoint(project: pathlib.Path) -> None:
-    rows = [L1.format('merged a1'), L2.format('merged b2'), L3.format('todo'), L4.format('todo')]
+    rows = [l1('merged a1'), l2('merged b2'), l3('todo'), l4('todo')]
     order = order_with(project, rows, tail='\nCheckpoint after 2: passed 90\n', every=2)
     step = ralphlib.order.next_step(order)
     assert isinstance(step, ralphlib.order.RunList)
@@ -267,7 +283,7 @@ def test_implicit_counter_restarts_after_a_passed_checkpoint(project: pathlib.Pa
 
 
 def test_all_merged_with_explicit_checkpoints_passed_is_finished(project: pathlib.Path) -> None:
-    rows = [L1.format('merged a1'), CP.format('passed 1'), L2.format('merged b2'), FINAL.format('passed 2')]
+    rows = [l1('merged a1'), cp('passed 1'), l2('merged b2'), final('passed 2')]
     assert ralphlib.order.next_step(order_with(project, rows)) == ralphlib.order.Finished()
 
 
@@ -341,7 +357,7 @@ def test_default_branch_os_error() -> None:
 
 def log_verdict(project: pathlib.Path, text: str | None, **settings: str) -> ralphlib.order.LogVerdict:
     extra = ''.join(f'| {name} | {value} |\n' for name, value in settings.items())
-    path = write_order(project, SETTINGS + extra + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + extra + ORDER_HEADER + l1('todo'))
     order = ralphlib.order.read_order(path)
     row = order.rows[0]
     assert isinstance(row, ralphlib.order.ListRow)
@@ -398,7 +414,7 @@ def test_log_path_uses_the_test_log_setting(project: pathlib.Path) -> None:
 
 
 def test_set_status_changes_one_cell(project: pathlib.Path) -> None:
-    rows = [L1.format('todo'), L2.format('todo'), CP.format('todo')]
+    rows = [l1('todo'), l2('todo'), cp('todo')]
     path = write_order(project, '# x\r\n' + SETTINGS + ORDER_HEADER + ''.join(rows).replace('\n', '\r\n') + 'tail\n')
     before = path.read_bytes()
     ralphlib.order.set_status(path, '2', 'merged abc1234')
@@ -411,14 +427,14 @@ def test_set_status_changes_one_cell(project: pathlib.Path) -> None:
 
 
 def test_set_status_unknown_label(project: pathlib.Path) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     with pytest.raises(ralphlib.exceptions.OrderFormatError):
         ralphlib.order.set_status(path, '9', 'running')
 
 
 @pytest.mark.parametrize('status', ['a\nb', 'a\rb', 'x\nCheckpoint after 1: passed 9', 'x\r\n', 'a\x0bb', 'a\x0cb', 'a\x1cb', 'a\x85b', 'a b', 'a b'])
 def test_set_status_refuses_a_line_break(project: pathlib.Path, status: str) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     before = path.read_bytes()
     with pytest.raises(ralphlib.exceptions.OrderFormatError, match='line break'):
         ralphlib.order.set_status(path, '1', status)
@@ -426,7 +442,7 @@ def test_set_status_refuses_a_line_break(project: pathlib.Path, status: str) -> 
 
 
 def test_set_status_restores_a_file_the_write_left_unparseable(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     before = path.read_bytes()
 
     def refuse(order_path: pathlib.Path) -> None:
@@ -439,7 +455,7 @@ def test_set_status_restores_a_file_the_write_left_unparseable(project: pathlib.
 
 
 def test_set_status_implicit_checkpoint_line(project: pathlib.Path) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('merged a1') + '\nafter\n')
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('merged a1') + '\nafter\n')
     ralphlib.order.set_status(path, 'Checkpoint after 1', 'running')
     assert ralphlib.order.read_order(path).implicit == (('1', 'running'),)
     ralphlib.order.set_status(path, 'Checkpoint after 1', 'passed 5')
@@ -456,19 +472,19 @@ def checkpoint_label(step: ralphlib.order.Step) -> str:
 
 
 def test_one_list_order_final_checkpoint_label(project: pathlib.Path) -> None:
-    step = ralphlib.order.next_step(order_with(project, [L1.format('merged a1')]))
+    step = ralphlib.order.next_step(order_with(project, [l1('merged a1')]))
     assert step == ralphlib.order.RunCheckpoint(label='Checkpoint after 1', position=0, final=True, after='1')
 
 
 @pytest.mark.parametrize(
     ('rows', 'every', 'tail'),
     [
-        ([L1.format('merged a1'), CP.format('todo'), L2.format('todo')], None, ''),
-        ([L1.format('merged a1'), FINAL.format('todo')], None, ''),
-        ([L1.format('merged a1'), L2.format('merged b2'), L3.format('merged c3')], None, ''),
-        ([L1.format('merged a1')], None, ''),
-        ([L1.format('merged a1'), CP.format('running'), L2.format('todo')], None, ''),
-        ([L1.format('merged a1'), L2.format('merged b2')], 2, '\nCheckpoint after 2: failed 2\n'),
+        ([l1('merged a1'), cp('todo'), l2('todo')], None, ''),
+        ([l1('merged a1'), final('todo')], None, ''),
+        ([l1('merged a1'), l2('merged b2'), l3('merged c3')], None, ''),
+        ([l1('merged a1')], None, ''),
+        ([l1('merged a1'), cp('running'), l2('todo')], None, ''),
+        ([l1('merged a1'), l2('merged b2')], 2, '\nCheckpoint after 2: failed 2\n'),
     ],
 )
 def test_checkpoint_label_round_trip(project: pathlib.Path, rows: list[str], every: int | None, tail: str) -> None:
@@ -545,7 +561,7 @@ SET_STATUS_AND_SETTING = [
 
 
 def test_read_order_names_the_path_on_an_os_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
     with pytest.raises(ralphlib.exceptions.OrderFormatError, match=str(path)):
         ralphlib.order.read_order(path)
@@ -561,7 +577,7 @@ def test_an_undecodable_order_file_is_an_order_format_error(project: pathlib.Pat
 
 @pytest.mark.parametrize('call', SET_STATUS_AND_SETTING)
 def test_an_unreadable_order_file_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch, call: object) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     monkeypatch.setattr(pathlib.Path, 'read_bytes', raise_os_error)
     with pytest.raises(ralphlib.exceptions.OrderFormatError, match=str(path)):
         call(path)  # type: ignore[operator]
@@ -569,7 +585,7 @@ def test_an_unreadable_order_file_is_an_order_format_error(project: pathlib.Path
 
 @pytest.mark.parametrize('call', SET_STATUS_AND_SETTING)
 def test_a_failed_write_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch, call: object) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     monkeypatch.setattr(pathlib.Path, 'write_bytes', raise_os_error)
     with pytest.raises(ralphlib.exceptions.OrderFormatError, match='cannot write'):
         call(path)  # type: ignore[operator]
@@ -594,7 +610,7 @@ def test_set_setting_names_both_failures_when_the_restore_fails(project: pathlib
 
 
 def test_check_test_log_os_error_is_an_order_format_error(project: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    path = write_order(project, SETTINGS + ORDER_HEADER + L1.format('todo'))
+    path = write_order(project, SETTINGS + ORDER_HEADER + l1('todo'))
     order = ralphlib.order.read_order(path)
     row = order.rows[0]
     assert isinstance(row, ralphlib.order.ListRow)

@@ -253,7 +253,7 @@ files it names, so a test reported but never committed is caught.
 
 ## Task 8: f-strings in `test_order.py`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** Finding 10
@@ -262,17 +262,17 @@ files it names, so a test reported but never committed is caught.
 
 **Subtasks:**
 
-- [ ] Replace each template with a function taking the status (`def l1(status: str) -> str`), and update every use in the module
-- [ ] Leave `src/ralphlib/order.py`'s `.format()` of the user-supplied template alone
+- [x] Replace each template with a function taking the status (`def l1(status: str) -> str`), and update every use in the module
+- [x] Leave `src/ralphlib/order.py`'s `.format()` of the user-supplied template alone
 
 **Acceptance Criteria:**
 
-- [ ] `rg -n '\.format\(' src/tests/test_order.py` finds nothing
+- [x] `rg -n '\.format\(' src/tests/test_order.py` finds nothing
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv run pytest src/tests/test_order.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv run pytest src/tests/test_order.py` passes
 
 **Notes:**
 
