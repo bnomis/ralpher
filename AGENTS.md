@@ -163,7 +163,7 @@ lists, reviews, `TODO.md`, `DONE.md`, docs or commit messages. Write "another
 project" or "one project", and use neutral names in fixtures (`probe`, `pkg`,
 `/src/probe`). A measurement taken from another project's run keeps its date
 and figures but not the project's name. The shared tooling repository the
-hooks and CI install from (`git@github.com:bnomis/auditor.git`, for the audit
+hooks and CI install from (`https://github.com/bnomis/auditor`, for the audit
 hooks and the names hook) is a dependency, not a project, and may be named
 where configuration needs it.
 
