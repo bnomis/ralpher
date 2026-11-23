@@ -1227,11 +1227,11 @@ def test_agent_environment_removes_variables_left_empty() -> None:
 
 def test_agent_environment_keeps_another_virtual_environment() -> None:
     environ = {
-        'PATH': f'/work/featenv/.venv/bin:{RALPHER_VENV}/bin:/usr/bin',
-        'VIRTUAL_ENV': '/work/featenv/.venv',
+        'PATH': f'/work/env/.venv/bin:{RALPHER_VENV}/bin:/usr/bin',
+        'VIRTUAL_ENV': '/work/env/.venv',
     }
     env = ralphlib.iteration.agent_environment(environ, RALPHER_VENV, RALPHER_SRC)
-    assert env == {'PATH': '/work/featenv/.venv/bin:/usr/bin', 'VIRTUAL_ENV': '/work/featenv/.venv'}
+    assert env == {'PATH': '/work/env/.venv/bin:/usr/bin', 'VIRTUAL_ENV': '/work/env/.venv'}
 
 
 def test_agent_environment_leaves_environ_unchanged() -> None:
