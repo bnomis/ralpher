@@ -93,7 +93,7 @@ class TestPreprocessHook:
 class TestMakeContext:
     def test_includes_expected_fields(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=5)
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['event_type'] == 'start'
         assert context['iterations'] == '5'
         assert 'datetime_utc' in context
@@ -103,7 +103,7 @@ class TestMakeContext:
 
     def test_resolves_task_file_when_set(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task.md')
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'].endswith('/tasks/my-task.md')
         assert context['task_file_basename'] == 'my-task.md'
         assert context['task_file_number'] == ''
@@ -112,7 +112,7 @@ class TestMakeContext:
 
     def test_non_numeric_task_file_suffix_gives_empty_number(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1, task_file='tasks/my-task-abc.md')
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == ''
 
     @pytest.mark.parametrize(
@@ -129,7 +129,7 @@ class TestMakeContext:
     )
     def test_task_file_number_cases(self, name: str, expected: str) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1, task_file=f'tasks/{name}')
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == expected
 
     @hypothesis.settings(max_examples=20, deadline=10000)
@@ -143,18 +143,18 @@ class TestMakeContext:
             iterations=1,
             task_file=f'tasks/{prefix}-{number}{suffix}',
         )
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file_number'] == str(number)
 
     def test_task_file_fields_are_empty_when_not_set(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1)
-        context = ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+        context = ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
         assert context['task_file'] == ''
         assert context['task_file_basename'] == ''
 
     def test_merges_event_context(self) -> None:
         options = tests.helpers.make_options_with_settings(iterations=1)
-        context = ralphlib.hooks.make_context(
+        context = ralphlib.hooks.collect_context(
             options,
             ralphlib.types.RalpherEventType.ERROR,
             {'error_msg': 'something failed'},
@@ -263,7 +263,7 @@ class TestMakeContextDomainErrors:
     def test_time_zone_failure_raises_ralpher_error(self) -> None:
         options = tests.helpers.make_options_with_settings()
         with unittest.mock.patch('tzlocal.get_localzone', side_effect=LookupError('no zone')), pytest.raises(ralphlib.exceptions.RalpherError):
-            ralphlib.hooks.make_context(options, ralphlib.types.RalpherEventType.START, {})
+            ralphlib.hooks.collect_context(options, ralphlib.types.RalpherEventType.START, {})
 
 
 class TestTaskFileChoice:

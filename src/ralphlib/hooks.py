@@ -68,7 +68,7 @@ def event(
         hook_templates = options.settings.get('hook_templates', True)
         context = {}
         if hook_templates:
-            context = make_context(options, event_type, event_context, hooks[event_type_string])
+            context = collect_context(options, event_type, event_context, hooks[event_type_string])
 
         for cmd in hooks[event_type_string]:
             run_hook(cmd, context if hook_templates else None)
@@ -95,7 +95,7 @@ def ralpher_root() -> pathlib.Path:
     return pathlib.Path(__file__).resolve().parent.parent.parent
 
 
-def make_context(
+def collect_context(
     options: ralphlib.options.RalpherOptions,
     event_type: ralphlib.types.RalpherEventType,
     event_context: dict[str, typing.Any],

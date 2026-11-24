@@ -75,7 +75,7 @@ def run_git(cwd: pathlib.Path, *args: str) -> None:
     git.Git(str(cwd)).execute(['git', '-c', 'user.name=t', '-c', 'user.email=t@example.com', *args])
 
 
-def make_repo(tmp_path: pathlib.Path) -> pathlib.Path:
+def create_repo(tmp_path: pathlib.Path) -> pathlib.Path:
     repo = (tmp_path / 'repo').resolve()
     (repo / 'agents/tasks/feat').mkdir(parents=True)
     (repo / TASK_FILE).write_text('## Task 1: T\n**Status:** todo\n')
@@ -90,14 +90,14 @@ def make_options(repo: pathlib.Path) -> ralphlib.options.RalpherOptions:
 
 
 def test_worktree_task_file_found(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     assert ralphlib.verifier.worktree_task_file(make_options(repo)) == wt / TASK_FILE
 
 
 def test_worktree_task_file_threads_list_worktrees_once(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     options = make_options(repo)
@@ -113,12 +113,12 @@ def test_worktree_task_file_threads_list_worktrees_once(tmp_path: pathlib.Path) 
 
 
 def test_worktree_task_file_no_match(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     assert ralphlib.verifier.worktree_task_file(make_options(repo)) is None
 
 
 def test_worktree_task_file_ignores_unrelated_branch(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     run_git(repo, 'worktree', 'add', '-b', 'worktree-other', str((tmp_path / 'wt').resolve()))
     assert ralphlib.verifier.worktree_task_file(make_options(repo)) is None
 
@@ -176,14 +176,14 @@ def test_verify_stop_empty_file(tmp_path: pathlib.Path) -> None:
 
 
 def test_verify_stop_worktree_not_found(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     check = ralphlib.verifier.verify_stop(make_options(repo))
     assert not check.verified
     assert check.reason == f'worktree for {SLUG} not found'
 
 
 def test_verify_stop_reads_worktree_copy(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     (repo / TASK_FILE).write_text('## Task 1: T\n**Status:** done\n')
@@ -194,7 +194,7 @@ def test_verify_stop_reads_worktree_copy(tmp_path: pathlib.Path) -> None:
 
 
 def test_verify_stop_worktree_missing_file(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     (wt / TASK_FILE).unlink()
@@ -203,7 +203,7 @@ def test_verify_stop_worktree_missing_file(tmp_path: pathlib.Path) -> None:
 
 
 def test_worktree_task_file_cwd_through_symlink(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     link = tmp_path / 'link'
@@ -213,7 +213,7 @@ def test_worktree_task_file_cwd_through_symlink(tmp_path: pathlib.Path) -> None:
 
 
 def test_verify_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     outside = tmp_path / 'outside.md'
     outside.write_text('## Task 1: T\n**Status:** todo\n')
     options = ralphlib.options.RalpherOptions(prompt='p', task_file=str(outside), worktree=True, cwd=str(repo))
@@ -223,13 +223,13 @@ def test_verify_stop_task_file_outside_repository(tmp_path: pathlib.Path) -> Non
 
 
 def test_agent_task_file_worktree_not_found_raises_tasks_file_error(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     with pytest.raises(ralphlib.exceptions.TasksFileError):
         ralphlib.verifier.agent_task_file(make_options(repo))
 
 
 def test_worktree_task_file_runs_git_worktree_list_once(tmp_path: pathlib.Path) -> None:
-    repo = make_repo(tmp_path)
+    repo = create_repo(tmp_path)
     wt = (tmp_path / 'wt').resolve()
     run_git(repo, 'worktree', 'add', '-b', f'worktree-{SLUG}', str(wt))
     options = make_options(repo)

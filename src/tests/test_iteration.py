@@ -1320,7 +1320,7 @@ def test_process_stream_event_null_delta_returns_line() -> None:
 
 
 def test_process_fires_agent_process_end_with_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
-    events: list[tuple[ralphlib.types.RalpherEventType, dict]] = []
+    events: list[tuple[ralphlib.types.RalpherEventType, dict[str, typing.Any]]] = []
     monkeypatch.setattr(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05)
     monkeypatch.setattr(ralphlib.hooks, 'event', lambda options, event, extra: events.append((event, extra)))
     context = ralphlib.iteration.IterationContext(cmd=[sys.executable, '-c', 'raise SystemExit(3)'], iteration=1, prompt='test')

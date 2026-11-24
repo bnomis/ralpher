@@ -371,7 +371,7 @@ class TestLoopEndToEnd:
         assert state['iterations_completed'] == 1
 
 
-def make_stop_options(tmp_path: pathlib.Path, tasks_text: str | None) -> ralphlib.options.RalpherOptions:
+def write_stop_options(tmp_path: pathlib.Path, tasks_text: str | None) -> ralphlib.options.RalpherOptions:
     task_file = tmp_path / 'tasks.md'
     if tasks_text is not None:
         task_file.write_text(tasks_text)
@@ -389,17 +389,17 @@ def make_stop_options(tmp_path: pathlib.Path, tasks_text: str | None) -> ralphli
 
 class TestRejectUnverifiedStop:
     def test_all_done_allows_the_stop(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
-        options = make_stop_options(tmp_path, TASKS_DONE)
+        options = write_stop_options(tmp_path, TASKS_DONE)
         assert ralphlib.looper.reject_unverified_stop(options, 1, '1') is True
         assert 'rejected' not in capsys.readouterr().out
 
     def test_missing_task_file_trusts_the_stop(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
-        options = make_stop_options(tmp_path, None)
+        options = write_stop_options(tmp_path, None)
         assert ralphlib.looper.reject_unverified_stop(options, 1, '1') is True
         assert 'rejected' not in capsys.readouterr().out
 
     def test_unfinished_tasks_reject_the_stop_and_record_it(self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
-        options = make_stop_options(tmp_path, TASKS_UNFINISHED)
+        options = write_stop_options(tmp_path, TASKS_UNFINISHED)
         (tmp_path / 'logs').mkdir()
         (tmp_path / 'logs' / 'state.json').write_text('{}')
         assert ralphlib.looper.reject_unverified_stop(options, 2, '2') is False
