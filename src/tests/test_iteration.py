@@ -1331,6 +1331,28 @@ def test_process_fires_agent_process_end_with_exit_code(monkeypatch: pytest.Monk
     assert end == {'agent_process_id': start['agent_process_id'], 'agent_exit_code': 3}
 
 
+@pytest.mark.parametrize(
+    ('code', 'error'),
+    [
+        ('raise SystemExit(3)', True),
+        ('print("{}"); raise SystemExit(3)', False),
+        ('pass', False),
+    ],
+)
+def test_process_sets_error_only_when_the_agent_fails_without_output(monkeypatch: pytest.MonkeyPatch, code: str, error: bool) -> None:
+    monkeypatch.setattr(ralphlib.iteration, 'SUBPROCESS_POLL_INTERVAL', 0.05)
+    monkeypatch.setattr(ralphlib.hooks, 'event', lambda options, event, extra: None)
+    context = ralphlib.iteration.IterationContext(cmd=[sys.executable, '-c', code], iteration=1, prompt='test')
+    ralphlib.iteration.process(tests.helpers.make_options(quiet=True), context)
+    assert ralphlib.iteration.get_error(context) is error
+
+
+def test_failed_to_start_ignores_an_exit_after_a_termination_signal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ralphlib.signals, 'get_should_exit', lambda: True)
+    context = ralphlib.iteration.IterationContext(cmd=['agent'], iteration=1, prompt='test')
+    assert ralphlib.iteration.failed_to_start(context, -15) is False
+
+
 class TestDomainErrors:
     def test_make_context_translates_log_open_error(self, tmp_path: pathlib.Path) -> None:
         blocker = tmp_path / 'file'

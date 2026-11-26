@@ -54,6 +54,8 @@ class IterationContext:
     """Set at run time when the agent reports completion."""
     error: bool = False
     """Set at run time when the agent run fails."""
+    stdout_seen: bool = False
+    """Set at run time when the agent writes its first non-empty stdout line."""
     gil: threading.Lock = dataclasses.field(default_factory=threading.Lock)
     message_type_queue: list[ralphlib.types.MessageType] = dataclasses.field(default_factory=list)
     started_tasks: set[str] = dataclasses.field(default_factory=set)
@@ -534,6 +536,9 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
     stderr_thread.join()
 
     log_msg(options, context, f'Process {proc.pid} exited with code {proc.returncode}')
+    if failed_to_start(context, proc.returncode):
+        log_error(options, context, f'The agent exited with code {proc.returncode} without any output; stopping the loop')
+        set_error(context, True)
     ralphlib.hooks.event(
         options,
         ralphlib.types.RalpherEventType.AGENT_PROCESS_END,
@@ -542,6 +547,18 @@ def process(options: ralphlib.options.RalpherOptions, context: IterationContext)
             'agent_process_id': proc.pid,
         },
     )
+
+
+def failed_to_start(context: IterationContext, returncode: int | None) -> bool:
+    """Whether the agent exited non-zero before writing any stdout, as when it refuses its arguments.
+
+    Every later iteration would pass the same arguments and fail the same way, so the loop stops. An exit after a termination signal, or
+    after an error already seen, is not counted.
+    """
+    if not returncode or ralphlib.signals.get_should_exit() or get_error(context):
+        return False
+    with context.gil:
+        return not context.stdout_seen
 
 
 def kill_agent(proc: subprocess.Popen) -> None:
@@ -589,6 +606,8 @@ def read_stdout(
         if not line:
             continue
 
+        with context.gil:
+            context.stdout_seen = True
         write_stdout(context, line + '\n')
 
         message_type, message = process_line(options, context, line)

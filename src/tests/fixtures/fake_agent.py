@@ -12,6 +12,10 @@ def emit(payload: dict[str, typing.Any]) -> None:
 
 def main() -> None:
     mode = sys.argv[-1]
+    if mode == 'refuse':
+        sys.stderr.write('Error: the agent refuses its arguments\n')
+        sys.stderr.flush()
+        raise SystemExit(1)
     emit({'type': 'system', 'subtype': 'session_started'})
     emit({'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'hello from the agent'}]}})
     emit({'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'name': 'Bash', 'input': {'command': 'ls'}}]}})

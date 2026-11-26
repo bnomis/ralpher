@@ -6,6 +6,7 @@
 | 0 | every iteration ran without a stop | `completed all iterations` |
 | 0 | `--help`, `--cleanup` | |
 | 1 | the agent reported an error result | `error` |
+| 1 | the agent exited non-zero without writing any stdout, as when it refuses its arguments | `error` |
 | 1 | an exception inside ralpher during an iteration | `exception during iteration <n>` |
 | 1 | Ctrl+C twice, `SIGTERM`, an `operator` task block, or a loop on a blocked task | `termination` |
 | 1 | a signal during shutdown | none: ralpher exits at once |

@@ -370,6 +370,13 @@ class TestLoopEndToEnd:
         assert state['exit_reason'] == 'error'
         assert state['iterations_completed'] == 1
 
+    def test_agent_that_fails_to_start_stops_the_loop(self, tmp_path: pathlib.Path) -> None:
+        error, types, state = self.run_loop(tmp_path, 'refuse', iterations=3)
+        assert error is True
+        assert types[-2:] == [ralphlib.types.RalpherEventType.ERROR, ralphlib.types.RalpherEventType.END]
+        assert state['exit_reason'] == 'error'
+        assert state['iterations_completed'] == 1
+
 
 def write_stop_options(tmp_path: pathlib.Path, tasks_text: str | None) -> ralphlib.options.RalpherOptions:
     task_file = tmp_path / 'tasks.md'
