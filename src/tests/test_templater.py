@@ -1,4 +1,5 @@
 import pathlib
+import re
 
 import hypothesis
 import hypothesis.strategies
@@ -154,6 +155,25 @@ def test_task_file_slug_with_single_part_path_uses_stem_only() -> None:
 )
 def test_task_file_slug_joins_parent_and_stem(parent: str, stem: str) -> None:
     assert ralphlib.templater.task_file_slug(f'x/{parent}/{stem}.md') == f'{parent}-{stem}'
+
+
+def test_task_file_slug_keeps_a_name_of_the_maximum_length() -> None:
+    parent = 'a' * (ralphlib.templater.WORKTREE_NAME_MAX - len('-tasks-1'))
+    assert ralphlib.templater.task_file_slug(f'agents/tasks/{parent}/tasks-1.md') == f'{parent}-tasks-1'
+
+
+def test_task_file_slug_shortens_a_long_name_with_a_hash() -> None:
+    parent = 'a-long-spec-name-that-runs-well-past-the-limit-of-worktree-names'
+    slug = ralphlib.templater.task_file_slug(f'agents/tasks/{parent}/tasks-1.md')
+    assert len(slug) <= ralphlib.templater.WORKTREE_NAME_MAX
+    assert slug.startswith('a-long-spec-name')
+    assert re.fullmatch(r'[a-z0-9-]+-[0-9a-f]{8}', slug)
+    assert slug == ralphlib.templater.task_file_slug(f'agents/tasks/{parent}/tasks-1.md')
+
+
+def test_task_file_slug_keeps_long_names_with_a_shared_prefix_apart() -> None:
+    parent = 'p' * 70
+    assert ralphlib.templater.task_file_slug(f'x/{parent}/tasks-1.md') != ralphlib.templater.task_file_slug(f'x/{parent}/tasks-2.md')
 
 
 @hypothesis.settings(max_examples=20, deadline=10000)

@@ -1,3 +1,4 @@
+import hashlib
 import pathlib
 import re
 import typing
@@ -18,14 +19,31 @@ def slugify(value: str) -> str:
     return value
 
 
+WORKTREE_NAME_MAX = 64
+"""The longest worktree name Claude Code's `--worktree` accepts."""
+
+WORKTREE_NAME_HASH = 8
+"""Hex digits of the full name's SHA-256 kept at the end of a shortened name."""
+
+
 def task_file_slug(task_file: str) -> str:
+    """The worktree name for a tasks file: its directory name and stem, joined with `-` and slugified.
+
+    A name longer than `WORKTREE_NAME_MAX` is cut and ends with `-` and the first `WORKTREE_NAME_HASH` hex digits of the full name's
+    SHA-256, so two long names that share a prefix still differ.
+    """
     path = pathlib.Path(task_file)
     parts = path.parts
     if len(parts) >= 2:
         slug = parts[-2] + '-' + path.stem
     else:
         slug = path.stem
-    return slugify(slug)
+    slug = slugify(slug)
+    if len(slug) <= WORKTREE_NAME_MAX:
+        return slug
+    digest = hashlib.sha256(slug.encode()).hexdigest()[:WORKTREE_NAME_HASH]
+    head = slug[: WORKTREE_NAME_MAX - WORKTREE_NAME_HASH - 1].rstrip('-')
+    return f'{head}-{digest}'
 
 
 BUILTIN_VARS = (

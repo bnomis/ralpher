@@ -31,7 +31,10 @@ whether a worktree is used.
 
 The name comes from the tasks file's absolute path: its directory name and its stem, joined
 with `-`, lowercased, with every run of characters other than `a-z` and `0-9`
-turned into one `-`.
+turned into one `-`. Claude Code accepts worktree names of at most 64
+characters, so a longer name is cut to at most 55 characters and ends with `-` and
+the first 8 hex digits of the full name's SHA-256; the branch is still
+`worktree-<name>`.
 
 | `--task-file` | Worktree | Branch |
 |---------------|----------|--------|
